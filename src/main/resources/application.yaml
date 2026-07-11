@@ -26,9 +26,9 @@ spring:
     baseline-version: 1
   mail:
     port: 465
-    host: smtp.example.com
-    username:
-    password:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -66,12 +66,12 @@ app:
       client-id: ${GOOGLE_CLIENT_ID:}
   mail:
     # "From" address for outgoing mail (EmailService)
-    from: no-reply@springboot.vn
+    from: ${APP_MAIL_FROM:}
   init:
     # Seed default roles/permissions/admin account on startup
     enabled: true
     admin-username: admin
-    admin-email: admin@springboot.vn
+    admin-email: admin@gmail.com
     admin-password: admin123
 
 # Actuator: only expose health & info publicly; keep the rest off by default
