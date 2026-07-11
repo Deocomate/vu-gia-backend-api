@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: vu-gia
+  servlet:
+    multipart:
+      max-file-size: 10MB         # mỗi file tối đa 10MB
+      max-request-size: 100MB     # tổng 1 request
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/dev_db}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:rootpassword}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      # Flyway là nguồn chân lý của schema; Hibernate chỉ kiểm tra khớp (không tự sửa DB).
+      ddl-auto: validate
+    show-sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+    # Chạy schema (db/migration) trước, rồi seed (db/seed) theo thứ tự version.
+    locations: classpath:db/migration,classpath:db/seed
+    # DB đã có sẵn bảng (chưa có lịch sử Flyway) sẽ được baseline ở version 1
+    # (bỏ qua V1 để KHÔNG drop/xoá dữ liệu hiện có); chỉ chạy seed V2 trở đi.
+    baseline-on-migrate: true
+    baseline-version: 1
+  mail:
+    port: 465
+    host: smtp.example.com
+    username:
+    password:
+    default-encoding: UTF-8
+    properties:
+      mail:
+        SMTP:
+          auth: true
+          STARTTLS:
+            enable: true
+            required: true
+          ssl:
+            enable: true
+
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
+  # Base URL used to build public object links (usually same as url, or a CDN/proxy).
+  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
+  bucket:
+    # Bucket cho ảnh sản phẩm upload qua app (thumbnail, gallery, seo).
+    product: ${MINIO_BUCKET_PRODUCT:products}
+    # Bucket cho asset tĩnh giao diện (logo, icon, pattern, hero) — chứa thư mục ./images.
+    asset: ${MINIO_BUCKET_ASSET:assets}
+# Application specific configuration
+app:
+  jwt:
+    # Base64-encoded 512-bit secret. Override via APP_JWT_SECRET in production.
+    secret: ${APP_JWT_SECRET:fJV2+5QqrlNHmoqnaO4FliZ6rdwxbyi4ohpjMeKCKI+OXbe4y6eup8Vj0TaJem/aj8reEfbkK9aWenBdS7xlIg==}
+    issuer: vu-gia
+    access-token-expiration: 3600000        # 1 hour (ms)
+    refresh-token-expiration: 604800000     # 7 days (ms)
+  oauth2:
+    google:
+      # Google OAuth Web client ID (the "aud" every ID token must match).
+      # Set GOOGLE_CLIENT_ID in the environment; empty disables the audience check (dev only).
+      client-id: ${GOOGLE_CLIENT_ID:}
+  mail:
+    # "From" address for outgoing mail (EmailService)
+    from: no-reply@springboot.vn
+  init:
+    # Seed default roles/permissions/admin account on startup
+    enabled: true
+    admin-username: admin
+    admin-email: admin@springboot.vn
+    admin-password: admin123
+
+# Actuator: only expose health & info publicly; keep the rest off by default
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# SpringDoc / Swagger UI
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs

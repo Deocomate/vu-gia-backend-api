@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Xác nhận đặt hàng</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f1ec; font-family:Arial, Helvetica, sans-serif; color:#2b2b2b;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f1ec; padding:24px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                   style="width:600px; max-width:100%; background-color:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #e6e0d6;">
+                <!-- Header -->
+                <tr>
+                    <td style="background-color:#7a5230; padding:24px 32px; text-align:center;">
+                        <h1 style="margin:0; color:#ffffff; font-size:22px; letter-spacing:1px;">GỐM SỨ VŨ GIA</h1>
+                        <p style="margin:6px 0 0; color:#e9dcc9; font-size:13px;">Xác nhận đặt hàng thành công</p>
+                    </td>
+                </tr>
+
+                <!-- Greeting -->
+                <tr>
+                    <td style="padding:28px 32px 8px;">
+                        <p style="margin:0 0 12px; font-size:15px;">
+                            Xin chào <strong th:text="${receiverName}">Quý khách</strong>,
+                        </p>
+                        <p style="margin:0; font-size:14px; line-height:1.6; color:#555;">
+                            Cảm ơn bạn đã đặt hàng tại <strong>Gốm Sứ Vũ Gia</strong>. Đơn hàng của bạn đã được
+                            tiếp nhận. Dưới đây là chi tiết đơn hàng:
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Order code -->
+                <tr>
+                    <td style="padding:12px 32px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                               style="background-color:#faf7f2; border:1px solid #ece4d7; border-radius:6px;">
+                            <tr>
+                                <td style="padding:12px 16px; font-size:14px;">
+                                    Mã đơn hàng:
+                                    <strong th:text="${orderCode}" style="color:#7a5230;">OD000000</strong>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Items table -->
+                <tr>
+                    <td style="padding:12px 32px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:13px;">
+                            <thead>
+                            <tr style="background-color:#7a5230; color:#ffffff;">
+                                <th align="left" style="padding:10px 12px;">Sản phẩm</th>
+                                <th align="center" style="padding:10px 8px;">SL</th>
+                                <th align="right" style="padding:10px 12px;">Đơn giá</th>
+                                <th align="right" style="padding:10px 12px;">Thành tiền</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${items}" style="border-bottom:1px solid #ece4d7;">
+                                <td style="padding:10px 12px;" th:text="${item.productName}">Sản phẩm</td>
+                                <td align="center" style="padding:10px 8px;" th:text="${item.quantity}">1</td>
+                                <td align="right" style="padding:10px 12px;"
+                                    th:text="${#numbers.formatInteger(item.unitPrice, 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td align="right" style="padding:10px 12px;"
+                                    th:text="${#numbers.formatInteger(item.subtotal, 0, 'POINT')} + ' đ'">0 đ</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Totals -->
+                <tr>
+                    <td style="padding:4px 32px 12px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                            <tr>
+                                <td align="right" style="padding:4px 0; color:#666;">Tạm tính:</td>
+                                <td align="right" width="140" style="padding:4px 0;"
+                                    th:text="${#numbers.formatInteger(subtotalAmount, 0, 'POINT')} + ' đ'">0 đ</td>
+                            </tr>
+                            <tr th:if="${discountAmount > 0}">
+                                <td align="right" style="padding:4px 0; color:#666;">Giảm giá:</td>
+                                <td align="right" style="padding:4px 0; color:#c0392b;"
+                                    th:text="'- ' + ${#numbers.formatInteger(discountAmount, 0, 'POINT')} + ' đ'">0 đ</td>
+                            </tr>
+                            <tr>
+                                <td align="right" style="padding:8px 0 0; font-size:16px; font-weight:bold;">Tổng thanh toán:</td>
+                                <td align="right" style="padding:8px 0 0; font-size:16px; font-weight:bold; color:#7a5230;"
+                                    th:text="${#numbers.formatInteger(totalAmount, 0, 'POINT')} + ' đ'">0 đ</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Shipping info -->
+                <tr>
+                    <td style="padding:12px 32px 24px;">
+                        <h3 style="margin:0 0 8px; font-size:14px; color:#7a5230;">Thông tin nhận hàng</h3>
+                        <p style="margin:0; font-size:13px; line-height:1.7; color:#555;">
+                            <span th:text="${receiverName}">Người nhận</span><br/>
+                            <span th:text="${receiverPhone}">SĐT</span><br/>
+                            <span th:text="${receiverAddress}">Địa chỉ</span>
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color:#faf7f2; padding:20px 32px; text-align:center; border-top:1px solid #ece4d7;">
+                        <p style="margin:0 0 4px; font-size:13px; color:#555;">
+                            Chúng tôi sẽ liên hệ để xác nhận và giao hàng trong thời gian sớm nhất.
+                        </p>
+                        <p style="margin:0; font-size:12px; color:#999;">© Gốm Sứ Vũ Gia</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
