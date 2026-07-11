@@ -1,12 +1,12 @@
 <div align="center">
 
-# 🚀 Spring Boot Starter — Xác thực JWT & RBAC
+# 🏺 Gốm Sứ Vũ Gia — Backend Thương mại điện tử
 
-**Bộ khung Spring Boot sẵn sàng cho production với xác thực JWT, xoay vòng refresh-token và phân quyền theo vai trò/quyền hạn.**
+**REST API Spring Boot cho cửa hàng gốm sứ Vũ Gia — danh mục sản phẩm, giỏ hàng, đặt hàng, mã giảm giá, nội dung CMS, dashboard quản trị, JWT + RBAC, lưu ảnh MinIO và tự động migrate/seed bằng Flyway.**
 
 <br/>
 
-<!-- 🌐 Nút chuyển ngôn ngữ / Language switcher -->
+<!-- 🌐 Nút chuyển ngôn ngữ -->
 <a href="README.md"><img src="https://img.shields.io/badge/🇬🇧_English-555?style=for-the-badge" alt="English"/></a>
 <a href="README.vi.md"><img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-2C5BFF?style=for-the-badge" alt="Tiếng Việt"/></a>
 
@@ -14,10 +14,11 @@
 
 ![Java](https://img.shields.io/badge/Java-21-007396?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![Spring Security](https://img.shields.io/badge/Spring%20Security-JWT-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
-![MariaDB](https://img.shields.io/badge/MariaDB-Database-003545?style=for-the-badge&logo=mariadb&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![Spring Security](https://img.shields.io/badge/Security-JWT%20%2B%20RBAC-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Flyway](https://img.shields.io/badge/Flyway-Migrate%20%2B%20Seed-CC0200?style=for-the-badge&logo=flyway&logoColor=white)
+![MinIO](https://img.shields.io/badge/MinIO-Object%20Storage-C72E49?style=for-the-badge&logo=minio&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 </div>
 
@@ -26,85 +27,93 @@
 ## 📑 Mục lục
 
 - [Tổng quan](#-tổng-quan)
-- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
-- [Tính năng](#-tính-năng)
+- [Công nghệ](#-công-nghệ)
+- [Chức năng & Module](#-chức-năng--module)
 - [Kiến trúc](#-kiến-trúc)
 - [Cấu trúc dự án](#-cấu-trúc-dự-án)
 - [Bắt đầu](#-bắt-đầu)
 - [Cấu hình](#-cấu-hình)
 - [Tài liệu API](#-tài-liệu-api)
 - [Mô hình bảo mật](#-mô-hình-bảo-mật)
-- [Định dạng phản hồi](#-định-dạng-phản-hồi)
-- [Giấy phép](#-giấy-phép)
+- [Định dạng response](#-định-dạng-response)
+- [License](#-license)
 
 ---
 
 ## 🧭 Tổng quan
 
-Đây là một bộ khung Spring Boot phân tầng, sạch sẽ, bạn có thể fork để khởi tạo nhanh bất kỳ REST API nào. Dự án đi kèm luồng xác thực hoàn chỉnh (đăng ký / đăng nhập / làm mới token / đăng xuất / lấy thông tin người dùng hiện tại), mô hình **phân quyền theo vai trò (RBAC)** với quyền hạn chi tiết, JPA auditing, một lớp vỏ phản hồi JSON thống nhất và xử lý ngoại lệ tập trung.
+Backend REST API cho storefront **Gốm Sứ Vũ Gia**. Phủ toàn bộ luồng thương mại — danh mục sản phẩm, giỏ hàng, đặt hàng kèm mã giảm giá — cùng nội dung dạng CMS (tin tức, trang, banner, gallery, showroom, FAQ) và dashboard thống kê cho admin.
 
-Mã nguồn tuân thủ nguyên tắc **SOLID**: mọi service đều lập trình theo interface, trách nhiệm được tách bạch rõ ràng, và các mối quan tâm xuyên suốt (bảo mật, lỗi, audit) được đặt trong các package riêng.
+Mã nguồn bám **kiến trúc phân tầng** chặt chẽ và nguyên tắc **SOLID**: mỗi service viết theo interface, lọc động bằng JPA Specification, map DTO ↔ Entity ở compile-time (MapStruct), các mối quan tâm chéo (bảo mật, lỗi, auditing) nằm ở package riêng. Schema và dữ liệu mẫu được áp dụng **tự động khi khởi động** bằng **Flyway**.
 
 ---
 
-## 🛠 Công nghệ sử dụng
+## 🛠 Công nghệ
 
-| Tầng | Công nghệ | Phiên bản | Mục đích |
+| Tầng | Công nghệ | Version | Vai trò |
 |---|---|---|---|
-| **Ngôn ngữ** | Java | 21 (LTS) | Ngôn ngữ chính, dùng record/pattern-matching hiện đại |
-| **Framework** | Spring Boot | 3.5.10 | Nền tảng auto-configuration & dependency injection |
-| **Web** | Spring Web (MVC) | — | REST controller, serialize JSON |
-| **Lưu trữ** | Spring Data JPA + Hibernate | — | ORM, repository abstraction, Specification API |
-| **CSDL** | MariaDB | — | CSDL quan hệ (driver `mariadb-java-client`) |
-| **Bảo mật** | Spring Security | — | Xác thực, phân quyền, method-level security |
-| **Token** | JJWT (io.jsonwebtoken) | 0.12.6 | Phát hành & xác thực JWT (HS512) |
-| **Kiểm tra dữ liệu** | Jakarta Bean Validation | — | Kiểm tra dữ liệu đầu vào (`@Valid`) |
-| **Ánh xạ** | MapStruct | 1.6.3 | Ánh xạ DTO ↔ Entity tại compile-time (`UserMapper`) |
-| **Tài liệu API** | SpringDoc OpenAPI (Swagger UI) | 2.8.6 | Tài liệu API tương tác tại `/swagger-ui.html` |
-| **Giám sát** | Spring Boot Actuator | — | Health/info/metrics tại `/actuator/**` |
-| **Email** | Spring Boot Starter Mail | — | Gửi email giao dịch (`EmailService`) |
-| **Giảm boilerplate** | Lombok | — | Giảm code lặp (getter/setter/builder) |
-| **Trải nghiệm dev** | Spring Boot DevTools | — | Tự reload khi phát triển |
-| **Build** | Maven (`mvnw` wrapper) | 3.9.x | Quản lý phụ thuộc & đóng gói |
-| **Kiểm thử** | JUnit 5 + Spring Security Test | — | Kiểm thử tích hợp |
+| **Ngôn ngữ** | Java | 21 (LTS) | record, pattern matching, text block |
+| **Framework** | Spring Boot | 3.5.10 | Auto-config & DI |
+| **Web** | Spring Web (MVC) | — | REST controller, JSON |
+| **Persistence** | Spring Data JPA + Hibernate | — | ORM, repository, Specification API |
+| **CSDL** | MySQL | 8.x | DB quan hệ (`mysql-connector-j`) |
+| **Migration** | Flyway (+ `flyway-mysql`) | — | Tự migrate schema + seed data lúc khởi động |
+| **Bảo mật** | Spring Security | — | Xác thực, method security (`@PreAuthorize`) |
+| **Token** | JJWT | 0.12.6 | JWT access token (HS512) + refresh rotation |
+| **OAuth** | Google Identity | — | Đăng nhập Google (xác thực ID-token) |
+| **Lưu trữ ảnh** | MinIO | 8.5.x | Ảnh sản phẩm/asset (bucket public) |
+| **Email** | Spring Mail + Thymeleaf | — | Email **HTML** bất đồng bộ |
+| **Mapping** | MapStruct | 1.6.3 | Map DTO ↔ Entity compile-time |
+| **Validation** | Jakarta Bean Validation | — | Kiểm tra payload `@Valid` |
+| **API Docs** | SpringDoc OpenAPI (Swagger UI) | — | Tài liệu tương tác `/swagger-ui.html` |
+| **Monitoring** | Spring Boot Actuator | — | `/actuator/health`, `/actuator/info` |
+| **Boilerplate** | Lombok | — | getter/setter/builder |
+| **Build** | Maven (wrapper `mvnw`) | — | Quản lý phụ thuộc & đóng gói |
+| **Test** | JUnit 5 + Mockito + Spring Security Test | — | Test service & controller |
 
 ---
 
-## ✨ Tính năng
+## ✨ Chức năng & Module
 
-- 🔐 **Xác thực JWT** — access token stateless (HS512), không lưu session phía server.
-- 🔄 **Xoay vòng refresh-token** — refresh token dạng opaque lưu trong DB, cho phép đăng xuất & thu hồi thật; mỗi lần làm mới sẽ thay token cũ.
-- 👥 **RBAC theo quyền hạn** — người dùng → vai trò → quyền; kiểm tra bằng `hasRole(...)` *và* `hasAuthority(PERMISSION)`.
-- 🧾 **Vỏ API thống nhất** — mọi phản hồi (thành công hay lỗi) đều cùng cấu trúc `{ code, message, data, timestamp }`.
-- 🧯 **Xử lý ngoại lệ tập trung** — một `@RestControllerAdvice` ánh xạ mọi ngoại lệ về mã lỗi nghiệp vụ ổn định.
-- 🕵️ **JPA auditing** — tự động điền `createdAt / updatedAt / createdBy / updatedBy`.
-- 🔎 **Tìm kiếm động & phân trang** — JPA Specification kèm sắp xếp an toàn (whitelist).
-- 🌱 **Seed dữ liệu idempotent** — tạo sẵn quyền mặc định, vai trò `ADMIN`/`USER` và tài khoản admin khi khởi động.
-- ✉️ **Dịch vụ email** — ẩn sau interface để dễ thay thế (DIP).
-- 🌍 **Đã cấu hình CORS** & đăng nhập bằng **username hoặc email**.
+### Nền tảng lõi
+- 🔐 **JWT + refresh rotation** — access token HS512 stateless; refresh token lưu DB (logout/thu hồi thật). Đăng nhập bằng **username hoặc email**, kèm **đăng nhập Google**.
+- 👥 **RBAC** — mô hình 1 vai trò (`Role` enum: `SUPERADMIN` / `ADMIN` / `CUSTOMER`); chặn quyền bằng `@PreAuthorize`.
+- 🧾 **Envelope thống nhất** — mọi response là `{ code, message, data, timestamp }`; `code=1000` = thành công.
+- 🧯 **Xử lý lỗi tập trung** — một `@RestControllerAdvice` map exception → error code ổn định.
+- 🕵️ **JPA auditing** — `createdAt / updatedAt / createdBy / updatedBy` tự điền.
+- 🔎 **Search & phân trang an toàn** — JPA Specification + whitelist sort (phân trang 1-based).
+- 🌱 **Tự migrate + seed** — Flyway chạy schema (`db/migration`) rồi data mẫu (`db/seed`); seed admin idempotent.
+- 🖼 **Ảnh MinIO** — upload vào bucket public (`assets`, `products`), bucket tự tạo & set public-read khi khởi động.
+
+### Các module nghiệp vụ
+| Miền | Điểm nổi bật |
+|---|---|
+| **Auth / User** | đăng ký · đăng nhập · refresh · logout · me · đăng nhập Google · đổi mật khẩu · quản trị user (list, tạo, đổi vai trò, reset mật khẩu) |
+| **Sản phẩm** | catalog + danh mục + ảnh (MinIO), bật/tắt trạng thái & nổi bật, **tra cứu theo slug (SEO)** |
+| **Nội dung / CMS** | Tin tức + danh mục (theo slug), **Trang** (theo key), Banner, Showroom, Gallery, FAQ, Redirect |
+| **Marketing** | **Mã giảm giá** (PERCENT / FIXED / FREE_SHIP, validate + điều kiện), đăng ký Newsletter, form Liên hệ |
+| **Giỏ hàng** | giỏ theo user, cộng dồn số lượng, tính tổng trực tiếp |
+| **Đơn hàng** | **đặt hàng idempotent**, snapshot giá, **trừ lượt coupon nguyên tử** (race-free), trừ giỏ, `sold_count` chỉ tăng khi **COMPLETED**, **email xác nhận HTML bất đồng bộ**, admin search đơn |
+| **Dashboard** | KPI admin (doanh thu/đơn/khách), doanh thu theo ngày, top sản phẩm bán chạy |
+
+> Tài liệu endpoint đầy đủ theo từng module nằm trong [`docs/`](docs).
 
 ---
 
 ## 🏗 Kiến trúc
 
-Kiến trúc phân tầng cổ điển với luồng phụ thuộc một chiều. Tầng web không bao giờ chạm trực tiếp vào tầng lưu trữ; service phụ thuộc vào **interface**, không phụ thuộc implementation.
+Luồng phụ thuộc một chiều; tầng web không đụng thẳng persistence, service phụ thuộc **interface**.
 
 ```text
-HTTP Request
-     │
-     ▼
-┌─────────────┐   @Valid DTO     ┌──────────────┐   Interface     ┌──────────────┐
-│ Controller  │ ───────────────▶ │   Service    │ ──────────────▶ │  Repository  │
-│  (REST API) │                  │ (impl)       │                 │ (Spring Data)│
-└─────────────┘                  └──────────────┘                 └──────────────┘
-     ▲                                  │                                 │
-     │ ApiResponse<T>                   │ Mapper / Specification          ▼
-     │                                  ▼                          ┌──────────────┐
-┌──────────────────────┐        ┌──────────────┐                  │   MariaDB    │
-│ GlobalExceptionHandler│◀──────│  AppException │                  └──────────────┘
-└──────────────────────┘        └──────────────┘
-            ▲
-            │  Chuỗi filter bảo mật (JWT)  ──▶  EntryPoint / AccessDeniedHandler
+HTTP ─▶ Controller ─▶ Service (interface → impl) ─▶ Repository (+ Specification) ─▶ MySQL
+          │                     │
+          │ ApiResponse<T>      │ MapStruct mapper
+          ▼                     ▼
+  GlobalExceptionHandler ◀─ AppException(ErrorCode)
+          ▲
+  Chuỗi filter bảo mật (JWT) ─▶ 401 EntryPoint / 403 AccessDeniedHandler
+
+  Đơn commit ─▶ @TransactionalEventListener(AFTER_COMMIT) ─▶ @Async email HTML (Thymeleaf)
 ```
 
 ---
@@ -113,213 +122,169 @@ HTTP Request
 
 ```text
 src/main/java/vn/springboot
-├── Application.java                  # Điểm khởi động
+├── Application.java
 ├── common
-│   ├── entity/BaseEntity.java        # Trường audit (id, created/updated by/at)
-│   ├── exception/                    # ErrorCode, AppException, GlobalExceptionHandler
-│   └── response/ApiResponse.java     # Lớp vỏ phản hồi chung
-├── config
-│   ├── DataInitializer.java          # Seed vai trò/quyền/admin
-│   └── JpaAuditingConfig.java        # AuditorAware (người dùng hiện tại)
-├── controller                        # AuthController, UserController
-├── dto
-│   ├── request/                      # Login/Register/RefreshToken/UserSearch
-│   └── response/                     # Phản hồi Auth/User/Page
-├── entity/user                       # User, Role, Permission, RefreshToken
-├── mapper/UserMapper.java            # Entity → DTO
-├── repository                        # Spring Data repository + Specification
-├── security
-│   ├── SecurityConfig.java           # Filter chain, CORS, password encoder
-│   ├── jwt/                          # JwtService, JwtAuthenticationFilter
-│   ├── CustomUserDetails(Service)    # UserEntity → UserDetails của Spring Security
-│   └── *Handler / *EntryPoint        # Phản hồi JSON 401/403 thống nhất
-└── service                           # AuthService, UserService, EmailService (+ impl)
+│   ├── entity/BaseEntity.java            # id + cột audit
+│   ├── exception/                        # ErrorCode, AppException, GlobalExceptionHandler
+│   └── response/ApiResponse.java         # envelope thống nhất
+├── config                                # Async, JPA auditing, MinIO, khởi tạo bucket, seed admin
+├── controller                            # 20 REST controller (theo module)
+├── dto/{request,response}                # DTO request/response theo miền
+├── entity                                # 19 entity JPA (product, order, cart, news, page, …)
+├── event                                 # OrderPlacedEvent + OrderEmailListener (async)
+├── mapper                                # MapStruct mapper
+├── repository (+ specification)          # Spring Data repo + filter động
+├── security                              # SecurityConfig, JWT, CustomUserDetails, handler
+└── service (+ impl)                      # nghiệp vụ sau interface
+
+src/main/resources
+├── application.yaml
+├── db/migration/V1__init_db.sql          # schema (Flyway)
+├── db/seed/V2__seed_db.sql               # data mẫu (Flyway)
+└── templates/email/order-confirmation.html   # email HTML (Thymeleaf)
 ```
 
 ---
 
 ## 🚦 Bắt đầu
 
-### 1. Yêu cầu
+### Cách A — Docker (khuyến nghị, 1 lệnh)
 
-- **JDK 21+**
-- **MariaDB** (hoặc MySQL) đang chạy cục bộ
-- Không cần cài Maven — dùng wrapper `./mvnw` có sẵn
-
-### 2. Tạo CSDL
-
-```sql
-CREATE DATABASE dev_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-> Hibernate `ddl-auto: update` sẽ tự tạo bảng ở lần chạy đầu tiên.
-
-### 3. Chạy ứng dụng
+Dựng **MySQL + MinIO + app**; app tự migrate schema và seed data khi khởi động.
 
 ```bash
-# Phát triển
-./mvnw spring-boot:run
-
-# Đóng gói jar chạy được
-./mvnw clean package
-java -jar target/spring-boot-0.0.1-SNAPSHOT.jar
+docker compose up -d --build
+docker compose logs -f app        # xem: "Successfully applied 2 migrations"
 ```
 
-Ứng dụng khởi động tại **`http://localhost:8080`**.
+- API → **http://localhost:8080** (Swagger: `/swagger-ui.html`)
+- MinIO Console → **http://localhost:9001** (`minioadmin` / `minioadmin123`)
 
-### 4. Tài khoản admin mặc định
+### Cách B — Chạy local
 
-| Trường | Giá trị |
-|---|---|
-| Username | `admin` |
-| Mật khẩu | `admin123` |
-| Email | `admin@springboot.vn` |
-
-> ⚠️ **Hãy đổi mật khẩu này trước khi triển khai!**
-
-### 5. Chạy bằng Docker
+**Yêu cầu:** JDK 21, MySQL 8 đang chạy (MinIO tuỳ chọn, chỉ cần khi phục vụ ảnh).
 
 ```bash
-docker build -t spring-boot-app .
-docker run -p 8080:8080 \
-  -e DB_URL="jdbc:mariadb://host.docker.internal:3306/dev_db" \
-  -e DB_USERNAME=root -e DB_PASSWORD=root \
-  -e APP_JWT_SECRET="<secret-base64-512bit>" \
-  spring-boot-app
+# DB mới: MySQL tự tạo qua flag URL; Flyway dựng schema + seed
+DB_URL="jdbc:mysql://localhost:3306/dev_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
+  ./mvnw spring-boot:run
+
+# Build jar chạy được
+./mvnw clean package && java -jar target/spring-boot-0.0.1-SNAPSHOT.jar
 ```
+
+### Tài khoản admin mặc định
+
+| Username | Password | Email |
+|---|---|---|
+| `admin` | `admin123` | `admin@gmail.com` |
+
+> ⚠️ Đổi mật khẩu trước khi deploy.
+
+### Ảnh (MinIO)
+
+App tự tạo bucket `assets` và `products` dạng public-read. Upload thư mục `assets/images/` vào bucket **`assets`** qua MinIO console — xem chi tiết ở **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)**. DB lưu **đường dẫn tương đối** (vd `assets/images/gallery/gallery-1.jpg`); FE tự cộng tiền tố URL MinIO.
 
 ---
 
 ## ⚙️ Cấu hình
 
-Mọi cấu hình nằm trong `src/main/resources/application.yaml` và có thể ghi đè bằng biến môi trường.
+Mọi thứ trong `src/main/resources/application.yaml` đều override được qua biến môi trường.
 
 | Biến môi trường | Mặc định | Mô tả |
 |---|---|---|
-| `DB_URL` | `jdbc:mariadb://localhost:3306/dev_db` | Chuỗi kết nối JDBC |
-| `DB_USERNAME` | `root` | User CSDL |
-| `DB_PASSWORD` | `root` | Mật khẩu CSDL |
-| `APP_JWT_SECRET` | *(mặc định dev)* | Khoá ký 512-bit mã hoá Base64 — **bắt buộc ghi đè ở production** |
-| `app.jwt.access-token-expiration` | `3600000` | Thời hạn access token (ms) — 1 giờ |
-| `app.jwt.refresh-token-expiration` | `604800000` | Thời hạn refresh token (ms) — 7 ngày |
-| `app.mail.from` | `no-reply@springboot.vn` | Địa chỉ "From" cho email gửi đi |
-| `app.init.enabled` | `true` | Bật/tắt seed dữ liệu khi khởi động |
-| `app.init.admin-username` / `-email` / `-password` | `admin` / … | Thông tin admin được seed |
+| `DB_URL` | `jdbc:mysql://localhost:3306/dev_db` | JDBC URL |
+| `DB_USERNAME` / `DB_PASSWORD` | `root` / `rootpassword` | Thông tin DB |
+| `APP_JWT_SECRET` | *(mặc định dev)* | Khoá HS512 base64 512-bit — **phải override ở prod** |
+| `MINIO_URL` | `http://localhost:9000` | Endpoint MinIO (phía server) |
+| `MINIO_PUBLIC_URL` | `http://localhost:9000` | Base URL ảnh công khai (trình duyệt / CDN) |
+| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` / `minioadmin123` | Thông tin MinIO |
+| `MINIO_BUCKET_ASSET` / `MINIO_BUCKET_PRODUCT` | `assets` / `products` | Tên bucket |
+| `MAIL_HOST` | `smtp.gmail.com` | SMTP host |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | *(rỗng)* | Tài khoản SMTP (cần để gửi email thật) |
+| `APP_MAIL_FROM` | *(rỗng)* | Địa chỉ "From" cho email |
+| `GOOGLE_CLIENT_ID` | *(rỗng)* | Google OAuth Web client ID (rỗng = tắt kiểm tra — chỉ dev) |
+| `app.init.enabled` | `true` | Bật/tắt seed admin khi khởi động |
 
-> 🔒 **Lưu ý production:** hãy sinh JWT secret mới và truyền qua `APP_JWT_SECRET`; đừng commit secret thật.
+> 🔒 **Prod:** sinh `APP_JWT_SECRET` mới, đặt SMTP + MinIO thật, trỏ `MINIO_PUBLIC_URL` về CDN/domain.
 
 ---
 
 ## 🔌 Tài liệu API
 
-Đường dẫn gốc: **`/api`** · Tài liệu tương tác: **`/swagger-ui.html`** · Health: **`/actuator/health`**
+Base path **`/api`** · Swagger UI **`/swagger-ui.html`** · Health **`/actuator/health`**.
 
-### 🔑 Xác thực — `/api/auth`
+Tài liệu theo từng module (request/response, error code, curl dán Postman):
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|:---:|---|
-| `POST` | `/register` | ❌ | Đăng ký người dùng mới |
-| `POST` | `/login` | ❌ | Đăng nhập (username **hoặc** email) → access + refresh token |
-| `POST` | `/refresh` | ❌ | Làm mới & xoay refresh token → cặp token mới |
-| `POST` | `/logout` | ✅ | Thu hồi refresh token |
-| `GET` | `/me` | ✅ | Lấy người dùng đang đăng nhập |
+| Module | Tài liệu |
+|---|---|
+| Auth & User (RBAC) | [docs/AUTH_USER_API.md](docs/AUTH_USER_API.md) |
+| Sản phẩm & Danh mục | [docs/PRODUCT_API.md](docs/PRODUCT_API.md) |
+| Tin tức & Danh mục | [docs/NEWS_API.md](docs/NEWS_API.md) |
+| Mã giảm giá | [docs/COUPON_API.md](docs/COUPON_API.md) |
+| Giỏ hàng | [docs/CART_API.md](docs/CART_API.md) |
+| Đơn hàng | [docs/ORDER_API.md](docs/ORDER_API.md) |
+| Dashboard admin | [docs/DASHBOARD_API.md](docs/DASHBOARD_API.md) |
+| Trang (CMS) | [docs/PAGE_API.md](docs/PAGE_API.md) |
+| Liên hệ | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
+| Newsletter | [docs/NEWSLETTER_API.md](docs/NEWSLETTER_API.md) |
+| Banner / Showroom / Gallery / FAQ / Redirect | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
+| Chạy & seed & MinIO | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
 
-### 👤 Người dùng — `/api/users`
-
-| Method | Endpoint | Quyền | Mô tả |
-|---|---|:---:|---|
-| `GET` | `/` | `USER_READ` | Tìm kiếm & phân trang người dùng |
-| `GET` | `/{id}` | `USER_READ` | Lấy người dùng theo id |
-
-### 📥 Ví dụ request
-
-**Đăng ký**
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"john","email":"john@mail.com","password":"secret123","fullName":"John Doe"}'
-```
-
-**Đăng nhập**
+**Ví dụ đăng nhập**
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
 ```
 
-**Gọi endpoint cần xác thực**
-```bash
-curl http://localhost:8080/api/users \
-  -H "Authorization: Bearer <ACCESS_TOKEN>"
-```
-
 ---
 
 ## 🛡 Mô hình bảo mật
 
-1. **Đăng nhập** xác thực thông tin qua `AuthenticationManager` + `BCryptPasswordEncoder`.
-2. Server phát hành **JWT access token** (HS512) thời gian ngắn và **refresh token** thời gian dài lưu trong DB.
-3. Mỗi request đi qua `JwtAuthenticationFilter` để xác thực token và nạp `SecurityContext`.
-4. **Phân quyền** thực thi bằng `@PreAuthorize("hasAuthority('USER_READ')")` — quyền được suy ra từ vai trò của người dùng.
-5. Khi xác thực thất bại, trả về JSON nhất quán: **401** (`JwtAuthenticationEntryPoint`) hoặc **403** (`CustomAccessDeniedHandler`).
+1. **Login** kiểm tra thông tin qua `AuthenticationManager` + `BCryptPasswordEncoder` (hoặc Google ID token).
+2. Server phát **JWT access token** ngắn hạn (HS512) + **refresh token** dài hạn lưu DB (xoay vòng mỗi lần refresh).
+3. `JwtAuthenticationFilter` kiểm token mỗi request và nạp `SecurityContext`.
+4. **Phân quyền**: **đọc storefront công khai**; **ghi cần staff** (`@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`); quản trị user chỉ `SUPERADMIN`; giỏ hàng/đặt hàng cần user đăng nhập.
+5. Lỗi auth trả JSON nhất quán: **401** (`JwtAuthenticationEntryPoint`) hoặc **403** (`CustomAccessDeniedHandler`).
 
-**Vai trò & quyền mặc định**
-
-| Vai trò | Quyền |
-|---|---|
-| `ADMIN` | `USER_READ`, `USER_WRITE`, `USER_DELETE`, `ROLE_READ`, `ROLE_WRITE` |
-| `USER` | `USER_READ` |
+**Vai trò:** `SUPERADMIN` › `ADMIN` › `CUSTOMER` (lưu ở `users.role`).
 
 ---
 
-## 📦 Định dạng phản hồi
-
-Mọi phản hồi dùng chung một lớp vỏ. Mã `1000` nghĩa là thành công.
+## 📦 Định dạng response
 
 **Thành công**
 ```json
-{
-  "code": 1000,
-  "message": "Login successful",
-  "data": { "accessToken": "...", "refreshToken": "...", "tokenType": "Bearer", "expiresIn": 3600 },
-  "timestamp": "2026-06-05T10:00:00Z"
-}
+{ "code": 1000, "message": "Order placed", "data": { "...": "..." }, "timestamp": "2026-07-11T02:00:00Z" }
 ```
-
 **Lỗi**
 ```json
-{
-  "code": 4011,
-  "message": "Invalid username or password",
-  "data": null,
-  "timestamp": "2026-06-05T10:00:00Z"
-}
+{ "code": 4105, "message": "Mã giảm giá đã hết hạn", "data": null, "timestamp": "2026-07-11T02:00:00Z" }
 ```
 
-**Dải mã lỗi**
+**Dải error code**
 
 | Dải | Ý nghĩa |
 |---|---|
 | `1000` | Thành công |
-| `4000–4001` | Bad request / validation |
-| `4010–4014` | Xác thực |
+| `4000–4005` | Bad request / validation |
+| `401x` | Xác thực |
 | `4030` | Phân quyền (403) |
-| `4040–4043` | Không tìm thấy |
-| `4090–4093` | Xung đột (đã tồn tại, token bị thu hồi…) |
+| `404x` | Không tìm thấy |
+| `409x` / `41xx` | Conflict (trùng, coupon không đủ điều kiện…) |
 | `9000–9999` | Lỗi server / nội bộ |
 
 ---
 
-## 📄 Giấy phép
+## 📄 License
 
-Phát hành theo **Giấy phép MIT**. Tự do sử dụng, chỉnh sửa và phân phối.
+Phát hành theo **MIT License**.
 
 ---
 
 <div align="center">
 
-**Xây dựng bằng ❤️ với Spring Boot**
-
-⭐ Nếu dự án hữu ích, hãy tặng một sao nhé!
+**Gốm Sứ Vũ Gia** — Xây bằng ❤️ với Spring Boot
 
 </div>
