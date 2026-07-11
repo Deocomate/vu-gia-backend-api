@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.springboot.entity.enums.OrderStatus;
+import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.PaymentStatus;
 
 import java.time.Instant;
@@ -23,6 +24,11 @@ public class OrderResponse {
     private OrderStatus status;
 
     private PaymentStatus paymentStatus;
+
+    private PaymentMethod paymentMethod;
+
+    /** VietQR payment info — present only for unpaid ONL orders, otherwise null. */
+    private PaymentInfoResponse payment;
 
     /** Amount payable after discount. */
     private long totalAmount;

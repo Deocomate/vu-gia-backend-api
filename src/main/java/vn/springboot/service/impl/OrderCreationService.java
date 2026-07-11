@@ -10,6 +10,7 @@ import vn.springboot.dto.request.order.OrderItemRequest;
 import vn.springboot.dto.request.order.OrderPlaceRequest;
 import vn.springboot.entity.coupon.CouponEntity;
 import vn.springboot.entity.enums.OrderStatus;
+import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.PaymentStatus;
 import vn.springboot.entity.enums.ProductType;
 import vn.springboot.entity.order.OrderEntity;
@@ -55,11 +56,17 @@ public class OrderCreationService {
 
         // Snapshot each line from the live product (name/type/price frozen at order time).
         Map<Long, ProductEntity> products = loadProducts(request.getItems());
+        // COD by default; ONL means the customer pays online (VietQR) before fulfilment.
+        PaymentMethod paymentMethod = request.getPaymentMethod() != null
+                ? request.getPaymentMethod()
+                : PaymentMethod.COD;
+
         OrderEntity order = OrderEntity.builder()
                 .user(user)
                 .orderCode(generateOrderCode())
                 .status(OrderStatus.PENDING_PAYMENT)
                 .paymentStatus(PaymentStatus.PENDING)
+                .paymentMethod(paymentMethod)
                 .receiverName(request.getReceiverName())
                 .receiverPhone(request.getReceiverPhone())
                 .receiverAddress(request.getReceiverAddress())
@@ -86,16 +93,19 @@ public class OrderCreationService {
         // Reflect what was bought back into the cart (reduce or remove the matching lines).
         deductFromCart(user.getId(), request.getItems());
 
-        // Fire after commit → async confirmation email (see OrderEmailListener).
-        List<OrderPlacedEvent.Item> emailItems = items.stream()
-                .map(i -> new OrderPlacedEvent.Item(
-                        i.getProductName(), i.getQuantity(), i.getUnitPrice(), i.getSubtotal()))
-                .toList();
-        eventPublisher.publishEvent(new OrderPlacedEvent(
-                user.getEmail(), order.getOrderCode(),
-                orderAmount, discount, order.getTotalAmount(),
-                order.getReceiverName(), order.getReceiverPhone(), order.getReceiverAddress(),
-                emailItems));
+        // COD → confirm immediately (email now). ONL → wait until payment is confirmed
+        // (the webhook, added later, will trigger the email), so don't send it here.
+        if (paymentMethod == PaymentMethod.COD) {
+            List<OrderPlacedEvent.Item> emailItems = items.stream()
+                    .map(i -> new OrderPlacedEvent.Item(
+                            i.getProductName(), i.getQuantity(), i.getUnitPrice(), i.getSubtotal()))
+                    .toList();
+            eventPublisher.publishEvent(new OrderPlacedEvent(
+                    user.getEmail(), order.getOrderCode(),
+                    orderAmount, discount, order.getTotalAmount(),
+                    order.getReceiverName(), order.getReceiverPhone(), order.getReceiverAddress(),
+                    emailItems));
+        }
 
         return order;
     }

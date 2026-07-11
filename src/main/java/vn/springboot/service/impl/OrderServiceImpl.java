@@ -21,6 +21,8 @@ import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.order.OrderItemResponse;
 import vn.springboot.dto.response.order.OrderResponse;
 import vn.springboot.entity.enums.OrderStatus;
+import vn.springboot.entity.enums.PaymentMethod;
+import vn.springboot.entity.enums.PaymentStatus;
 import vn.springboot.entity.enums.Role;
 import vn.springboot.entity.order.OrderEntity;
 import vn.springboot.entity.user.UserEntity;
@@ -32,6 +34,7 @@ import vn.springboot.repository.ProductRepository;
 import vn.springboot.repository.specification.OrderSpecification;
 import vn.springboot.security.CustomUserDetails;
 import vn.springboot.service.OrderService;
+import vn.springboot.service.PaymentQrService;
 
 import java.util.List;
 import java.util.Set;
@@ -51,6 +54,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
     private final OrderCreationService orderCreationService;
+    private final PaymentQrService paymentQrService;
 
     /**
      * Not {@code @Transactional}: the actual write happens in
@@ -189,6 +193,11 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderItemMapper::toResponse)
                 .toList();
         response.setItems(items);
+
+        // Online orders that aren't paid yet carry a VietQR so the FE can render it.
+        if (order.getPaymentMethod() == PaymentMethod.ONL && order.getPaymentStatus() != PaymentStatus.PAID) {
+            response.setPayment(paymentQrService.buildQr(order.getOrderCode(), order.getTotalAmount()));
+        }
         return response;
     }
 

@@ -14,6 +14,7 @@ import vn.springboot.dto.request.order.OrderPlaceRequest;
 import vn.springboot.entity.cart.CartItemEntity;
 import vn.springboot.entity.coupon.CouponEntity;
 import vn.springboot.entity.enums.DiscountType;
+import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.ProductType;
 import vn.springboot.entity.order.OrderEntity;
 import vn.springboot.entity.order.OrderItemEntity;
@@ -173,6 +174,25 @@ class OrderCreationServiceTest {
         assertThatThrownBy(() -> service.create(u, request(null, line(99L, 1))))
                 .isInstanceOf(AppException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.PRODUCT_NOT_FOUND);
+    }
+
+    @Test
+    void create_onl_doesNotPublishEmailEvent() {
+        UserEntity u = user(1L);
+        when(productRepository.findAllById(any()))
+                .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
+        when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+
+        OrderPlaceRequest req = OrderPlaceRequest.builder()
+                .idempotencyKey("key-1").items(List.of(line(10L, 1)))
+                .receiverName("Alice").receiverPhone("0900").receiverAddress("HN")
+                .paymentMethod(PaymentMethod.ONL).build();
+
+        OrderEntity order = service.create(u, req);
+
+        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONL);
+        verify(eventPublisher, never()).publishEvent(any());  // email deferred until payment
     }
 
     @Test

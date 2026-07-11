@@ -40,6 +40,8 @@ public class SecurityConfig {
             "/api/auth/google",
             // Public coupon preview (apply code in cart); other coupon endpoints are admin-only
             "/api/coupons/validate",
+            // Payment gateway webhooks (authenticated by signature, not JWT)
+            "/api/webhooks/**",
             // API docs / Swagger UI
             "/v3/api-docs/**",
             "/swagger-ui/**",

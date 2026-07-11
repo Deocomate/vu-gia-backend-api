@@ -15,7 +15,9 @@ import vn.springboot.dto.request.order.OrderPlaceRequest;
 import vn.springboot.dto.request.order.OrderStatusUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.order.OrderResponse;
+import vn.springboot.dto.response.order.PaymentInfoResponse;
 import vn.springboot.entity.enums.OrderStatus;
+import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.security.CustomAccessDeniedHandler;
 import vn.springboot.security.JwtAuthenticationEntryPoint;
 import vn.springboot.security.SecurityConfig;
@@ -87,6 +89,27 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.code").value(1000))
                 .andExpect(jsonPath("$.data.orderCode").value("ODABC"))
                 .andExpect(jsonPath("$.data.totalAmount").value(200));
+    }
+
+    @Test
+    @WithMockUser
+    void place_onl_returnsQrPaymentInResponse() throws Exception {
+        when(orderService.placeOrder(any())).thenReturn(OrderResponse.builder()
+                .id(1L).orderCode("ODX").paymentMethod(PaymentMethod.ONL)
+                .payment(PaymentInfoResponse.builder()
+                        .qrImageUrl("https://vietqr.app/img?amount=200&des=ODX")
+                        .amount(200).transferContent("ODX").build())
+                .build());
+
+        mockMvc.perform(post("/api/orders")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validPlaceRequest())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(1000))
+                .andExpect(jsonPath("$.data.paymentMethod").value("ONL"))
+                .andExpect(jsonPath("$.data.payment.qrImageUrl").value("https://vietqr.app/img?amount=200&des=ODX"))
+                .andExpect(jsonPath("$.data.payment.transferContent").value("ODX"));
     }
 
     @Test

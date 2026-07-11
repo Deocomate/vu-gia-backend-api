@@ -73,6 +73,19 @@ app:
     admin-username: admin
     admin-email: admin@gmail.com
     admin-password: admin123
+  payment:
+    # Tài khoản nhận tiền để sinh ảnh VietQR cho đơn thanh toán online (ONL)
+    vietqr:
+      base-url: ${VIETQR_BASE_URL:https://vietqr.app/img}
+      bank: ${VIETQR_BANK:MBBank}
+      account: ${VIETQR_ACCOUNT:686804076868}
+      holder: ${VIETQR_HOLDER:NGUYEN DUY DAT}
+      template: ${VIETQR_TEMPLATE:compact}
+  sepay:
+    webhook:
+      # Secret verify chữ ký X-SePay-Signature (HMAC-SHA256).
+      # BẮT BUỘC: rỗng = CHẶN mọi webhook (fail-closed). Phải khớp secret cấu hình bên SePay.
+      secret: ${SEPAY_WEBHOOK_SECRET:}
 
 # Actuator: only expose health & info publicly; keep the rest off by default
 management:

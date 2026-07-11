@@ -204,6 +204,8 @@ Mọi thứ trong `src/main/resources/application.yaml` đều override được
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | *(rỗng)* | Tài khoản SMTP (cần để gửi email thật) |
 | `APP_MAIL_FROM` | *(rỗng)* | Địa chỉ "From" cho email |
 | `GOOGLE_CLIENT_ID` | *(rỗng)* | Google OAuth Web client ID (rỗng = tắt kiểm tra — chỉ dev) |
+| `VIETQR_BANK` / `VIETQR_ACCOUNT` / `VIETQR_HOLDER` | `MBBank` / `686804076868` / `NGUYEN DUY DAT` | Tài khoản nhận tiền để sinh QR VietQR (đơn ONL) |
+| `SEPAY_WEBHOOK_SECRET` | *(rỗng)* | Secret verify chữ ký webhook SePay — **rỗng = chặn mọi webhook** (fail-closed) |
 | `app.init.enabled` | `true` | Bật/tắt seed admin khi khởi động |
 
 > 🔒 **Prod:** sinh `APP_JWT_SECRET` mới, đặt SMTP + MinIO thật, trỏ `MINIO_PUBLIC_URL` về CDN/domain.

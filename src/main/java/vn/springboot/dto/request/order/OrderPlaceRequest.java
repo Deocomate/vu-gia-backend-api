@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.entity.enums.PaymentMethod;
 
 import java.util.List;
 
@@ -29,6 +30,9 @@ public class OrderPlaceRequest {
 
     /** Optional coupon code; validated against all conditions before applying. */
     private String couponCode;
+
+    /** Payment method: {@code COD} (default) or {@code ONL} (online VietQR transfer). */
+    private PaymentMethod paymentMethod;
 
     @NotBlank
     @Size(max = 100)

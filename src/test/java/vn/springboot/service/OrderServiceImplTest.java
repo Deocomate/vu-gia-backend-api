@@ -20,6 +20,8 @@ import vn.springboot.dto.request.order.OrderItemRequest;
 import vn.springboot.dto.request.order.OrderPlaceRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.order.OrderResponse;
+import vn.springboot.dto.response.order.PaymentInfoResponse;
+import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.Role;
 import vn.springboot.entity.order.OrderEntity;
 import vn.springboot.entity.user.UserEntity;
@@ -33,6 +35,7 @@ import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
 import vn.springboot.security.CustomUserDetails;
+import vn.springboot.service.PaymentQrService;
 import vn.springboot.service.impl.OrderCreationService;
 import vn.springboot.service.impl.OrderServiceImpl;
 
@@ -42,6 +45,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,6 +59,7 @@ class OrderServiceImplTest {
     @Mock private OrderMapper orderMapper;
     @Mock private OrderItemMapper orderItemMapper;
     @Mock private OrderCreationService orderCreationService;
+    @Mock private PaymentQrService paymentQrService;
 
     @InjectMocks private OrderServiceImpl service;
 
@@ -122,6 +127,40 @@ class OrderServiceImplTest {
 
         assertThat(response.getId()).isEqualTo(9L);
         verify(orderCreationService).create(any(), any());
+    }
+
+    @Test
+    void placeOrder_onl_attachesQrPayment() {
+        OrderEntity created = OrderEntity.builder()
+                .user(user).orderCode("ODONL").idempotencyKey("key-1")
+                .paymentMethod(PaymentMethod.ONL).totalAmount(500_000L).build();
+        created.setId(9L);
+        when(orderRepository.findByUser_IdAndIdempotencyKey(1L, "key-1")).thenReturn(Optional.empty());
+        when(orderCreationService.create(any(), any())).thenReturn(created);
+        when(orderMapper.toResponse(created)).thenReturn(OrderResponse.builder().id(9L).orderCode("ODONL").build());
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(9L)).thenReturn(List.of());
+        when(paymentQrService.buildQr("ODONL", 500_000L))
+                .thenReturn(PaymentInfoResponse.builder().qrImageUrl("https://qr").amount(500_000L).build());
+
+        OrderResponse response = service.placeOrder(placeRequest());
+
+        assertThat(response.getPayment()).isNotNull();
+        assertThat(response.getPayment().getQrImageUrl()).isEqualTo("https://qr");
+        verify(paymentQrService).buildQr("ODONL", 500_000L);
+    }
+
+    @Test
+    void placeOrder_cod_hasNoQrPayment() {
+        OrderEntity created = order(9L, user); // COD by default
+        when(orderRepository.findByUser_IdAndIdempotencyKey(1L, "key-1")).thenReturn(Optional.empty());
+        when(orderCreationService.create(any(), any())).thenReturn(created);
+        when(orderMapper.toResponse(created)).thenReturn(OrderResponse.builder().id(9L).build());
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(9L)).thenReturn(List.of());
+
+        OrderResponse response = service.placeOrder(placeRequest());
+
+        assertThat(response.getPayment()).isNull();
+        verify(paymentQrService, never()).buildQr(any(), anyLong());
     }
 
     @Test

@@ -19,6 +19,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import vn.springboot.common.entity.BaseEntity;
 import vn.springboot.entity.coupon.CouponEntity;
 import vn.springboot.entity.enums.OrderStatus;
+import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.PaymentStatus;
 import vn.springboot.entity.user.UserEntity;
 
@@ -49,6 +50,11 @@ public class OrderEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 20)
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 20)
+    private PaymentMethod paymentMethod = PaymentMethod.COD;
 
     @Column(name = "total_amount", nullable = false)
     private Long totalAmount;

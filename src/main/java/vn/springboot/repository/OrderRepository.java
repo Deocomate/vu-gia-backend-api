@@ -19,6 +19,9 @@ public interface OrderRepository
     /** Idempotent-checkout lookup: the existing order for a (user, key) pair. */
     Optional<OrderEntity> findByUser_IdAndIdempotencyKey(Long userId, String idempotencyKey);
 
+    /** Payment reconciliation: match a bank transfer memo to its order. */
+    Optional<OrderEntity> findByOrderCode(String orderCode);
+
     /** How many times this user has already used a given coupon (per-user limit). */
     long countByUser_IdAndCoupon_Id(Long userId, Long couponId);
 

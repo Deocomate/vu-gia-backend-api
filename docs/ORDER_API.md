@@ -25,6 +25,11 @@ Tài liệu bàn giao FE cho module **Order (đặt hàng)**.
 - **Giỏ hàng**: sau khi đặt thành công, mỗi `(productId, quantity)` đã đặt sẽ được **trừ/xoá** khỏi giỏ của
   khách (mua đủ hoặc quá số trong giỏ → xoá dòng; mua ít hơn → giảm số lượng).
 - Trạng thái đơn khởi tạo: `status = PENDING_PAYMENT`, `paymentStatus = PENDING`.
+- **Phương thức thanh toán** (`paymentMethod`): `COD` (mặc định) hoặc `ONL` (chuyển khoản VietQR).
+  - `COD` → xác nhận ngay, **gửi email luôn** (như trên).
+  - `ONL` → response trả kèm object **`payment`** (ảnh QR VietQR + số tiền + mã đơn + thông tin CK);
+    **CHƯA gửi email** (email sẽ gửi sau khi thanh toán được xác nhận qua webhook — *làm sau*).
+    Nội dung chuyển khoản (`des` / `transferContent`) = **mã đơn hàng** để đối soát.
 - **Đếm "đã bán" (`product.soldCount`)**: chỉ cộng khi đơn chuyển sang **`COMPLETED`** (không cộng lúc đặt,
   tránh sai lệch khi khách huỷ/hoàn tiền). Nếu đơn **rời khỏi `COMPLETED`** (vd `RETURNED`) thì **trừ lại**
   đúng số lượng. Cộng/trừ bằng UPDATE nguyên tử theo từng sản phẩm.
@@ -72,6 +77,7 @@ status, createdAt` (mặc định `id`, hướng mặc định `DESC`). Filter l
     { "productId": 22, "quantity": 1 }
   ],
   "couponCode": "SALE10",                   // tuỳ chọn
+  "paymentMethod": "ONL",                   // tuỳ chọn: COD (mặc định) | ONL
   "receiverName": "Nguyễn Văn A",           // bắt buộc, ≤100
   "receiverPhone": "0900123456",            // bắt buộc, ≤20
   "receiverAddress": "123 Lê Lợi, Q1, HCM", // bắt buộc
@@ -90,6 +96,15 @@ Response `200`:
     "orderCode": "OD3F1C2A4B5D6",
     "status": "PENDING_PAYMENT",
     "paymentStatus": "PENDING",
+    "paymentMethod": "ONL",
+    "payment": {
+      "qrImageUrl": "https://vietqr.app/img?bank=MBBank&acc=686804076868&template=compact&amount=1200000&des=ODF97CD281BE0D&showinfo=true&holder=NGUYEN%20DUY%20DAT",
+      "amount": 1200000,
+      "bankName": "MBBank",
+      "accountNumber": "686804076868",
+      "accountHolder": "NGUYEN DUY DAT",
+      "transferContent": "ODF97CD281BE0D"
+    },
     "totalAmount": 1800000,
     "discountAmount": 200000,
     "couponCode": "SALE10",
@@ -197,11 +212,25 @@ interface OrderItemResponse {
   comboItems: string | null;
 }
 
+type PaymentMethod = 'COD' | 'ONL';
+
+// Thông tin thanh toán QR — chỉ có với đơn ONL chưa thanh toán, còn lại null
+interface PaymentInfoResponse {
+  qrImageUrl: string;        // link ảnh VietQR, FE render trực tiếp
+  amount: number;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  transferContent: string;   // = orderCode (nội dung chuyển khoản)
+}
+
 interface OrderResponse {
   id: number;
   orderCode: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  payment: PaymentInfoResponse | null;   // != null khi ONL & chưa PAID
   totalAmount: number;   // sau giảm giá
   discountAmount: number;
   couponCode: string | null;
@@ -220,6 +249,7 @@ interface OrderPlaceRequest {
   idempotencyKey: string;   // FE sinh (UUID), giữ nguyên khi retry
   items: OrderItemRequest[];
   couponCode?: string;
+  paymentMethod?: PaymentMethod;   // COD (mặc định) | ONL
   receiverName: string;
   receiverPhone: string;
   receiverAddress: string;
@@ -246,10 +276,15 @@ interface PageResponse<T> {
 > Postman: **Import → Raw text** rồi dán lệnh `curl`.
 
 ```bash
-# Đặt hàng (idempotencyKey giữ nguyên khi bấm lại "Đặt hàng")
+# Đặt hàng COD (idempotencyKey giữ nguyên khi bấm lại "Đặt hàng")
 curl -X POST http://localhost:8080/api/orders \
   -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Content-Type: application/json" \
-  -d '{"idempotencyKey":"b3f1c2a4-0001","items":[{"productId":10,"quantity":2}],"couponCode":"SALE10","receiverName":"Nguyễn Văn A","receiverPhone":"0900123456","receiverAddress":"123 Lê Lợi, Q1, HCM","note":"Giao giờ hành chính"}'
+  -d '{"idempotencyKey":"b3f1c2a4-0001","items":[{"productId":10,"quantity":2}],"couponCode":"SALE10","paymentMethod":"COD","receiverName":"Nguyễn Văn A","receiverPhone":"0900123456","receiverAddress":"123 Lê Lợi, Q1, HCM","note":"Giao giờ hành chính"}'
+
+# Đặt hàng ONL → response trả kèm "payment": { qrImageUrl, amount, transferContent=orderCode, ... }
+curl -X POST http://localhost:8080/api/orders \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Content-Type: application/json" \
+  -d '{"idempotencyKey":"b3f1c2a4-0002","items":[{"productId":10,"quantity":1}],"paymentMethod":"ONL","receiverName":"Nguyễn Văn A","receiverPhone":"0900123456","receiverAddress":"123 Lê Lợi, Q1, HCM"}'
 
 # Danh sách đơn của tôi + filter
 curl "http://localhost:8080/api/orders?status=PENDING_PAYMENT&page=1&size=20&sortBy=createdAt&sortDirection=DESC" \
@@ -277,3 +312,39 @@ curl -X PATCH http://localhost:8080/api/orders/1/status \
 | GET | `/api/orders/admin` | JWT | ADMIN/SUPERADMIN | Search toàn bộ đơn + filter đầy đủ |
 | GET | `/api/orders/{id}` | JWT | Đăng nhập | Chi tiết đơn (chủ đơn / admin) |
 | PATCH | `/api/orders/{id}/status` | JWT | ADMIN/SUPERADMIN | Đổi trạng thái đơn / thanh toán |
+| POST | `/api/webhooks/sepay` | Chữ ký HMAC | — | Webhook SePay xác nhận thanh toán (server-to-server) |
+
+## 7. Webhook thanh toán SePay — `POST /api/webhooks/sepay`
+
+Endpoint **công khai** (không JWT), xác thực bằng **chữ ký HMAC-SHA256** ở header
+`X-SePay-Signature: sha256=<hex>` = `HMAC_SHA256(rawBody, SEPAY_WEBHOOK_SECRET)`. Đặt secret qua env
+`SEPAY_WEBHOOK_SECRET` (khớp với cấu hình bên SePay). **Fail-closed: chưa đặt secret → CHẶN mọi webhook (401).**
+
+**Cấu hình mã thanh toán trên SePay**: tiền tố `OD`, phần biến **12 ký tự**, kiểu **chữ và số** (hexa `0-9A-F`
+viết hoa) — SePay trích vào trường `code` = **mã đơn hàng**.
+
+Body SePay gửi (rút gọn): `id, gateway, transactionDate, accountNumber, code, content, transferType,
+transferAmount, referenceCode, ...`
+
+**Xử lý phía server:**
+1. **Idempotent** theo `id` (SePay txn id, lưu UNIQUE) — retry/replay chỉ xử lý 1 lần.
+2. Chỉ nhận `transferType = "in"`; khớp đơn theo `code` = `orderCode`.
+3. Nếu đơn đang `PENDING` và `transferAmount ≥ totalAmount` → set **`paymentStatus = PAID`**,
+   **`status = PROCESSING`**, rồi **gửi email xác nhận** (email của đơn ONL bị hoãn lúc đặt, giờ mới gửi).
+4. Ghi log giao dịch vào bảng `payment_transactions`.
+
+**Phản hồi**: luôn `HTTP 200` + body **`{"success": true}`** (đúng chuẩn SePay). Chữ ký sai → `401` +
+`{"success": false}`.
+
+```bash
+# Test cục bộ: cần secret + tự ký (vì fail-closed). Giả sử SEPAY_WEBHOOK_SECRET=test-secret
+SECRET='test-secret'
+BODY='{"id":92704,"gateway":"MBBank","transactionDate":"2024-07-02 11:08:33","accountNumber":"686804076868","code":"ODF97CD281BE0D","content":"ODF97CD281BE0D chuyen tien","transferType":"in","transferAmount":1200000,"referenceCode":"FT123"}'
+SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+curl -X POST http://localhost:8080/api/webhooks/sepay \
+  -H "Content-Type: application/json" -H "X-SePay-Signature: sha256=$SIG" -d "$BODY"
+# → {"success":true}   (đơn ODF97CD281BE0D chuyển sang PAID + PROCESSING)
+```
+
+> Trên production, **SePay tự gọi kèm chữ ký** — bạn chỉ cần dán cùng một secret vào cấu hình webhook SePay
+> và biến môi trường `SEPAY_WEBHOOK_SECRET`.

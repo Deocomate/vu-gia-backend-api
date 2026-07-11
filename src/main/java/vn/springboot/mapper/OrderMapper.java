@@ -14,5 +14,6 @@ import vn.springboot.entity.order.OrderEntity;
 public interface OrderMapper {
 
     @Mapping(target = "items", ignore = true)
+    @Mapping(target = "payment", ignore = true)
     OrderResponse toResponse(OrderEntity entity);
 }

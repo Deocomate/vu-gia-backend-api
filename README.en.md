@@ -204,6 +204,8 @@ Everything in `src/main/resources/application.yaml` is overridable via environme
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | *(empty)* | SMTP credentials (required to actually send email) |
 | `APP_MAIL_FROM` | *(empty)* | "From" address for outgoing mail |
 | `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth Web client ID (empty disables the check — dev only) |
+| `VIETQR_BANK` / `VIETQR_ACCOUNT` / `VIETQR_HOLDER` | `MBBank` / `686804076868` / `NGUYEN DUY DAT` | Receiving account for the VietQR image (ONL orders) |
+| `SEPAY_WEBHOOK_SECRET` | *(empty)* | Secret to verify the SePay webhook signature — **empty = reject all webhooks** (fail-closed) |
 | `app.init.enabled` | `true` | Toggle startup admin seeding |
 
 > 🔒 **Production:** generate a fresh `APP_JWT_SECRET`, set real SMTP + MinIO credentials, and point `MINIO_PUBLIC_URL` at your CDN/domain.
