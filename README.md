@@ -1,14 +1,14 @@
 <div align="center">
 
-# 🏺 Gốm Sứ Vũ Gia — E-commerce Backend
+# 🏺 Gốm Sứ Vũ Gia — Backend Thương mại điện tử
 
-**A production-grade Spring Boot REST API for the Gốm Sứ Vũ Gia ceramics store — catalog, cart, orders, coupons, CMS content, admin dashboard, JWT + RBAC, MinIO media and Flyway auto-migrate/seed.**
+**REST API Spring Boot cho cửa hàng gốm sứ Vũ Gia — danh mục sản phẩm, giỏ hàng, đặt hàng, mã giảm giá, nội dung CMS, dashboard quản trị, JWT + RBAC, lưu ảnh MinIO và tự động migrate/seed bằng Flyway.**
 
 <br/>
 
-<!-- 🌐 Language switcher / Nút chuyển ngôn ngữ -->
-<a href="README.md"><img src="https://img.shields.io/badge/🇬🇧_English-2C5BFF?style=for-the-badge" alt="English"/></a>
-<a href="README.vi.md"><img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-555?style=for-the-badge" alt="Tiếng Việt"/></a>
+<!-- 🌐 Nút chuyển ngôn ngữ -->
+<a href="README.md"><img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-2C5BFF?style=for-the-badge" alt="Tiếng Việt"/></a>
+<a href="README.en.md"><img src="https://img.shields.io/badge/🇬🇧_English-555?style=for-the-badge" alt="English"/></a>
 
 <br/><br/>
 
@@ -24,214 +24,214 @@
 
 ---
 
-## 📑 Table of Contents
+## 📑 Mục lục
 
-- [Overview](#-overview)
-- [Tech Stack](#-tech-stack)
-- [Features & Modules](#-features--modules)
-- [Architecture](#-architecture)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-- [Configuration](#-configuration)
-- [API Reference](#-api-reference)
-- [Security Model](#-security-model)
-- [Response Format](#-response-format)
+- [Tổng quan](#-tổng-quan)
+- [Công nghệ](#-công-nghệ)
+- [Chức năng & Module](#-chức-năng--module)
+- [Kiến trúc](#-kiến-trúc)
+- [Cấu trúc dự án](#-cấu-trúc-dự-án)
+- [Bắt đầu](#-bắt-đầu)
+- [Cấu hình](#-cấu-hình)
+- [Tài liệu API](#-tài-liệu-api)
+- [Mô hình bảo mật](#-mô-hình-bảo-mật)
+- [Định dạng response](#-định-dạng-response)
 - [License](#-license)
 
 ---
 
-## 🧭 Overview
+## 🧭 Tổng quan
 
-Backend REST API powering the **Gốm Sứ Vũ Gia** ceramics storefront. It covers the full commerce flow — product catalog, shopping cart, order placement with coupons, plus CMS-style content (news, pages, banners, gallery, showrooms, FAQ) and an admin analytics dashboard.
+Backend REST API cho storefront **Gốm Sứ Vũ Gia**. Phủ toàn bộ luồng thương mại — danh mục sản phẩm, giỏ hàng, đặt hàng kèm mã giảm giá — cùng nội dung dạng CMS (tin tức, trang, banner, gallery, showroom, FAQ) và dashboard thống kê cho admin.
 
-The codebase follows a strict **layered architecture** and **SOLID** principles: every service is coded against an interface, filtering is done with the JPA Specification API, DTO ↔ Entity mapping is compile-time (MapStruct), and cross-cutting concerns (security, errors, auditing) live in their own packages. Schema and demo data are applied automatically on startup via **Flyway**.
+Mã nguồn bám **kiến trúc phân tầng** chặt chẽ và nguyên tắc **SOLID**: mỗi service viết theo interface, lọc động bằng JPA Specification, map DTO ↔ Entity ở compile-time (MapStruct), các mối quan tâm chéo (bảo mật, lỗi, auditing) nằm ở package riêng. Schema và dữ liệu mẫu được áp dụng **tự động khi khởi động** bằng **Flyway**.
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 Công nghệ
 
-| Layer | Technology | Version | Purpose |
+| Tầng | Công nghệ | Version | Vai trò |
 |---|---|---|---|
-| **Language** | Java | 21 (LTS) | Records, pattern matching, text blocks |
-| **Framework** | Spring Boot | 3.5.10 | Auto-configuration & DI |
-| **Web** | Spring Web (MVC) | — | REST controllers, JSON |
-| **Persistence** | Spring Data JPA + Hibernate | — | ORM, repositories, Specification API |
-| **Database** | MySQL | 8.x | Relational DB (`mysql-connector-j`) |
-| **Migrations** | Flyway (+ `flyway-mysql`) | — | Auto migrate schema + seed data on startup |
-| **Security** | Spring Security | — | Auth, method security (`@PreAuthorize`) |
-| **Token** | JJWT | 0.12.6 | JWT access tokens (HS512) + refresh rotation |
-| **OAuth** | Google Identity | — | "Login with Google" (ID-token verification) |
-| **Object storage** | MinIO | 8.5.x | Product/asset images (public buckets) |
-| **Email** | Spring Mail + Thymeleaf | — | Async **HTML** transactional emails |
-| **Mapping** | MapStruct | 1.6.3 | Compile-time DTO ↔ Entity mapping |
-| **Validation** | Jakarta Bean Validation | — | `@Valid` request payloads |
-| **API Docs** | SpringDoc OpenAPI (Swagger UI) | — | Interactive docs at `/swagger-ui.html` |
+| **Ngôn ngữ** | Java | 21 (LTS) | record, pattern matching, text block |
+| **Framework** | Spring Boot | 3.5.10 | Auto-config & DI |
+| **Web** | Spring Web (MVC) | — | REST controller, JSON |
+| **Persistence** | Spring Data JPA + Hibernate | — | ORM, repository, Specification API |
+| **CSDL** | MySQL | 8.x | DB quan hệ (`mysql-connector-j`) |
+| **Migration** | Flyway (+ `flyway-mysql`) | — | Tự migrate schema + seed data lúc khởi động |
+| **Bảo mật** | Spring Security | — | Xác thực, method security (`@PreAuthorize`) |
+| **Token** | JJWT | 0.12.6 | JWT access token (HS512) + refresh rotation |
+| **OAuth** | Google Identity | — | Đăng nhập Google (xác thực ID-token) |
+| **Lưu trữ ảnh** | MinIO | 8.5.x | Ảnh sản phẩm/asset (bucket public) |
+| **Email** | Spring Mail + Thymeleaf | — | Email **HTML** bất đồng bộ |
+| **Mapping** | MapStruct | 1.6.3 | Map DTO ↔ Entity compile-time |
+| **Validation** | Jakarta Bean Validation | — | Kiểm tra payload `@Valid` |
+| **API Docs** | SpringDoc OpenAPI (Swagger UI) | — | Tài liệu tương tác `/swagger-ui.html` |
 | **Monitoring** | Spring Boot Actuator | — | `/actuator/health`, `/actuator/info` |
-| **Boilerplate** | Lombok | — | Getters/setters/builders |
-| **Build** | Maven (`mvnw` wrapper) | — | Dependency management & packaging |
-| **Test** | JUnit 5 + Mockito + Spring Security Test | — | Service & controller tests |
+| **Boilerplate** | Lombok | — | getter/setter/builder |
+| **Build** | Maven (wrapper `mvnw`) | — | Quản lý phụ thuộc & đóng gói |
+| **Test** | JUnit 5 + Mockito + Spring Security Test | — | Test service & controller |
 
 ---
 
-## ✨ Features & Modules
+## ✨ Chức năng & Module
 
-### Core platform
-- 🔐 **JWT auth + refresh rotation** — stateless HS512 access tokens; DB-backed refresh tokens (real logout/revocation). Login by **username or email**, plus **Google login**.
-- 👥 **RBAC** — single-role model (`Role` enum: `SUPERADMIN` / `ADMIN` / `CUSTOMER`); endpoints guarded with `@PreAuthorize`.
-- 🧾 **Unified envelope** — every response is `{ code, message, data, timestamp }`; `code=1000` = success.
-- 🧯 **Global exception handling** — one `@RestControllerAdvice` maps exceptions to stable business error codes.
-- 🕵️ **JPA auditing** — `createdAt / updatedAt / createdBy / updatedBy` populated automatically.
-- 🔎 **Safe search & pagination** — JPA Specification + whitelisted sorting (1-based paging).
-- 🌱 **Auto migrate + seed** — Flyway runs schema (`db/migration`) then demo data (`db/seed`) on startup; idempotent admin bootstrap.
-- 🖼 **MinIO media** — uploads to public buckets (`assets`, `products`), buckets auto-created & made public-read on startup.
+### Nền tảng lõi
+- 🔐 **JWT + refresh rotation** — access token HS512 stateless; refresh token lưu DB (logout/thu hồi thật). Đăng nhập bằng **username hoặc email**, kèm **đăng nhập Google**.
+- 👥 **RBAC** — mô hình 1 vai trò (`Role` enum: `SUPERADMIN` / `ADMIN` / `CUSTOMER`); chặn quyền bằng `@PreAuthorize`.
+- 🧾 **Envelope thống nhất** — mọi response là `{ code, message, data, timestamp }`; `code=1000` = thành công.
+- 🧯 **Xử lý lỗi tập trung** — một `@RestControllerAdvice` map exception → error code ổn định.
+- 🕵️ **JPA auditing** — `createdAt / updatedAt / createdBy / updatedBy` tự điền.
+- 🔎 **Search & phân trang an toàn** — JPA Specification + whitelist sort (phân trang 1-based).
+- 🌱 **Tự migrate + seed** — Flyway chạy schema (`db/migration`) rồi data mẫu (`db/seed`); seed admin idempotent.
+- 🖼 **Ảnh MinIO** — upload vào bucket public (`assets`, `products`), bucket tự tạo & set public-read khi khởi động.
 
-### Business modules
-| Domain | Highlights |
+### Các module nghiệp vụ
+| Miền | Điểm nổi bật |
 |---|---|
-| **Auth / User** | register · login · refresh · logout · me · Google login · change password · admin user management (list, create, change role, reset password) |
-| **Products** | catalog + categories + images (MinIO), status/featured toggles, **SEO lookup by slug** |
-| **Content / CMS** | News + categories (by slug), **Pages** (by key), Banners, Showrooms, Gallery, FAQ, Redirects |
-| **Marketing** | **Coupons** (PERCENT / FIXED / FREE_SHIP, validate + conditions), Newsletter subscribe, Contact form |
-| **Cart** | per-user cart, accumulate quantity, live totals |
-| **Orders** | **idempotent checkout**, price snapshot, **atomic coupon claim** (race-free), cart deduction, `sold_count` bumped only on **COMPLETED**, **async HTML confirmation email**, admin order search |
-| **Dashboard** | admin KPIs (revenue/orders/customers), daily revenue series, top-selling products |
+| **Auth / User** | đăng ký · đăng nhập · refresh · logout · me · đăng nhập Google · đổi mật khẩu · quản trị user (list, tạo, đổi vai trò, reset mật khẩu) |
+| **Sản phẩm** | catalog + danh mục + ảnh (MinIO), bật/tắt trạng thái & nổi bật, **tra cứu theo slug (SEO)** |
+| **Nội dung / CMS** | Tin tức + danh mục (theo slug), **Trang** (theo key), Banner, Showroom, Gallery, FAQ, Redirect |
+| **Marketing** | **Mã giảm giá** (PERCENT / FIXED / FREE_SHIP, validate + điều kiện), đăng ký Newsletter, form Liên hệ |
+| **Giỏ hàng** | giỏ theo user, cộng dồn số lượng, tính tổng trực tiếp |
+| **Đơn hàng** | **đặt hàng idempotent**, snapshot giá, **trừ lượt coupon nguyên tử** (race-free), trừ giỏ, `sold_count` chỉ tăng khi **COMPLETED**, **email xác nhận HTML bất đồng bộ**, admin search đơn |
+| **Dashboard** | KPI admin (doanh thu/đơn/khách), doanh thu theo ngày, top sản phẩm bán chạy |
 
-> Full endpoint reference per module lives in [`docs/`](docs).
+> Tài liệu endpoint đầy đủ theo từng module nằm trong [`docs/`](docs).
 
 ---
 
-## 🏗 Architecture
+## 🏗 Kiến trúc
 
-One-way dependency flow; the web layer never touches persistence directly, and services depend on **interfaces**.
+Luồng phụ thuộc một chiều; tầng web không đụng thẳng persistence, service phụ thuộc **interface**.
 
 ```text
 HTTP ─▶ Controller ─▶ Service (interface → impl) ─▶ Repository (+ Specification) ─▶ MySQL
-          │                     │                                          
-          │ ApiResponse<T>      │ MapStruct mapper                         
-          ▼                     ▼                                          
-  GlobalExceptionHandler ◀─ AppException(ErrorCode)                        
+          │                     │
+          │ ApiResponse<T>      │ MapStruct mapper
+          ▼                     ▼
+  GlobalExceptionHandler ◀─ AppException(ErrorCode)
           ▲
-  Security filter chain (JWT) ─▶ 401 EntryPoint / 403 AccessDeniedHandler
-          
-  Order committed ─▶ @TransactionalEventListener(AFTER_COMMIT) ─▶ @Async HTML email (Thymeleaf)
+  Chuỗi filter bảo mật (JWT) ─▶ 401 EntryPoint / 403 AccessDeniedHandler
+
+  Đơn commit ─▶ @TransactionalEventListener(AFTER_COMMIT) ─▶ @Async email HTML (Thymeleaf)
 ```
 
 ---
 
-## 📂 Project Structure
+## 📂 Cấu trúc dự án
 
 ```text
 src/main/java/vn/springboot
 ├── Application.java
 ├── common
-│   ├── entity/BaseEntity.java            # id + audit fields
+│   ├── entity/BaseEntity.java            # id + cột audit
 │   ├── exception/                        # ErrorCode, AppException, GlobalExceptionHandler
-│   └── response/ApiResponse.java         # unified envelope
-├── config                                # Async, Jpa auditing, MinIO, bucket init, data seeding
-├── controller                            # 20 REST controllers (per module)
-├── dto/{request,response}                # per-domain request/response DTOs
-├── entity                                # 19 JPA entities (product, order, cart, news, page, …)
-├── event                                 # OrderPlacedEvent + async OrderEmailListener
-├── mapper                                # MapStruct mappers
-├── repository (+ specification)          # Spring Data repos + dynamic filters
-├── security                              # SecurityConfig, JWT, CustomUserDetails, handlers
-└── service (+ impl)                      # business logic behind interfaces
+│   └── response/ApiResponse.java         # envelope thống nhất
+├── config                                # Async, JPA auditing, MinIO, khởi tạo bucket, seed admin
+├── controller                            # 20 REST controller (theo module)
+├── dto/{request,response}                # DTO request/response theo miền
+├── entity                                # 19 entity JPA (product, order, cart, news, page, …)
+├── event                                 # OrderPlacedEvent + OrderEmailListener (async)
+├── mapper                                # MapStruct mapper
+├── repository (+ specification)          # Spring Data repo + filter động
+├── security                              # SecurityConfig, JWT, CustomUserDetails, handler
+└── service (+ impl)                      # nghiệp vụ sau interface
 
 src/main/resources
 ├── application.yaml
 ├── db/migration/V1__init_db.sql          # schema (Flyway)
-├── db/seed/V2__seed_db.sql               # demo data (Flyway)
-└── templates/email/order-confirmation.html   # HTML email (Thymeleaf)
+├── db/seed/V2__seed_db.sql               # data mẫu (Flyway)
+└── templates/email/order-confirmation.html   # email HTML (Thymeleaf)
 ```
 
 ---
 
-## 🚦 Getting Started
+## 🚦 Bắt đầu
 
-### Option A — Docker (recommended, one command)
+### Cách A — Docker (khuyến nghị, 1 lệnh)
 
-Brings up **MySQL + MinIO + app**; the app auto-migrates the schema and seeds demo data on boot.
+Dựng **MySQL + MinIO + app**; app tự migrate schema và seed data khi khởi động.
 
 ```bash
 docker compose up -d --build
-docker compose logs -f app        # watch: "Successfully applied 2 migrations"
+docker compose logs -f app        # xem: "Successfully applied 2 migrations"
 ```
 
 - API → **http://localhost:8080** (Swagger: `/swagger-ui.html`)
 - MinIO Console → **http://localhost:9001** (`minioadmin` / `minioadmin123`)
 
-### Option B — Local
+### Cách B — Chạy local
 
-**Prerequisites:** JDK 21, MySQL 8 running locally (MinIO optional, only needed to serve images).
+**Yêu cầu:** JDK 21, MySQL 8 đang chạy (MinIO tuỳ chọn, chỉ cần khi phục vụ ảnh).
 
 ```bash
-# Fresh DB: MySQL auto-creates it via the URL flag; Flyway builds schema + seeds
+# DB mới: MySQL tự tạo qua flag URL; Flyway dựng schema + seed
 DB_URL="jdbc:mysql://localhost:3306/dev_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
   ./mvnw spring-boot:run
 
-# Build a runnable jar
+# Build jar chạy được
 ./mvnw clean package && java -jar target/spring-boot-0.0.1-SNAPSHOT.jar
 ```
 
-### Default admin account
+### Tài khoản admin mặc định
 
 | Username | Password | Email |
 |---|---|---|
 | `admin` | `admin123` | `admin@gmail.com` |
 
-> ⚠️ Change the password before deploying.
+> ⚠️ Đổi mật khẩu trước khi deploy.
 
-### Images (MinIO)
+### Ảnh (MinIO)
 
-The app auto-creates the `assets` and `products` buckets as public-read. Upload the `assets/images/` folder into the **`assets`** bucket via the MinIO console — see **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)** for the full flow. The DB stores **relative** image paths (e.g. `assets/images/gallery/gallery-1.jpg`); the frontend prepends the MinIO base URL.
+App tự tạo bucket `assets` và `products` dạng public-read. Upload thư mục `assets/images/` vào bucket **`assets`** qua MinIO console — xem chi tiết ở **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)**. DB lưu **đường dẫn tương đối** (vd `assets/images/gallery/gallery-1.jpg`); FE tự cộng tiền tố URL MinIO.
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Cấu hình
 
-Everything in `src/main/resources/application.yaml` is overridable via environment variables.
+Mọi thứ trong `src/main/resources/application.yaml` đều override được qua biến môi trường.
 
-| Env variable | Default | Description |
+| Biến môi trường | Mặc định | Mô tả |
 |---|---|---|
 | `DB_URL` | `jdbc:mysql://localhost:3306/dev_db` | JDBC URL |
-| `DB_USERNAME` / `DB_PASSWORD` | `root` / `rootpassword` | DB credentials |
-| `APP_JWT_SECRET` | *(dev default)* | Base64 512-bit HS512 key — **must override in prod** |
-| `MINIO_URL` | `http://localhost:9000` | MinIO endpoint (server-side) |
-| `MINIO_PUBLIC_URL` | `http://localhost:9000` | Public base for image URLs (browser-facing / CDN) |
-| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` / `minioadmin123` | MinIO credentials |
-| `MINIO_BUCKET_ASSET` / `MINIO_BUCKET_PRODUCT` | `assets` / `products` | Bucket names |
+| `DB_USERNAME` / `DB_PASSWORD` | `root` / `rootpassword` | Thông tin DB |
+| `APP_JWT_SECRET` | *(mặc định dev)* | Khoá HS512 base64 512-bit — **phải override ở prod** |
+| `MINIO_URL` | `http://localhost:9000` | Endpoint MinIO (phía server) |
+| `MINIO_PUBLIC_URL` | `http://localhost:9000` | Base URL ảnh công khai (trình duyệt / CDN) |
+| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` / `minioadmin123` | Thông tin MinIO |
+| `MINIO_BUCKET_ASSET` / `MINIO_BUCKET_PRODUCT` | `assets` / `products` | Tên bucket |
 | `MAIL_HOST` | `smtp.gmail.com` | SMTP host |
-| `MAIL_USERNAME` / `MAIL_PASSWORD` | *(empty)* | SMTP credentials (required to actually send email) |
-| `APP_MAIL_FROM` | *(empty)* | "From" address for outgoing mail |
-| `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth Web client ID (empty disables the check — dev only) |
-| `app.init.enabled` | `true` | Toggle startup admin seeding |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | *(rỗng)* | Tài khoản SMTP (cần để gửi email thật) |
+| `APP_MAIL_FROM` | *(rỗng)* | Địa chỉ "From" cho email |
+| `GOOGLE_CLIENT_ID` | *(rỗng)* | Google OAuth Web client ID (rỗng = tắt kiểm tra — chỉ dev) |
+| `app.init.enabled` | `true` | Bật/tắt seed admin khi khởi động |
 
-> 🔒 **Production:** generate a fresh `APP_JWT_SECRET`, set real SMTP + MinIO credentials, and point `MINIO_PUBLIC_URL` at your CDN/domain.
+> 🔒 **Prod:** sinh `APP_JWT_SECRET` mới, đặt SMTP + MinIO thật, trỏ `MINIO_PUBLIC_URL` về CDN/domain.
 
 ---
 
-## 🔌 API Reference
+## 🔌 Tài liệu API
 
 Base path **`/api`** · Swagger UI **`/swagger-ui.html`** · Health **`/actuator/health`**.
 
-Per-module reference (request/response, error codes, curl-for-Postman):
+Tài liệu theo từng module (request/response, error code, curl dán Postman):
 
-| Module | Doc |
+| Module | Tài liệu |
 |---|---|
 | Auth & User (RBAC) | [docs/AUTH_USER_API.md](docs/AUTH_USER_API.md) |
-| Products & Categories | [docs/PRODUCT_API.md](docs/PRODUCT_API.md) |
-| News & Categories | [docs/NEWS_API.md](docs/NEWS_API.md) |
-| Coupons | [docs/COUPON_API.md](docs/COUPON_API.md) |
-| Cart | [docs/CART_API.md](docs/CART_API.md) |
-| Orders | [docs/ORDER_API.md](docs/ORDER_API.md) |
-| Admin Dashboard | [docs/DASHBOARD_API.md](docs/DASHBOARD_API.md) |
-| Pages (CMS) | [docs/PAGE_API.md](docs/PAGE_API.md) |
-| Contact | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
+| Sản phẩm & Danh mục | [docs/PRODUCT_API.md](docs/PRODUCT_API.md) |
+| Tin tức & Danh mục | [docs/NEWS_API.md](docs/NEWS_API.md) |
+| Mã giảm giá | [docs/COUPON_API.md](docs/COUPON_API.md) |
+| Giỏ hàng | [docs/CART_API.md](docs/CART_API.md) |
+| Đơn hàng | [docs/ORDER_API.md](docs/ORDER_API.md) |
+| Dashboard admin | [docs/DASHBOARD_API.md](docs/DASHBOARD_API.md) |
+| Trang (CMS) | [docs/PAGE_API.md](docs/PAGE_API.md) |
+| Liên hệ | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
 | Newsletter | [docs/NEWSLETTER_API.md](docs/NEWSLETTER_API.md) |
-| Banners / Showrooms / Gallery / FAQ / Redirects | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
-| Run & seed & MinIO | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
+| Banner / Showroom / Gallery / FAQ / Redirect | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
+| Chạy & seed & MinIO | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
 
-**Login example**
+**Ví dụ đăng nhập**
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
@@ -240,51 +240,51 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ---
 
-## 🛡 Security Model
+## 🛡 Mô hình bảo mật
 
-1. **Login** validates credentials via `AuthenticationManager` + `BCryptPasswordEncoder` (or a Google ID token).
-2. Server issues a short-lived **JWT access token** (HS512) + a long-lived DB-stored **refresh token** (rotated on each refresh).
-3. `JwtAuthenticationFilter` validates the token per request and populates the `SecurityContext`.
-4. **Authorization**: storefront **reads are public**; **writes require staff** (`@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`); user management is `SUPERADMIN`-only; cart/checkout require any authenticated user.
-5. Auth failures return consistent JSON: **401** (`JwtAuthenticationEntryPoint`) or **403** (`CustomAccessDeniedHandler`).
+1. **Login** kiểm tra thông tin qua `AuthenticationManager` + `BCryptPasswordEncoder` (hoặc Google ID token).
+2. Server phát **JWT access token** ngắn hạn (HS512) + **refresh token** dài hạn lưu DB (xoay vòng mỗi lần refresh).
+3. `JwtAuthenticationFilter` kiểm token mỗi request và nạp `SecurityContext`.
+4. **Phân quyền**: **đọc storefront công khai**; **ghi cần staff** (`@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`); quản trị user chỉ `SUPERADMIN`; giỏ hàng/đặt hàng cần user đăng nhập.
+5. Lỗi auth trả JSON nhất quán: **401** (`JwtAuthenticationEntryPoint`) hoặc **403** (`CustomAccessDeniedHandler`).
 
-**Roles:** `SUPERADMIN` › `ADMIN` › `CUSTOMER` (stored on `users.role`).
+**Vai trò:** `SUPERADMIN` › `ADMIN` › `CUSTOMER` (lưu ở `users.role`).
 
 ---
 
-## 📦 Response Format
+## 📦 Định dạng response
 
-**Success**
+**Thành công**
 ```json
 { "code": 1000, "message": "Order placed", "data": { "...": "..." }, "timestamp": "2026-07-11T02:00:00Z" }
 ```
-**Error**
+**Lỗi**
 ```json
 { "code": 4105, "message": "Mã giảm giá đã hết hạn", "data": null, "timestamp": "2026-07-11T02:00:00Z" }
 ```
 
-**Error code ranges**
+**Dải error code**
 
-| Range | Meaning |
+| Dải | Ý nghĩa |
 |---|---|
-| `1000` | Success |
+| `1000` | Thành công |
 | `4000–4005` | Bad request / validation |
-| `401x` | Authentication |
-| `4030` | Authorization (403) |
-| `404x` | Not found |
-| `409x` / `41xx` | Conflict (already exists, coupon not applicable…) |
-| `9000–9999` | Server / internal errors |
+| `401x` | Xác thực |
+| `4030` | Phân quyền (403) |
+| `404x` | Không tìm thấy |
+| `409x` / `41xx` | Conflict (trùng, coupon không đủ điều kiện…) |
+| `9000–9999` | Lỗi server / nội bộ |
 
 ---
 
 ## 📄 License
 
-Released under the **MIT License**.
+Phát hành theo **MIT License**.
 
 ---
 
 <div align="center">
 
-**Gốm Sứ Vũ Gia** — Built with ❤️ using Spring Boot
+**Gốm Sứ Vũ Gia** — Xây bằng ❤️ với Spring Boot
 
 </div>
