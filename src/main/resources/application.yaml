@@ -16,6 +16,15 @@ spring:
       ddl-auto: validate
     show-sql: true
     open-in-view: false
+    properties:
+      hibernate:
+        # Ghi/đọc cột DATETIME theo giờ Việt Nam (GMT+7) thay vì UTC mặc định.
+        # Instant sẽ được quy đổi sang wall-clock Asia/Ho_Chi_Minh khi lưu vào DB.
+        jdbc:
+          time_zone: Asia/Ho_Chi_Minh
+  # Jackson tuần tự hoá thời gian theo giờ Việt Nam trong JSON response.
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
   flyway:
     enabled: true
     # Chạy schema (db/migration) trước, rồi seed (db/seed) theo thứ tự version.
