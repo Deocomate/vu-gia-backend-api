@@ -38,7 +38,25 @@ Khi app khởi động, `MinioBucketInitializer` **tự tạo + set public-read*
 (kể cả bucket bạn đã tạo tay trước đó — nó vá lại policy). **Bạn KHÔNG cần chỉnh Access Policy thủ công.**
 Nếu MinIO chưa chạy thì app chỉ log warning và vẫn boot bình thường.
 
-### Cách upload (MinIO Console)
+### Cách upload (tự động — mặc định)
+
+`docker-compose.yml` có service `minio-init` (image `minio/mc`, one-shot) tự chạy sau khi `minio` healthy:
+1. Tạo bucket `assets` + `products` (`mc mb --ignore-existing`).
+2. Set cả 2 bucket public-read (`mc anonymous set download`).
+3. Mirror `./assets/images` → `myminio/assets/images` (`mc mirror --overwrite`).
+
+```bash
+docker compose up -d minio minio-init
+docker logs vugia-minio-init   # thấy "minio-init: done" là xong
+curl -I http://localhost:9000/assets/images/home/hero-image-1-top.png   # phải 200
+```
+
+Idempotent — chạy lại `docker compose up -d minio-init` nhiều lần không hỏng, lần sau gần như no-op
+(chỉ mirror phần thay đổi). Không cần thao tác tay qua console cho luồng dev bình thường.
+
+### Cách upload thủ công (dự phòng, MinIO Console)
+
+Chỉ cần khi muốn thêm ảnh ngoài `./assets/images` mà không muốn sửa lại thư mục nguồn:
 
 1. Chạy app 1 lần để bucket `assets` được tạo & set public (hoặc tự tạo bucket `assets` trong console cũng được).
 2. Mở console: Docker → **http://localhost:9001** (local → **http://localhost:9000/minio**), login `minioadmin` / `minioadmin123`.
@@ -47,7 +65,7 @@ Nếu MinIO chưa chạy thì app chỉ log warning và vẫn boot bình thườ
    → URL đầy đủ = `http://localhost:9000/assets/images/gallery/gallery-1.jpg` = tiền tố (`http://localhost:9000/`) + hậu tố trong DB (`assets/images/gallery/gallery-1.jpg`). ✔
 
 > App **không cần** MinIO để boot/seed (seed chỉ lưu chuỗi đường dẫn). Ảnh chỉ hiển thị trên trình duyệt
-> sau khi bạn upload thư mục `images` vào bucket `assets` (và app đã set bucket public — tự động).
+> sau khi bucket `assets` có ảnh (tự động qua `minio-init`, hoặc thủ công qua console).
 
 Các nhóm ảnh seed dùng (đều có trong `./assets/images/`): `products/`, `product-detail/`, `gallery/`,
 `home/` (home-new, hero-image), `about/`, `nha-xuong/` (slider/banner), `customer-services/` (chính sách).

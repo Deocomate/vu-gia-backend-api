@@ -6,9 +6,9 @@ spring:
       max-file-size: 10MB         # mỗi file tối đa 10MB
       max-request-size: 100MB     # tổng 1 request
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/dev_db}
+    url: ${DB_URL:jdbc:mysql://localhost:3307/db_vu_gia_fullstack?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:rootpassword}
+    password: ${DB_PASSWORD:admin}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
