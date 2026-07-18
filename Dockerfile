@@ -41,18 +41,27 @@ RUN apt-get update \
 RUN groupadd --system spring && useradd --system --gid spring spring
 
 COPY --from=build /workspace/app.jar app.jar
-RUN chown -R spring:spring /app
+# Uploaded files live here (see app.storage.root); a named volume is normally
+# mounted over this path, but the directory must pre-exist and be writable by
+# the non-root "spring" user for the case where it isn't (e.g. local `docker run`).
+RUN mkdir -p /app/data && chown -R spring:spring /app
 USER spring
+
+# Data written under /app/data must survive container recreation — keep it out
+# of the writable container layer.
+VOLUME /app/data
 
 EXPOSE 8080
 
 # JVM tuned for containers (respects cgroup memory limits).
 # JVM tối ưu cho container (tôn trọng giới hạn bộ nhớ cgroup).
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+ENV APP_STORAGE_ROOT=/app/data
 
 # Liveness/readiness probe via Spring Boot Actuator.
-# Kiểm tra sức khoẻ qua Spring Boot Actuator.
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+# Kiểm tra sức khoẻ qua Spring Boot Actuator. start-period=90s: cold first boot
+# runs Flyway V1->V5 including a large seed (700+ INSERTs) before Actuator is UP.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=90s --retries=3 \
     CMD curl -fsS http://localhost:8080/actuator/health || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

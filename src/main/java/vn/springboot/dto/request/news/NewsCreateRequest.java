@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
 @Data
@@ -21,6 +22,7 @@ public class NewsCreateRequest {
     /** Image URL of the news thumbnail. */
     @NotBlank
     @Size(max = 255)
+    @StorageUrl
     private String thumb;
 
     @NotBlank
@@ -49,5 +51,6 @@ public class NewsCreateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }

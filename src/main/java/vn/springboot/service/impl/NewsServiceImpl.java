@@ -206,7 +206,7 @@ public class NewsServiceImpl implements NewsService {
     public void delete(Long id) {
         NewsEntity entity = newsRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NEWS_NOT_FOUND));
-        // thumb/seo images are shared URLs, so they are not removed from MinIO here.
+        // thumb/seo images are shared URLs, so they are not removed from storage here.
         newsRepository.delete(entity);
     }
 

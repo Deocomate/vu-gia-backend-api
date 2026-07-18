@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 @Data
 @NoArgsConstructor
@@ -20,6 +21,7 @@ public class ProductCategoryCreateRequest {
     /** Image URL of the category thumbnail. */
     @NotBlank
     @Size(max = 255)
+    @StorageUrl
     private String thumb;
 
     /** Optional; auto-generated from {@code name} when blank. */
@@ -43,5 +45,6 @@ public class ProductCategoryCreateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }

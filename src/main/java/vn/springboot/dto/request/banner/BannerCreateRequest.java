@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.BannerPosition;
 
 import java.time.Instant;
@@ -22,6 +23,7 @@ public class BannerCreateRequest {
 
     @NotBlank
     @Size(max = 255)
+    @StorageUrl
     private String imageUrl;
 
     @Size(max = 255)

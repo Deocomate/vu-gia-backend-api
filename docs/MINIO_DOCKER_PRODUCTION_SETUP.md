@@ -1,3 +1,9 @@
+> ⚠️ **OBSOLETE — MinIO đã bị gỡ khỏi dự án.** File này mô tả kiến trúc CŨ (upload ảnh qua MinIO
+> object storage). Từ bản migrate sang local filesystem, backend lưu file trực tiếp trên đĩa
+> (`app.storage.*`, phục vụ qua `/files/**`) — xem [`FILE_STORAGE_API.md`](./FILE_STORAGE_API.md)
+> và [`../../docs/deployment-guide.md`](../../docs/deployment-guide.md) (bản hướng dẫn deploy hiện hành).
+> Giữ file này lại chỉ để tham khảo lịch sử.
+
 # MinIO Production Setup trên Coolify
 
 Hướng dẫn tạo MinIO làm **managed resource riêng** trên Coolify (tách khỏi `docker-compose.yml`

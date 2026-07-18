@@ -26,6 +26,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// StorageProperties.class defaults (public-url=http://localhost:8080, url-prefix=/files) are
+// what the assertions below expect; the @StorageUrl serializer resolves UploadResponse.url to
+// an absolute URL using those. The bean itself is registered by WebStorageConfig's
+// @EnableConfigurationProperties (always pulled into this slice as a WebMvcConfigurer).
 @WebMvcTest(MediaController.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class,
         JwtAuthenticationEntryPoint.class, CustomAccessDeniedHandler.class})
@@ -48,8 +52,10 @@ class MediaControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void uploadMultiple_returnsUrls_forAdmin() throws Exception {
+        // Storage returns relative paths; the @StorageUrl serializer must resolve
+        // them to absolute URLs in the JSON response.
         when(fileStorageService.uploadImages(any(), anyString()))
-                .thenReturn(List.of("http://minio/products/a.jpg", "http://minio/products/b.jpg"));
+                .thenReturn(List.of("/files/products/a.jpg", "/files/products/b.jpg"));
 
         mockMvc.perform(multipart("/api/media/upload-multiple")
                         .file(image("a.jpg")).file(image("b.jpg"))
@@ -57,8 +63,8 @@ class MediaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1000))
                 .andExpect(jsonPath("$.data.length()").value(2))
-                .andExpect(jsonPath("$.data[0].url").value("http://minio/products/a.jpg"))
-                .andExpect(jsonPath("$.data[1].url").value("http://minio/products/b.jpg"));
+                .andExpect(jsonPath("$.data[0].url").value("http://localhost:8080/files/products/a.jpg"))
+                .andExpect(jsonPath("$.data[1].url").value("http://localhost:8080/files/products/b.jpg"));
     }
 
     @Test
@@ -79,13 +85,13 @@ class MediaControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void uploadSingle_returnsUrl_forAdmin() throws Exception {
-        when(fileStorageService.uploadImage(any(), anyString())).thenReturn("http://minio/misc/x.jpg");
+        when(fileStorageService.uploadImage(any(), anyString())).thenReturn("/files/misc/x.jpg");
 
         mockMvc.perform(multipart("/api/media/upload")
                         .file(new MockMultipartFile("file", "x.jpg", "image/jpeg", new byte[]{1}))
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1000))
-                .andExpect(jsonPath("$.data.url").value("http://minio/misc/x.jpg"));
+                .andExpect(jsonPath("$.data.url").value("http://localhost:8080/files/misc/x.jpg"));
     }
 }

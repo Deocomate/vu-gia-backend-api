@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 @Data
 @NoArgsConstructor
@@ -15,6 +16,7 @@ public class GalleryImageCreateRequest {
 
     @NotBlank
     @Size(max = 255)
+    @StorageUrl
     private String imageUrl;
 
     @Size(max = 255)

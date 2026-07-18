@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.BannerPosition;
 
 import java.time.Instant;
@@ -18,6 +19,7 @@ public class BannerResponse {
 
     private String title;
 
+    @StorageUrl
     private String imageUrl;
 
     private String linkUrl;

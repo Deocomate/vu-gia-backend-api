@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ProductStatus;
 import vn.springboot.entity.enums.ProductType;
 
@@ -20,6 +21,7 @@ public class ProductResponse {
 
     private String name;
 
+    @StorageUrl
     private String thumb;
 
     private String sku;
@@ -55,6 +57,7 @@ public class ProductResponse {
 
     private String seoDescription;
 
+    @StorageUrl
     private String seoImage;
 
     private Instant createdAt;

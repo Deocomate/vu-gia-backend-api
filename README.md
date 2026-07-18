@@ -2,7 +2,7 @@
 
 # 🏺 Gốm Sứ Vũ Gia — Backend Thương mại điện tử
 
-**REST API Spring Boot cho cửa hàng gốm sứ Vũ Gia — danh mục sản phẩm, giỏ hàng, đặt hàng, mã giảm giá, nội dung CMS, dashboard quản trị, JWT + RBAC, lưu ảnh MinIO và tự động migrate/seed bằng Flyway.**
+**REST API Spring Boot cho cửa hàng gốm sứ Vũ Gia — danh mục sản phẩm, giỏ hàng, đặt hàng, mã giảm giá, nội dung CMS, dashboard quản trị, JWT + RBAC, lưu ảnh local filesystem và tự động migrate/seed bằng Flyway.**
 
 <br/>
 
@@ -17,7 +17,6 @@
 ![Spring Security](https://img.shields.io/badge/Security-JWT%20%2B%20RBAC-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![Flyway](https://img.shields.io/badge/Flyway-Migrate%20%2B%20Seed-CC0200?style=for-the-badge&logo=flyway&logoColor=white)
-![MinIO](https://img.shields.io/badge/MinIO-Object%20Storage-C72E49?style=for-the-badge&logo=minio&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 </div>
@@ -61,7 +60,7 @@ Mã nguồn bám **kiến trúc phân tầng** chặt chẽ và nguyên tắc **
 | **Bảo mật** | Spring Security | — | Xác thực, method security (`@PreAuthorize`) |
 | **Token** | JJWT | 0.12.6 | JWT access token (HS512) + refresh rotation |
 | **OAuth** | Google Identity | — | Đăng nhập Google (xác thực ID-token) |
-| **Lưu trữ ảnh** | MinIO | 8.5.x | Ảnh sản phẩm/asset (bucket public) |
+| **Lưu trữ ảnh** | Local filesystem | — | Ảnh upload lưu trong `data/`, phục vụ qua `/files/**` |
 | **Email** | Spring Mail + Thymeleaf | — | Email **HTML** bất đồng bộ |
 | **Mapping** | MapStruct | 1.6.3 | Map DTO ↔ Entity compile-time |
 | **Validation** | Jakarta Bean Validation | — | Kiểm tra payload `@Valid` |
@@ -83,13 +82,13 @@ Mã nguồn bám **kiến trúc phân tầng** chặt chẽ và nguyên tắc **
 - 🕵️ **JPA auditing** — `createdAt / updatedAt / createdBy / updatedBy` tự điền.
 - 🔎 **Search & phân trang an toàn** — JPA Specification + whitelist sort (phân trang 1-based).
 - 🌱 **Tự migrate + seed** — Flyway chạy schema (`db/migration`) rồi data mẫu (`db/seed`); seed admin idempotent.
-- 🖼 **Ảnh MinIO** — upload vào bucket public (`assets`, `products`), bucket tự tạo & set public-read khi khởi động.
+- 🖼 **Ảnh local filesystem** — upload lưu trực tiếp trên đĩa (`app.storage.root`), phục vụ qua `/files/**`; DB lưu relative path, JSON tự ghép/cắt domain (`@StorageUrl`) — xem [`docs/FILE_STORAGE_API.md`](docs/FILE_STORAGE_API.md).
 
 ### Các module nghiệp vụ
 | Miền | Điểm nổi bật |
 |---|---|
 | **Auth / User** | đăng ký · đăng nhập · refresh · logout · me · đăng nhập Google · đổi mật khẩu · quản trị user (list, tạo, đổi vai trò, reset mật khẩu) |
-| **Sản phẩm** | catalog + danh mục + ảnh (MinIO), bật/tắt trạng thái & nổi bật, **tra cứu theo slug (SEO)** |
+| **Sản phẩm** | catalog + danh mục + ảnh (local storage), bật/tắt trạng thái & nổi bật, **tra cứu theo slug (SEO)** |
 | **Nội dung / CMS** | Tin tức + danh mục (theo slug), **Trang** (theo key), Banner, Showroom, Gallery, FAQ, Redirect |
 | **Marketing** | **Mã giảm giá** (PERCENT / FIXED / FREE_SHIP, validate + điều kiện), đăng ký Newsletter, form Liên hệ |
 | **Giỏ hàng** | giỏ theo user, cộng dồn số lượng, tính tổng trực tiếp |
@@ -127,7 +126,7 @@ src/main/java/vn/springboot
 │   ├── entity/BaseEntity.java            # id + cột audit
 │   ├── exception/                        # ErrorCode, AppException, GlobalExceptionHandler
 │   └── response/ApiResponse.java         # envelope thống nhất
-├── config                                # Async, JPA auditing, MinIO, khởi tạo bucket, seed admin
+├── config                                # Async, JPA auditing, local storage, seed admin
 ├── controller                            # 20 REST controller (theo module)
 ├── dto/{request,response}                # DTO request/response theo miền
 ├── entity                                # 19 entity JPA (product, order, cart, news, page, …)
@@ -150,23 +149,26 @@ src/main/resources
 
 ### Cách A — Docker (khuyến nghị, 1 lệnh)
 
-Dựng **MySQL + MinIO + app**; app tự migrate schema và seed data khi khởi động.
+Dựng **MySQL + app** trong 1 stack tự chứa; app tự migrate schema và seed data khi khởi động. Ảnh
+upload lưu trên named volume `upload-data` (mount vào `/app/data`), sống qua restart. Hướng dẫn đầy
+đủ (kèm frontend, env matrix, test full-stack) xem **[docs/deployment-guide.md](../docs/deployment-guide.md)**.
 
 ```bash
+cp .env.example .env   # điền secret thật
 docker compose up -d --build
-docker compose logs -f app        # xem: "Successfully applied 2 migrations"
+docker compose logs -f app        # xem: "Successfully applied ... migrations"
 ```
 
 - API → **http://localhost:8080** (Swagger: `/swagger-ui.html`)
-- MinIO Console → **http://localhost:9001** (`minioadmin` / `minioadmin123`)
+- MySQL → **localhost:3306** (expose ra host cho DBeaver/dev)
 
 ### Cách B — Chạy local
 
-**Yêu cầu:** JDK 21, MySQL 8 đang chạy (MinIO tuỳ chọn, chỉ cần khi phục vụ ảnh).
+**Yêu cầu:** JDK 21, MySQL 8 đang chạy.
 
 ```bash
 # DB mới: MySQL tự tạo qua flag URL; Flyway dựng schema + seed
-DB_URL="jdbc:mysql://localhost:3306/dev_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
+DB_URL="jdbc:mysql://localhost:3306/db_vu_gia_fullstack?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
   ./mvnw spring-boot:run
 
 # Build jar chạy được
@@ -181,9 +183,12 @@ DB_URL="jdbc:mysql://localhost:3306/dev_db?createDatabaseIfNotExist=true&allowPu
 
 > ⚠️ Đổi mật khẩu trước khi deploy.
 
-### Ảnh (MinIO)
+### Ảnh (local filesystem)
 
-App tự tạo bucket `assets` và `products` dạng public-read. Upload thư mục `assets/images/` vào bucket **`assets`** qua MinIO console — xem chi tiết ở **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)**. DB lưu **đường dẫn tương đối** (vd `assets/images/gallery/gallery-1.jpg`); FE tự cộng tiền tố URL MinIO.
+Ảnh upload qua admin lưu trực tiếp trên đĩa (`app.storage.root`, mặc định `./data`/Docker `/app/data`),
+phục vụ qua `GET /files/**` (public, không cần JWT). Ảnh demo/seed là file bundle sẵn trong frontend
+(`vu-gia-client/public/assets/`), không qua backend — **không cần setup bucket/upload gì cả**. Chi
+tiết xem **[docs/FILE_STORAGE_API.md](docs/FILE_STORAGE_API.md)** và **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)**.
 
 ---
 
@@ -193,13 +198,11 @@ Mọi thứ trong `src/main/resources/application.yaml` đều override được
 
 | Biến môi trường | Mặc định | Mô tả |
 |---|---|---|
-| `DB_URL` | `jdbc:mysql://localhost:3306/dev_db` | JDBC URL |
-| `DB_USERNAME` / `DB_PASSWORD` | `root` / `rootpassword` | Thông tin DB |
+| `DB_URL` | `jdbc:mysql://localhost:3307/db_vu_gia_fullstack` | JDBC URL |
+| `DB_USERNAME` / `DB_PASSWORD` | `root` / `admin` | Thông tin DB |
 | `APP_JWT_SECRET` | *(mặc định dev)* | Khoá HS512 base64 512-bit — **phải override ở prod** |
-| `MINIO_URL` | `http://localhost:9000` | Endpoint MinIO (phía server) |
-| `MINIO_PUBLIC_URL` | `http://localhost:9000` | Base URL ảnh công khai (trình duyệt / CDN) |
-| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` / `minioadmin123` | Thông tin MinIO |
-| `MINIO_BUCKET_ASSET` / `MINIO_BUCKET_PRODUCT` | `assets` / `products` | Tên bucket |
+| `APP_STORAGE_ROOT` | `./data` (Docker: `/app/data`) | Thư mục gốc lưu file upload trên đĩa |
+| `APP_STORAGE_PUBLIC_URL` | `http://localhost:8080` | Base URL công khai ghép vào link ảnh trả JSON — **bắt buộc đúng domain thật ở prod** |
 | `MAIL_HOST` | `smtp.gmail.com` | SMTP host |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | *(rỗng)* | Tài khoản SMTP (cần để gửi email thật) |
 | `APP_MAIL_FROM` | *(rỗng)* | Địa chỉ "From" cho email |
@@ -208,7 +211,7 @@ Mọi thứ trong `src/main/resources/application.yaml` đều override được
 | `SEPAY_WEBHOOK_SECRET` | *(rỗng)* | Secret verify chữ ký webhook SePay — **rỗng = chặn mọi webhook** (fail-closed) |
 | `app.init.enabled` | `true` | Bật/tắt seed admin khi khởi động |
 
-> 🔒 **Prod:** sinh `APP_JWT_SECRET` mới, đặt SMTP + MinIO thật, trỏ `MINIO_PUBLIC_URL` về CDN/domain.
+> 🔒 **Prod:** sinh `APP_JWT_SECRET` mới, đặt SMTP thật, trỏ `APP_STORAGE_PUBLIC_URL` về domain thật (không để `localhost`).
 
 ---
 
@@ -231,7 +234,7 @@ Tài liệu theo từng module (request/response, error code, curl dán Postman)
 | Liên hệ | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
 | Newsletter | [docs/NEWSLETTER_API.md](docs/NEWSLETTER_API.md) |
 | Banner / Showroom / Gallery / FAQ / Redirect | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
-| Chạy & seed & MinIO | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
+| Chạy & seed & lưu trữ ảnh | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
 
 **Ví dụ đăng nhập**
 ```bash

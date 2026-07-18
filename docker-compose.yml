@@ -1,28 +1,44 @@
 # ============================================================================
-# vu-gia — production compose cho Coolify.
-# MySQL và MinIO chạy dưới dạng managed resource RIÊNG trên Coolify (không nằm
-# trong file này) — set các biến DB_*/MINIO_* dưới đây trỏ tới 2 resource đó.
-# Toàn bộ giá trị nhạy cảm PHẢI khai trong tab Environment Variables của Coolify,
-# không hardcode trong repo.
+# vu-gia — stack tự chứa: MySQL + Spring Boot chạy chung trong 1 `docker compose up`.
+# Thay thế bản Coolify managed-resource trước đây. Đặt các biến nhạy cảm trong
+# file `.env` cạnh file này (không commit) — xem `.env.example`.
 # ============================================================================
 services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: db_vu_gia_fullstack
+    volumes:
+      - mysql-data:/var/lib/mysql
+    # Expose ra host để dev/DBeaver connect trực tiếp (localhost:3306).
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
   app:
     build: .
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      # --- Database (MySQL resource riêng trên Coolify) ---
-      DB_URL: ${DB_URL}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
+      # --- Database (service "db" ở trên) ---
+      DB_URL: jdbc:mysql://db:3306/db_vu_gia_fullstack?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
 
-      # --- MinIO / S3 (MinIO resource riêng trên Coolify) ---
-      MINIO_URL: ${MINIO_URL}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      # URL công khai để build link ảnh trả về client (domain MinIO API, có HTTPS).
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
-      MINIO_BUCKET_PRODUCT: ${MINIO_BUCKET_PRODUCT:-products}
-      MINIO_BUCKET_ASSET: ${MINIO_BUCKET_ASSET:-assets}
+      # --- Local file storage (xem app.storage.* / application.yaml) ---
+      APP_STORAGE_ROOT: /app/data
+      # BẮT BUỘC: domain/IP thật trỏ tới server này (không để localhost ở prod,
+      # nếu không link ảnh trả về client sẽ không mở được).
+      APP_STORAGE_PUBLIC_URL: ${APP_STORAGE_PUBLIC_URL}
 
       # --- JWT ---
       APP_JWT_SECRET: ${APP_JWT_SECRET}
@@ -49,17 +65,25 @@ services:
       # --- JVM tuning (container-aware) ---
       JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0 -XX:+UseG1GC}
 
-    # Coolify tự gán domain qua biến này (điền ở tab Environment Variables/FQDN
-    # trên Coolify UI) và tự route reverse-proxy (Traefik) vào cổng container 8080.
-    # Không publish "ports:" trực tiếp ra host — Coolify proxy nói chuyện qua mạng nội bộ.
-    expose:
-      - "8080"
+    ports:
+      - "8080:8080"
+
+    # Named volume (KHÔNG bind mount): ownership của mountpoint được kế thừa từ
+    # image (đã `chown spring:spring /app` trong Dockerfile) nên user non-root
+    # "spring" ghi được ngay. Đổi sang bind mount (vd "./data:/app/data") thường
+    # khiến thư mục host thuộc root/khác UID -> mọi upload lỗi 500 lúc runtime,
+    # không fail lúc boot -> rất khó chẩn đoán. Nếu buộc phải bind mount, chạy
+    # trước: `sudo chown -R 1000:1000 ./data` (hoặc đúng UID image dùng cho "spring").
+    volumes:
+      - upload-data:/app/data
 
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 3s
-      start_period: 40s
+      # 90s: lần boot đầu tiên (DB rỗng) Flyway chạy V1->V5 gồm seed lớn
+      # (700+ dòng INSERT) trước khi Actuator lên UP; 40s dễ báo unhealthy sớm.
+      start_period: 90s
       retries: 3
 
     deploy:
@@ -68,3 +92,7 @@ services:
           memory: 768M
         reservations:
           memory: 384M
+
+volumes:
+  mysql-data:
+  upload-data:

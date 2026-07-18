@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ProductStatus;
 import vn.springboot.entity.enums.ProductType;
 
@@ -20,6 +21,7 @@ public class ProductUpdateRequest {
     private String name;
 
     @Size(max = 255)
+    @StorageUrl
     private String thumb;
 
     /** Optional stock keeping unit; must be unique when provided. */
@@ -58,5 +60,6 @@ public class ProductUpdateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }

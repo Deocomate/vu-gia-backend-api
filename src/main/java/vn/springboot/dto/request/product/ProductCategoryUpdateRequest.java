@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 /** Partial update: mọi field optional; field null → giữ nguyên, không ghi đè. */
 @Data
@@ -18,6 +19,7 @@ public class ProductCategoryUpdateRequest {
 
     /** Image URL of the category thumbnail. */
     @Size(max = 255)
+    @StorageUrl
     private String thumb;
 
     /** Optional; slug is left unchanged when blank. */
@@ -40,5 +42,6 @@ public class ProductCategoryUpdateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }

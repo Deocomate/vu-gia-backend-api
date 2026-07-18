@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 import java.time.Instant;
 
@@ -17,6 +18,7 @@ public class ProductCategoryResponse {
 
     private String name;
 
+    @StorageUrl
     private String thumb;
 
     private Integer priority;
@@ -33,6 +35,7 @@ public class ProductCategoryResponse {
 
     private String seoDescription;
 
+    @StorageUrl
     private String seoImage;
 
     private Instant createdAt;

@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * Product image gallery endpoints. Reads are public; writes require staff roles
- * ({@code ADMIN} / {@code SUPERADMIN}). Uploads land in MinIO.
+ * ({@code ADMIN} / {@code SUPERADMIN}). Uploads land on the local filesystem.
  */
 @RestController
 @RequestMapping("/api/products/{productId}/images")

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
 import java.time.Instant;
@@ -18,6 +19,7 @@ public class NewsResponse {
 
     private String title;
 
+    @StorageUrl
     private String thumb;
 
     private String shortContent;
@@ -41,6 +43,7 @@ public class NewsResponse {
 
     private String seoDescription;
 
+    @StorageUrl
     private String seoImage;
 
     private Instant createdAt;

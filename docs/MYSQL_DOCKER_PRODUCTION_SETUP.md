@@ -1,3 +1,9 @@
+> ⚠️ **OBSOLETE — kiến trúc "MySQL managed resource riêng" đã bị thay thế.** Quyết định deploy hiện
+> hành (xem Validation Log của plan migrate storage) là chạy MySQL **trong cùng** `docker-compose.yml`
+> với app (service `db`, image `mysql:8.4`), không tách thành Coolify managed resource nữa. Xem
+> [`../../docs/deployment-guide.md`](../../docs/deployment-guide.md) cho hướng dẫn deploy hiện hành.
+> Giữ file này lại chỉ để tham khảo lịch sử/nếu sau này quay lại kiến trúc managed-resource.
+
 # MySQL Production Setup trên Coolify
 
 Hướng dẫn tạo MySQL làm **managed resource riêng** trên Coolify (tách khỏi `docker-compose.yml`

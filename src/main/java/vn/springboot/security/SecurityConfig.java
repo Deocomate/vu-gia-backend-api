@@ -48,7 +48,9 @@ public class SecurityConfig {
             "/swagger-ui.html",
             // Actuator health probe
             "/actuator/health",
-            "/actuator/health/**"
+            "/actuator/health/**",
+            // Uploaded files served from local disk (public reads, no JWT)
+            "/files/**"
     };
 
     /** GET-only public storefront endpoints (product catalog reads). */

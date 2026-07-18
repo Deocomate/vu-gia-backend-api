@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.Role;
 
 import java.time.Instant;
@@ -29,6 +30,7 @@ public class UserResponse {
 
     private LocalDate dob;
 
+    @StorageUrl
     private String avatar;
 
     /** {@code null} = local account; otherwise the OAuth provider (e.g. GOOGLE). */

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 /** Partial update: mọi field optional; field null → giữ nguyên, không ghi đè. */
 @Data
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class GalleryImageUpdateRequest {
 
     @Size(max = 255)
+    @StorageUrl
     private String imageUrl;
 
     @Size(max = 255)

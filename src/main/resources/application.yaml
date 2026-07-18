@@ -49,19 +49,14 @@ spring:
           ssl:
             enable: true
 
-minio:
-  url: ${MINIO_URL:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
-  # Base URL used to build public object links (usually same as url, or a CDN/proxy).
-  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
-  bucket:
-    # Bucket cho ảnh sản phẩm upload qua app (thumbnail, gallery, seo).
-    product: ${MINIO_BUCKET_PRODUCT:products}
-    # Bucket cho asset tĩnh giao diện (logo, icon, pattern, hero) — chứa thư mục ./images.
-    asset: ${MINIO_BUCKET_ASSET:assets}
 # Application specific configuration
 app:
+  storage:
+    # Thư mục gốc lưu file upload trên đĩa (tuyệt đối trong Docker, xem Dockerfile/compose).
+    root: ${APP_STORAGE_ROOT:./data}
+    # Base URL công khai để ghép link đọc (KHÔNG lưu vào DB — DB chỉ lưu relative path).
+    public-url: ${APP_STORAGE_PUBLIC_URL:http://localhost:8080}
+    url-prefix: /files
   jwt:
     # Base64-encoded 512-bit secret. Override via APP_JWT_SECRET in production.
     secret: ${APP_JWT_SECRET:fJV2+5QqrlNHmoqnaO4FliZ6rdwxbyi4ohpjMeKCKI+OXbe4y6eup8Vj0TaJem/aj8reEfbkK9aWenBdS7xlIg==}
@@ -105,6 +100,12 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  health:
+    # Mail (SMTP) is an optional outbound dependency, not something the app needs
+    # to be up/ready — an unconfigured or unreachable mail host must not flip the
+    # container's liveness/readiness (and Docker HEALTHCHECK) to DOWN.
+    mail:
+      enabled: false
 
 # SpringDoc / Swagger UI
 springdoc:

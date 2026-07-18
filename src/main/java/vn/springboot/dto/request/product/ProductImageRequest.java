@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 /**
  * A gallery image supplied inline when creating a product. The {@code url} is
@@ -19,6 +20,7 @@ public class ProductImageRequest {
 
     @NotBlank
     @Size(max = 255)
+    @StorageUrl
     private String url;
 
     /** Display order; {@code null} → falls back to the position in the list. */

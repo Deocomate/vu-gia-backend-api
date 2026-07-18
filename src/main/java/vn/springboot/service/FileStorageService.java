@@ -5,8 +5,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Object storage abstraction (backed by MinIO). Uploads land in the
- * product-media bucket and are returned as public URLs stored on entities.
+ * Object storage abstraction (backed by the local filesystem under
+ * {@code app.storage.root}). Uploads are returned as relative paths, made
+ * absolute at the JSON boundary via {@code @StorageUrl}.
  */
 public interface FileStorageService {
 

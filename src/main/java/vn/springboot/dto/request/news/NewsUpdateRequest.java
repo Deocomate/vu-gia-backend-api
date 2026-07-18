@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
 /** Partial update: mọi field optional; field null → giữ nguyên, không ghi đè. */
@@ -17,6 +18,7 @@ public class NewsUpdateRequest {
     private String title;
 
     @Size(max = 255)
+    @StorageUrl
     private String thumb;
 
     private String shortContent;
@@ -41,5 +43,6 @@ public class NewsUpdateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }

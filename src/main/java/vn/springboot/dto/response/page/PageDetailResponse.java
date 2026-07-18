@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
 import java.time.Instant;
@@ -30,6 +31,7 @@ public class PageDetailResponse {
 
     private String heroDes;
 
+    @StorageUrl
     private String heroImage;
 
     private ContentStatus status;
@@ -38,6 +40,7 @@ public class PageDetailResponse {
 
     private String seoDescription;
 
+    @StorageUrl
     private String seoImage;
 
     private Instant createdAt;

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
 /** Partial update: mọi field optional; field null → giữ nguyên, không ghi đè. */
@@ -31,6 +32,7 @@ public class PageUpdateRequest {
     private String heroDes;
 
     @Size(max = 255)
+    @StorageUrl
     private String heroImage;
 
     private ContentStatus status;
@@ -42,5 +44,6 @@ public class PageUpdateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }

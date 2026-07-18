@@ -1,6 +1,7 @@
-# CHẠY DỰ ÁN & AUTO-SEED (Flyway + MinIO)
+# CHẠY DỰ ÁN & AUTO-SEED (Flyway + Local File Storage)
 
-Hướng dẫn chạy `vu-gia` để **tự động migrate schema + seed dữ liệu**, và cách upload ảnh vào MinIO.
+Hướng dẫn chạy `vu-gia` để **tự động migrate schema + seed dữ liệu**, và cách ảnh hoạt động sau khi
+bỏ MinIO (lưu local filesystem).
 
 ## 1. Cơ chế tự migrate + seed
 
@@ -15,83 +16,47 @@ Hướng dẫn chạy `vu-gia` để **tự động migrate schema + seed dữ l
 > ⚠️ Seed V2 dùng `TRUNCATE` các bảng catalog (products, product_categories, news, banners, showrooms,
 > gallery_images, product_images) rồi INSERT lại. Bảng `users` / `orders` / `cart_items` **không** bị đụng.
 
-## 2. Ảnh & bucket MinIO
+## 2. Ảnh (KHÔNG còn MinIO — 2 nguồn tách biệt)
 
-Có **2 bucket**:
+Kể từ khi gỡ MinIO, ảnh trong hệ thống đến từ **2 nguồn hoàn toàn khác nhau**, đừng nhầm lẫn:
 
-| Bucket | Dùng cho | Nội dung |
-|---|---|---|
-| `assets` | Ảnh nội dung/giao diện của seed | Thư mục `./assets/images/**` (products, gallery, about, news, showroom, nha-xuong…) |
-| `products` | Ảnh sản phẩm upload qua app | App tự tạo khi upload lần đầu (MediaController) |
+| Nguồn | Ví dụ giá trị trong DB | Ai phục vụ | Cần setup gì? |
+|---|---|---|---|
+| **Ảnh seed** (demo: catalog/gallery/news/home…) | `assets/images/products/product-image-thumb.png` (đường dẫn tương đối, KHÔNG có `/` đầu) | **Frontend** — file có thật trong `vu-gia-client/public/assets/images/**`, Next.js serve thẳng tại `/assets/...` | **Không cần gì** — không cần backend chạy, không cần upload, chỉ cần frontend có sẵn thư mục `public/assets` (đã có trong repo) |
+| **Ảnh upload qua admin** (`POST /api/media/upload`, gallery sản phẩm…) | `/files/products/ab12cd34.jpg` (bắt đầu bằng `/files`) | **Backend** — ghi vào `app.storage.root` (mặc định `./data`, Docker `/app/data`), serve qua `GET /files/**` | Backend chạy + `app.storage.*` cấu hình đúng (mặc định đã đúng cho dev) |
 
-### Quy ước đường dẫn (QUAN TRỌNG)
+Chi tiết cơ chế 2 nguồn này (kể cả cách JSON API tự ghép/cắt domain — annotation `@StorageUrl`)
+xem **[FILE_STORAGE_API.md](./FILE_STORAGE_API.md)**.
 
-- **DB chỉ lưu HẬU TỐ (đường dẫn tương đối)**, ví dụ: `assets/images/gallery/gallery-1.jpg`.
-  **KHÔNG** lưu host. **FE tự cộng tiền tố** (base URL của MinIO), ví dụ:
-  `VITE_IMG_BASE = http://localhost:9000` → ảnh đầy đủ = `http://localhost:9000/` + `assets/images/gallery/gallery-1.jpg`.
-- Đường dẫn trong DB **khớp đúng cấu trúc thư mục** trong `./assets/` → upload nguyên thư mục là chạy được.
-- Toàn bộ ảnh seed đều là **file có thật** trong `./assets/images/**` (không bịa ảnh mới).
-
-### Bucket tự động public
-
-Khi app khởi động, `MinioBucketInitializer` **tự tạo + set public-read** cho cả 2 bucket `assets` và `products`
-(kể cả bucket bạn đã tạo tay trước đó — nó vá lại policy). **Bạn KHÔNG cần chỉnh Access Policy thủ công.**
-Nếu MinIO chưa chạy thì app chỉ log warning và vẫn boot bình thường.
-
-### Cách upload (tự động — mặc định)
-
-`docker-compose.yml` có service `minio-init` (image `minio/mc`, one-shot) tự chạy sau khi `minio` healthy:
-1. Tạo bucket `assets` + `products` (`mc mb --ignore-existing`).
-2. Set cả 2 bucket public-read (`mc anonymous set download`).
-3. Mirror `./assets/images` → `myminio/assets/images` (`mc mirror --overwrite`).
-
-```bash
-docker compose up -d minio minio-init
-docker logs vugia-minio-init   # thấy "minio-init: done" là xong
-curl -I http://localhost:9000/assets/images/home/hero-image-1-top.png   # phải 200
-```
-
-Idempotent — chạy lại `docker compose up -d minio-init` nhiều lần không hỏng, lần sau gần như no-op
-(chỉ mirror phần thay đổi). Không cần thao tác tay qua console cho luồng dev bình thường.
-
-### Cách upload thủ công (dự phòng, MinIO Console)
-
-Chỉ cần khi muốn thêm ảnh ngoài `./assets/images` mà không muốn sửa lại thư mục nguồn:
-
-1. Chạy app 1 lần để bucket `assets` được tạo & set public (hoặc tự tạo bucket `assets` trong console cũng được).
-2. Mở console: Docker → **http://localhost:9001** (local → **http://localhost:9000/minio**), login `minioadmin` / `minioadmin123`.
-3. Vào bucket `assets` → **Upload → Upload Folder**, chọn thư mục **`images`** (nằm trong `./assets/`).
-   → Object key phải thành `images/gallery/gallery-1.jpg`, `images/products/product-image-thumb.png`…
-   → URL đầy đủ = `http://localhost:9000/assets/images/gallery/gallery-1.jpg` = tiền tố (`http://localhost:9000/`) + hậu tố trong DB (`assets/images/gallery/gallery-1.jpg`). ✔
-
-> App **không cần** MinIO để boot/seed (seed chỉ lưu chuỗi đường dẫn). Ảnh chỉ hiển thị trên trình duyệt
-> sau khi bucket `assets` có ảnh (tự động qua `minio-init`, hoặc thủ công qua console).
-
-Các nhóm ảnh seed dùng (đều có trong `./assets/images/`): `products/`, `product-detail/`, `gallery/`,
-`home/` (home-new, hero-image), `about/`, `nha-xuong/` (slider/banner), `customer-services/` (chính sách).
+**Vì sao seed KHÔNG cần backend/bucket nào cả**: `formatImageUrl()` phía FE (`src/lib/media.js`)
+nhận diện đường dẫn seed (không bắt đầu bằng `http`/`/`) và tự resolve **same-origin** (`/${url}`) —
+tức là Next.js tự phục vụ file tĩnh trong `public/assets/`, không hề gọi ra backend. Ảnh backend-upload
+thì ngược lại: JSON trả về **luôn là absolute URL sẵn** (`http://<host>/files/...`), FE chỉ cần render thẳng.
 
 ## 3. Chạy bằng Spring (máy local)
 
-Yêu cầu: MySQL + MinIO đang chạy (hoặc chỉ MySQL nếu chưa cần ảnh).
+Yêu cầu: MySQL đang chạy (ảnh không cần setup gì thêm — xem mục 2).
 
 ```bash
 # 1) Chạy app — Flyway tự migrate + seed khi khởi động
 ./mvnw spring-boot:run
 ```
 
-- DB mặc định: `jdbc:mysql://localhost:3306/dev_db` (đổi qua biến môi trường `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`).
-- **DB rỗng/mới**: thêm `?createDatabaseIfNotExist=true` vào URL để MySQL tự tạo database:
-  ```bash
-  DB_URL="jdbc:mysql://localhost:3306/dev_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" ./mvnw spring-boot:run
-  ```
-- Muốn seed lại từ đầu hoàn toàn: xoá database rồi chạy lại (`DROP DATABASE dev_db; CREATE DATABASE dev_db;`).
+- DB mặc định: `jdbc:mysql://localhost:3307/db_vu_gia_fullstack` (đổi qua biến môi trường `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` — xem `application.yaml`).
+- **DB rỗng/mới**: URL mặc định đã có `createDatabaseIfNotExist=true` nên MySQL tự tạo database.
+- Muốn seed lại từ đầu hoàn toàn: xoá database rồi chạy lại (`DROP DATABASE db_vu_gia_fullstack;`).
+- Ảnh upload thủ công lúc dev sẽ nằm ở `vu-gia-backend-api/data/` (thư mục này gitignore, tự tạo khi cần).
 
-## 4. Chạy bằng Docker (1 lệnh, đủ MySQL + MinIO + app)
+## 4. Chạy bằng Docker (1 lệnh, MySQL + app)
 
-Đã có sẵn [`docker-compose.yml`](../docker-compose.yml):
+`docker-compose.yml` chạy chung MySQL (`mysql:8.4`) + app trong 1 stack tự chứa — xem
+**[deployment-guide.md](../../docs/deployment-guide.md)** ở repo root cho hướng dẫn đầy đủ (kèm cả
+frontend, biến môi trường, test full-stack qua Docker Desktop). Tóm tắt nhanh:
 
 ```bash
-# Build image app + dựng MySQL + MinIO + app; app tự migrate + seed
+cp .env.example .env   # điền secret thật, xem .env.example
+
+# Build image app + dựng MySQL + app; app tự migrate + seed
 docker compose up -d --build
 
 # Xem log app (thấy Flyway "Successfully applied ... migrations")
@@ -100,12 +65,13 @@ docker compose logs -f app
 
 Sau khi lên:
 - API: **http://localhost:8080** (Swagger: `/swagger-ui.html`)
-- MinIO Console: **http://localhost:9001** (login `minioadmin` / `minioadmin123`) → tạo bucket `assets` + upload `./images` (mục 2).
+- MySQL: **localhost:3306** (expose ra host cho DBeaver/dev, xem `docker-compose.yml`)
+- Ảnh upload nằm trên named volume `upload-data` (mount vào `/app/data`) — sống qua `docker compose restart`.
 
 Dừng / xoá:
 ```bash
 docker compose down          # dừng, giữ dữ liệu (volume)
-docker compose down -v       # dừng + xoá sạch dữ liệu MySQL/MinIO (seed lại từ đầu lần sau)
+docker compose down -v       # dừng + xoá sạch dữ liệu MySQL + ảnh upload (seed lại từ đầu lần sau)
 ```
 
 ## 5. Lưu ý quan trọng
@@ -113,7 +79,8 @@ docker compose down -v       # dừng + xoá sạch dữ liệu MySQL/MinIO (see
 - **Sửa seed sau khi đã chạy**: Flyway lưu checksum của migration đã áp dụng. Nếu sửa `V2__seed_db.sql`
   sau khi nó đã chạy trên 1 DB → lần sau sẽ báo *checksum mismatch*. Khi đó: tạo migration mới `V3__...sql`,
   hoặc chạy `flyway repair`, hoặc (dev) `docker compose down -v` / drop DB để seed lại.
-- **Prod**: URL ảnh trong seed đang là `http://localhost:9000/...`. Khi deploy, đổi host cho khớp
-  `MINIO_PUBLIC_URL` thật (CDN/domain). Có thể find-replace trong seed hoặc seed lại với host đúng.
+- **Prod**: URL ảnh backend-upload được ghép động lúc trả JSON (không "bake" vào DB) — chỉ cần set đúng
+  `APP_STORAGE_PUBLIC_URL` ở env là đủ, **không** cần sửa/seed lại DB khi đổi domain. Ảnh seed
+  (`assets/images/...`) hoàn toàn không phụ thuộc domain backend.
 - **Test**: `./mvnw test` chạy `ApplicationTests.contextLoads` (dùng `@SpringBootTest`) sẽ kích hoạt Flyway
   trên DB cấu hình. Chạy test unit riêng bằng `-Dtest=Xxx` để không đụng DB thật.

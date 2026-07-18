@@ -12,7 +12,9 @@
 - Bảo mật **JWT + RBAC**: `User —(M:N)→ Role —(M:N)→ Permission`; kiểm quyền ở endpoint bằng
   `@PreAuthorize("hasAuthority('PERMISSION_CODE')")`.
 - Thư viện chính: Spring Data JPA, **MapStruct 1.6.3**, Lombok, Bean Validation, springdoc/Swagger,
-  jjwt (JWT), MinIO (mới có config, luôn luôn upload file vào minio, tùy mục đích sẽ dùng bucket tương ứng).
+  jjwt (JWT). File upload lưu **local filesystem** dưới `data/` (`app.storage.*`), phục vụ qua
+  `/files/**`; DB lưu **relative path**, field JSON annotate `@StorageUrl` tự resolve absolute
+  URL lúc đọc/ghi — xem `docs/FILE_STORAGE_API.md`.
 
 ## 2. Kiến trúc phân tầng & quy ước (BẮT BUỘC)
 

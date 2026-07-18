@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 
 import java.time.Instant;
 
@@ -15,6 +16,7 @@ public class GalleryImageResponse {
 
     private Long id;
 
+    @StorageUrl
     private String imageUrl;
 
     private String title;

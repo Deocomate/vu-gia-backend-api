@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
 @Data
@@ -33,6 +34,7 @@ public class PageCreateRequest {
     private String heroDes;
 
     @Size(max = 255)
+    @StorageUrl
     private String heroImage;
 
     /** {@code null} → defaults to {@code DRAFT} on create. */
@@ -45,5 +47,6 @@ public class PageCreateRequest {
     private String seoDescription;
 
     @Size(max = 255)
+    @StorageUrl
     private String seoImage;
 }
