@@ -2,6 +2,15 @@
 # vu-gia — stack tự chứa: MySQL + Spring Boot chạy chung trong 1 `docker compose up`.
 # Thay thế bản Coolify managed-resource trước đây. Đặt các biến nhạy cảm trong
 # file `.env` cạnh file này (không commit) — xem `.env.example`.
+#
+# QUAN TRỌNG (Coolify/production): file này KHÔNG publish cổng ra host
+# (không có `ports:`), chỉ dùng `expose:` cho mạng nội bộ Docker. Reverse proxy
+# của Coolify (Traefik) tự route domain -> cổng `expose` của container. Đây là lý
+# do tránh lỗi `Bind for 0.0.0.0:8080 failed: port is already allocated` khi
+# redeploy hoặc khi app khác trên cùng server đã giữ cổng 8080/3306.
+#
+# Cần chạy local (Docker Desktop) và muốn gọi trực tiếp localhost:8080 / :3306?
+# Dùng overlay: `docker compose -f docker-compose.yml -f docker-compose.local.yml up --build`
 # ============================================================================
 services:
   db:
@@ -12,9 +21,12 @@ services:
       MYSQL_DATABASE: db_vu_gia_fullstack
     volumes:
       - mysql-data:/var/lib/mysql
-    # Expose ra host để dev/DBeaver connect trực tiếp (localhost:3306).
-    ports:
-      - "3306:3306"
+    # KHÔNG publish `ports: 3306` ở đây: (1) tránh trùng cổng trên server dùng
+    # chung, (2) không phơi DB ra Internet ở production. App gọi DB qua tên
+    # service `db:3306` trong mạng nội bộ compose, không cần publish ra host.
+    # Muốn connect DBeaver lúc dev -> dùng docker-compose.local.yml.
+    expose:
+      - "3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
@@ -65,8 +77,12 @@ services:
       # --- JVM tuning (container-aware) ---
       JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0 -XX:+UseG1GC}
 
-    ports:
-      - "8080:8080"
+    # Chỉ `expose` (mạng nội bộ Docker), KHÔNG publish ra host. Coolify/Traefik
+    # route domain (vd https://api.gomvugia.vn) -> cổng 8080 container này. Nhờ
+    # vậy không đụng cổng host -> hết lỗi "port 8080 already allocated". Muốn gọi
+    # trực tiếp localhost:8080 lúc dev -> dùng docker-compose.local.yml.
+    expose:
+      - "8080"
 
     # Named volume (KHÔNG bind mount): ownership của mountpoint được kế thừa từ
     # image (đã `chown spring:spring /app` trong Dockerfile) nên user non-root

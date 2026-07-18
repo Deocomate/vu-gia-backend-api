@@ -1,0 +1,26 @@
+# ============================================================================
+# Local dev/test overlay — KHÔNG dùng bởi Coolify/production.
+#
+# File gốc `docker-compose.yml` chỉ `expose` cổng (mạng nội bộ Docker) để reverse
+# proxy của Coolify route domain vào, nên KHÔNG publish ra host -> tránh lỗi
+# `Bind for 0.0.0.0:8080 failed: port is already allocated`.
+#
+# Overlay này publish cổng ra host CHỈ khi chạy local, để:
+#   - gọi trực tiếp http://localhost:8080 (Swagger, actuator, API)
+#   - connect DBeaver/DataGrip vào MySQL qua localhost:3306
+#
+# Đặt tên khác `docker-compose.override.yml` có chủ đích: Compose tự merge file
+# `override` mặc định, còn file này CHỈ áp dụng khi truyền `-f` tường minh -> an
+# toàn, không lỡ publish cổng lên server thật.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+# ============================================================================
+services:
+  db:
+    ports:
+      - "3306:3306"
+
+  app:
+    ports:
+      - "8080:8080"
