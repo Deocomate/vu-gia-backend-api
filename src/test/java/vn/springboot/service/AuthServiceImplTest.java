@@ -17,7 +17,6 @@ import vn.springboot.common.exception.ErrorCode;
 import vn.springboot.dto.request.auth.ChangePasswordRequest;
 import vn.springboot.dto.request.auth.GoogleLoginRequest;
 import vn.springboot.dto.request.auth.LoginRequest;
-import vn.springboot.dto.request.auth.RefreshTokenRequest;
 import vn.springboot.dto.request.auth.RegisterRequest;
 import vn.springboot.dto.response.auth.AuthResponse;
 import vn.springboot.dto.response.user.UserResponse;
@@ -222,9 +221,25 @@ class AuthServiceImplTest {
     // ---------- refresh ----------
 
     @Test
+    void refresh_throwsWhenTokenNull() {
+        assertThatThrownBy(() -> authService.refresh(null))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        verify(refreshTokenRepository, never()).findByToken(any());
+    }
+
+    @Test
+    void refresh_throwsWhenTokenBlank() {
+        assertThatThrownBy(() -> authService.refresh("  "))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        verify(refreshTokenRepository, never()).findByToken(any());
+    }
+
+    @Test
     void refresh_throwsWhenTokenMissing() {
         when(refreshTokenRepository.findByToken("x")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequest("x")))
+        assertThatThrownBy(() -> authService.refresh("x"))
                 .isInstanceOf(AppException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
@@ -235,7 +250,7 @@ class AuthServiceImplTest {
                 .token("x").user(user()).revoked(true).expiresAt(Instant.now().plusSeconds(60)).build();
         when(refreshTokenRepository.findByToken("x")).thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequest("x")))
+        assertThatThrownBy(() -> authService.refresh("x"))
                 .isInstanceOf(AppException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_REVOKED);
     }
@@ -246,7 +261,7 @@ class AuthServiceImplTest {
                 .token("x").user(user()).revoked(false).expiresAt(Instant.now().minusSeconds(60)).build();
         when(refreshTokenRepository.findByToken("x")).thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequest("x")))
+        assertThatThrownBy(() -> authService.refresh("x"))
                 .isInstanceOf(AppException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_EXPIRED);
     }
@@ -263,10 +278,11 @@ class AuthServiceImplTest {
         when(refreshTokenRepository.save(any(RefreshTokenEntity.class))).thenAnswer(inv -> inv.getArgument(0));
         when(userMapper.toResponse(user)).thenReturn(UserResponse.builder().username("john").build());
 
-        AuthResponse res = authService.refresh(new RefreshTokenRequest("old"));
+        AuthResponse res = authService.refresh("old");
 
         assertThat(token.isRevoked()).isTrue(); // old token rotated out
         assertThat(res.getAccessToken()).isEqualTo("access-token");
+        assertThat(res.getRefreshToken()).isNotBlank(); // new token, present on the Java object (JSON-hidden)
     }
 
     // ---------- change password (self) ----------
@@ -316,9 +332,22 @@ class AuthServiceImplTest {
                 .token("x").user(user()).revoked(false).expiresAt(Instant.now().plusSeconds(3600)).build();
         when(refreshTokenRepository.findByToken("x")).thenReturn(Optional.of(token));
 
-        authService.logout(new RefreshTokenRequest("x"));
+        authService.logout("x");
 
         assertThat(token.isRevoked()).isTrue();
         verify(refreshTokenRepository).save(token);
+    }
+
+    @Test
+    void logout_isNoOp_whenTokenNull() {
+        authService.logout(null);
+        verify(refreshTokenRepository, never()).findByToken(any());
+    }
+
+    @Test
+    void logout_isNoOp_whenTokenUnknown() {
+        when(refreshTokenRepository.findByToken("unknown")).thenReturn(Optional.empty());
+        authService.logout("unknown"); // idempotent: unknown token does not throw
+        verify(refreshTokenRepository, never()).save(any());
     }
 }

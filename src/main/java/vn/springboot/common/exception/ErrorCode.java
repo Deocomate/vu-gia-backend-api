@@ -34,6 +34,7 @@ public enum ErrorCode {
 
     // 403x - authorization
     ACCESS_DENIED(4030, "You do not have permission to access this resource", HttpStatus.FORBIDDEN),
+    CSRF_TOKEN_INVALID(4031, "CSRF token missing or invalid", HttpStatus.FORBIDDEN),
 
     // 404x - not found
     USER_NOT_FOUND(4040, "User not found", HttpStatus.NOT_FOUND),

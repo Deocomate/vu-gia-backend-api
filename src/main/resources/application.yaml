@@ -63,6 +63,22 @@ app:
     issuer: vu-gia
     access-token-expiration: 3600000        # 1 hour (ms)
     refresh-token-expiration: 604800000     # 7 days (ms)
+  security:
+    cookie:
+      # httpOnly cookie carrying the opaque refresh token (see docs/AUTH_USER_API.md).
+      refresh-token-name: refresh_token
+      # Non-httpOnly cookie + header pair for the double-submit CSRF check on /api/auth/refresh.
+      csrf-token-name: XSRF-TOKEN
+      csrf-header-name: X-XSRF-TOKEN
+      path: /api/auth
+      # Blank = host-only cookie. Set APP_COOKIE_DOMAIN for a shared-parent-domain deployment
+      # (e.g. ".example.com" so app.example.com and api.example.com both receive it).
+      domain: ${APP_COOKIE_DOMAIN:}
+      # MUST be true whenever same-site=None (browsers reject SameSite=None without Secure).
+      secure: ${APP_COOKIE_SECURE:true}
+      # Lax works same-origin/same-site; cross-origin dev/prod needs None+Secure (HTTPS) or a
+      # same-origin proxy in front of both apps — see docs/AUTH_USER_API.md §7.
+      same-site: ${APP_COOKIE_SAME_SITE:Lax}
   oauth2:
     google:
       # Google OAuth Web client ID (the "aud" every ID token must match).

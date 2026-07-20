@@ -13,7 +13,6 @@ import vn.springboot.common.exception.ErrorCode;
 import vn.springboot.dto.request.auth.ChangePasswordRequest;
 import vn.springboot.dto.request.auth.GoogleLoginRequest;
 import vn.springboot.dto.request.auth.LoginRequest;
-import vn.springboot.dto.request.auth.RefreshTokenRequest;
 import vn.springboot.dto.request.auth.RegisterRequest;
 import vn.springboot.dto.response.auth.AuthResponse;
 import vn.springboot.dto.response.user.UserResponse;
@@ -153,8 +152,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse refresh(RefreshTokenRequest request) {
-        RefreshTokenEntity stored = refreshTokenRepository.findByToken(request.getRefreshToken())
+    public AuthResponse refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
+
+        RefreshTokenEntity stored = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         if (stored.isRevoked()) {
@@ -174,8 +177,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void logout(RefreshTokenRequest request) {
-        refreshTokenRepository.findByToken(request.getRefreshToken())
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
+        }
+        refreshTokenRepository.findByToken(refreshToken)
                 .ifPresent(token -> {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
