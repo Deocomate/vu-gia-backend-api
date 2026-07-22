@@ -24,8 +24,8 @@ chuyển sang mô hình phân quyền **1 role trên mỗi user** (cột `users.
 
 | Cookie | Thuộc tính | Ghi chú |
 |---|---|---|
-| `refresh_token` | `HttpOnly`, `Secure`*, `SameSite=Lax`*, `Path=/api/auth`, `Max-Age`=7 ngày | JS **không đọc được**. Server tự đọc ở `/refresh`, `/logout`. |
-| `XSRF-TOKEN` | **không** `HttpOnly`, `Secure`*, `SameSite=Lax`*, `Path=/api/auth`, `Max-Age`=7 ngày | JS đọc được — FE phải echo giá trị này vào header `X-XSRF-TOKEN` khi gọi `/refresh`. |
+| `refresh_token` | `HttpOnly`, `Secure`*, `SameSite=Lax`*, `Path=/api/auth`, `Max-Age`=7 ngày | JS **không đọc được**. Server tự đọc ở `/refresh`, `/logout`. Path hẹp vì cookie này chỉ cần gửi kèm request tới `/api/auth/*`. |
+| `XSRF-TOKEN` | **không** `HttpOnly`, `Secure`*, `SameSite=Lax`*, `Path=/`, `Max-Age`=7 ngày | JS đọc được — FE phải echo giá trị này vào header `X-XSRF-TOKEN` khi gọi `/refresh`. **Path=`/` bắt buộc**: `document.cookie` lọc theo path của **trang hiện tại**, không phải path lúc set cookie (RFC 6265) — nếu scope `Path=/api/auth`, `document.cookie` ở bất kỳ trang storefront/admin nào (đều không nằm dưới `/api/auth`) sẽ **không** thấy cookie này. |
 
 \* `Secure`/`SameSite` cấu hình qua env `APP_COOKIE_SECURE` (mặc định `true`) và
 `APP_COOKIE_SAME_SITE` (mặc định `Lax`); domain qua `APP_COOKIE_DOMAIN` (mặc định host-only).
@@ -156,7 +156,7 @@ Response header kèm theo (rút gọn):
 
 ```
 Set-Cookie: refresh_token=9f1c8e2a-...; Path=/api/auth; Max-Age=604800; HttpOnly; SameSite=Lax
-Set-Cookie: XSRF-TOKEN=3b7a1c9e-...; Path=/api/auth; Max-Age=604800; SameSite=Lax
+Set-Cookie: XSRF-TOKEN=3b7a1c9e-...; Path=/; Max-Age=604800; SameSite=Lax
 ```
 
 Gửi access token ở các request sau: header `Authorization: Bearer <accessToken>`.

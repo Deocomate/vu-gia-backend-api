@@ -33,14 +33,18 @@ public class AuthCookieService {
     /** Issue (or rotate) both cookies after a successful login/register-login/refresh. */
     public void issueAuthCookies(HttpServletResponse response, String refreshToken) {
         long maxAgeSeconds = jwtProperties.getRefreshTokenExpiration() / 1000;
-        addCookie(response, cookieProperties.getRefreshTokenName(), refreshToken, true, maxAgeSeconds);
-        addCookie(response, cookieProperties.getCsrfTokenName(), UUID.randomUUID().toString(), false, maxAgeSeconds);
+        addCookie(response, cookieProperties.getRefreshTokenName(), refreshToken, true,
+                cookieProperties.getRefreshTokenPath(), maxAgeSeconds);
+        addCookie(response, cookieProperties.getCsrfTokenName(), UUID.randomUUID().toString(), false,
+                cookieProperties.getCsrfTokenPath(), maxAgeSeconds);
     }
 
     /** Expire both cookies on logout (matching attributes so the browser actually overwrites them). */
     public void clearAuthCookies(HttpServletResponse response) {
-        addCookie(response, cookieProperties.getRefreshTokenName(), "", true, 0);
-        addCookie(response, cookieProperties.getCsrfTokenName(), "", false, 0);
+        addCookie(response, cookieProperties.getRefreshTokenName(), "", true,
+                cookieProperties.getRefreshTokenPath(), 0);
+        addCookie(response, cookieProperties.getCsrfTokenName(), "", false,
+                cookieProperties.getCsrfTokenPath(), 0);
     }
 
     /** Reads the refresh token from the httpOnly cookie; {@code null} if absent. */
@@ -77,11 +81,11 @@ public class AuthCookieService {
     }
 
     private void addCookie(HttpServletResponse response, String name, String value,
-                            boolean httpOnly, long maxAgeSeconds) {
+                            boolean httpOnly, String path, long maxAgeSeconds) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, value)
                 .httpOnly(httpOnly)
                 .secure(cookieProperties.isSecure())
-                .path(cookieProperties.getPath())
+                .path(path)
                 .maxAge(maxAgeSeconds)
                 .sameSite(cookieProperties.getSameSite());
         if (cookieProperties.getDomain() != null && !cookieProperties.getDomain().isBlank()) {

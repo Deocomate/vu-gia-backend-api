@@ -44,6 +44,7 @@ class AuthCookieServiceTest {
         assertThat(csrfCookie).isNotNull();
         assertThat(csrfCookie.isHttpOnly()).isFalse(); // must be JS-readable for double-submit
         assertThat(csrfCookie.getValue()).isNotBlank();
+        assertThat(csrfCookie.getPath()).isEqualTo("/"); // app-wide so document.cookie can see it anywhere
     }
 
     @Test

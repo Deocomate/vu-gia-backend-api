@@ -26,8 +26,21 @@ public class AuthCookieProperties {
     /** Request header the client must echo the CSRF cookie value into. */
     private String csrfHeaderName = "X-XSRF-TOKEN";
 
-    /** Cookie {@code Path} attribute — scoped to the auth endpoints that need it. */
-    private String path = "/api/auth";
+    /**
+     * {@code Path} attribute for the httpOnly refresh-token cookie — scoped narrowly to
+     * the auth endpoints that ever need to receive it (never sent to storefront/admin pages).
+     */
+    private String refreshTokenPath = "/api/auth";
+
+    /**
+     * {@code Path} attribute for the JS-readable CSRF cookie — MUST be app-wide ({@code "/"}).
+     * {@code document.cookie} filters by the *current document's own path*, not the path that
+     * set the cookie (RFC 6265) — so a cookie scoped to {@code /api/auth} would never appear in
+     * {@code document.cookie} on any storefront/admin page (none of which are under
+     * {@code /api/auth}), making the double-submit CSRF flow documented in
+     * {@code docs/AUTH_USER_API.md} §1.1 impossible for the FE to complete.
+     */
+    private String csrfTokenPath = "/";
 
     /** Cookie {@code Domain} attribute; blank = host-only cookie (default, safest for dev). */
     private String domain = "";

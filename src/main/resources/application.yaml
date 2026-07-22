@@ -70,7 +70,12 @@ app:
       # Non-httpOnly cookie + header pair for the double-submit CSRF check on /api/auth/refresh.
       csrf-token-name: XSRF-TOKEN
       csrf-header-name: X-XSRF-TOKEN
-      path: /api/auth
+      # httpOnly refresh cookie: narrow scope, only ever needed by /api/auth/* requests.
+      refresh-token-path: /api/auth
+      # CSRF cookie MUST be app-wide — document.cookie filters by the current page's own path,
+      # not the path that set the cookie, so a storefront/admin page outside /api/auth would
+      # never see a cookie scoped to /api/auth (see AuthCookieProperties javadoc).
+      csrf-token-path: /
       # Blank = host-only cookie. Set APP_COOKIE_DOMAIN for a shared-parent-domain deployment
       # (e.g. ".example.com" so app.example.com and api.example.com both receive it).
       domain: ${APP_COOKIE_DOMAIN:}
