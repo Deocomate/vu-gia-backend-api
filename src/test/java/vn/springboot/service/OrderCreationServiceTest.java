@@ -19,6 +19,7 @@ import vn.springboot.entity.enums.ProductType;
 import vn.springboot.entity.order.OrderEntity;
 import vn.springboot.entity.order.OrderItemEntity;
 import vn.springboot.entity.product.ProductEntity;
+import vn.springboot.entity.shipping.ShippingMethodEntity;
 import vn.springboot.entity.user.UserEntity;
 import vn.springboot.event.OrderPlacedEvent;
 import vn.springboot.repository.CartItemRepository;
@@ -26,6 +27,7 @@ import vn.springboot.repository.CouponRepository;
 import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
+import vn.springboot.repository.ShippingMethodRepository;
 import vn.springboot.service.impl.OrderCreationService;
 
 import java.time.Instant;
@@ -47,6 +49,7 @@ class OrderCreationServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private CouponRepository couponRepository;
     @Mock private CartItemRepository cartItemRepository;
+    @Mock private ShippingMethodRepository shippingMethodRepository;
     @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private OrderCreationService service;
@@ -209,5 +212,110 @@ class OrderCreationServiceTest {
         assertThat(cartItem.getQuantity()).isEqualTo(3); // 5 - 2
         verify(cartItemRepository).save(cartItem);
         verify(cartItemRepository, never()).delete(any());
+    }
+
+    private ShippingMethodEntity shippingMethod(Long id, long fee, boolean active) {
+        ShippingMethodEntity e = ShippingMethodEntity.builder()
+                .name("Standard").fee(fee).isActive(active).build();
+        e.setId(id);
+        return e;
+    }
+
+    @Test
+    void create_withShippingMethod_foldsFeeIntoTotal() {
+        UserEntity u = user(1L);
+        when(productRepository.findAllById(any()))
+                .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
+        when(shippingMethodRepository.findById(5L)).thenReturn(Optional.of(shippingMethod(5L, 30_000, true)));
+        when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+
+        OrderPlaceRequest req = OrderPlaceRequest.builder()
+                .idempotencyKey("key-1").items(List.of(line(10L, 3)))
+                .receiverName("Alice").receiverPhone("0900").receiverAddress("HN")
+                .shippingMethodId(5L).build();
+
+        OrderEntity order = service.create(u, req);
+
+        assertThat(order.getShippingFee()).isEqualTo(30_000L);
+        assertThat(order.getShippingMethod()).isNotNull();
+        assertThat(order.getTotalAmount()).isEqualTo(300 + 30_000); // orderAmount + shippingFee
+    }
+
+    @Test
+    void create_shippingMethodNotFound_throws() {
+        UserEntity u = user(1L);
+        when(productRepository.findAllById(any()))
+                .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
+        when(shippingMethodRepository.findById(99L)).thenReturn(Optional.empty());
+
+        OrderPlaceRequest req = OrderPlaceRequest.builder()
+                .idempotencyKey("key-1").items(List.of(line(10L, 1)))
+                .receiverName("Alice").receiverPhone("0900").receiverAddress("HN")
+                .shippingMethodId(99L).build();
+
+        assertThatThrownBy(() -> service.create(u, req))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.SHIPPING_METHOD_NOT_FOUND);
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void create_inactiveShippingMethod_throwsNotFound() {
+        UserEntity u = user(1L);
+        when(productRepository.findAllById(any()))
+                .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
+        when(shippingMethodRepository.findById(5L)).thenReturn(Optional.of(shippingMethod(5L, 30_000, false)));
+
+        OrderPlaceRequest req = OrderPlaceRequest.builder()
+                .idempotencyKey("key-1").items(List.of(line(10L, 1)))
+                .receiverName("Alice").receiverPhone("0900").receiverAddress("HN")
+                .shippingMethodId(5L).build();
+
+        assertThatThrownBy(() -> service.create(u, req))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.SHIPPING_METHOD_NOT_FOUND);
+    }
+
+    @Test
+    void create_nullShippingMethodId_feeIsZero_backwardCompatible() {
+        UserEntity u = user(1L);
+        when(productRepository.findAllById(any()))
+                .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
+        when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+
+        OrderEntity order = service.create(u, request(null, line(10L, 3)));
+
+        assertThat(order.getShippingFee()).isEqualTo(0L);
+        assertThat(order.getShippingMethod()).isNull();
+        assertThat(order.getTotalAmount()).isEqualTo(300);
+        verify(shippingMethodRepository, never()).findById(any());
+    }
+
+    @Test
+    void create_freeShipCoupon_zeroesShippingFeeAddedToTotal_butKeepsSnapshot() {
+        UserEntity u = user(1L);
+        when(productRepository.findAllById(any()))
+                .thenReturn(List.of(product(10L, 1000, ProductType.SINGLE)));
+        when(shippingMethodRepository.findById(5L)).thenReturn(Optional.of(shippingMethod(5L, 30_000, true)));
+        CouponEntity coupon = CouponEntity.builder()
+                .code("FREESHIP").discountType(DiscountType.FREE_SHIP).discountValue(0L).isActive(true).build();
+        coupon.setId(7L);
+        when(couponRepository.findByCode("FREESHIP")).thenReturn(Optional.of(coupon));
+        when(couponRepository.incrementUsedCount(7L)).thenReturn(1);
+        when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+
+        OrderPlaceRequest req = OrderPlaceRequest.builder()
+                .idempotencyKey("key-1").items(List.of(line(10L, 2)))
+                .receiverName("Alice").receiverPhone("0900").receiverAddress("HN")
+                .couponCode("freeship").shippingMethodId(5L).build();
+
+        OrderEntity order = service.create(u, req);
+
+        // Real fee kept for display, but not added to the payable total.
+        assertThat(order.getShippingFee()).isEqualTo(30_000L);
+        assertThat(order.getTotalAmount()).isEqualTo(2000); // 2000 (orderAmount) - 0 (discount) + 0 (waived)
     }
 }

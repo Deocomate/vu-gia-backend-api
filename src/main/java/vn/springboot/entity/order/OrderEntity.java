@@ -21,6 +21,7 @@ import vn.springboot.entity.coupon.CouponEntity;
 import vn.springboot.entity.enums.OrderStatus;
 import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.PaymentStatus;
+import vn.springboot.entity.shipping.ShippingMethodEntity;
 import vn.springboot.entity.user.UserEntity;
 
 @Entity
@@ -69,6 +70,15 @@ public class OrderEntity extends BaseEntity {
     @Builder.Default
     @Column(name = "discount_amount", nullable = false)
     private Long discountAmount = 0L;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shipping_method_id")
+    private ShippingMethodEntity shippingMethod;
+
+    /** Shipping fee (VND) applied at order placement — snapshot, independent of later method edits. */
+    @Builder.Default
+    @Column(name = "shipping_fee", nullable = false)
+    private Long shippingFee = 0L;
 
     @Column(name = "receiver_name", length = 100)
     private String receiverName;

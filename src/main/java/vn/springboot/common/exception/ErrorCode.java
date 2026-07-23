@@ -56,6 +56,7 @@ public enum ErrorCode {
     PAGE_NOT_FOUND(4057, "Page not found", HttpStatus.NOT_FOUND),
     CART_ITEM_NOT_FOUND(4058, "Cart item not found", HttpStatus.NOT_FOUND),
     ORDER_NOT_FOUND(4059, "Order not found", HttpStatus.NOT_FOUND),
+    SHIPPING_METHOD_NOT_FOUND(4060, "Shipping method not found", HttpStatus.NOT_FOUND),
 
     // 409x - conflict
     USERNAME_EXISTED(4090, "Username already exists", HttpStatus.CONFLICT),

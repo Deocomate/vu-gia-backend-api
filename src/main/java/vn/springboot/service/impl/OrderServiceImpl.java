@@ -25,19 +25,24 @@ import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.PaymentStatus;
 import vn.springboot.entity.enums.Role;
 import vn.springboot.entity.order.OrderEntity;
+import vn.springboot.entity.shipping.ShippingMethodEntity;
 import vn.springboot.entity.user.UserEntity;
 import vn.springboot.mapper.OrderItemMapper;
 import vn.springboot.mapper.OrderMapper;
 import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
+import vn.springboot.repository.ShippingMethodRepository;
 import vn.springboot.repository.specification.OrderSpecification;
 import vn.springboot.security.CustomUserDetails;
 import vn.springboot.service.OrderService;
 import vn.springboot.service.PaymentQrService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemMapper orderItemMapper;
     private final OrderCreationService orderCreationService;
     private final PaymentQrService paymentQrService;
+    private final ShippingMethodRepository shippingMethodRepository;
 
     /**
      * Not {@code @Transactional}: the actual write happens in
@@ -97,9 +103,7 @@ public class OrderServiceImpl implements OrderService {
 
         Page<OrderEntity> page = orderRepository.findAll(specification, pageable);
 
-        List<OrderResponse> content = page.getContent().stream()
-                .map(this::buildResponse)
-                .toList();
+        List<OrderResponse> content = buildResponseList(page.getContent());
 
         return PageResponse.<OrderResponse>builder()
                 .content(content)
@@ -122,9 +126,7 @@ public class OrderServiceImpl implements OrderService {
 
         Page<OrderEntity> page = orderRepository.findAll(OrderSpecification.buildAdmin(request), pageable);
 
-        List<OrderResponse> content = page.getContent().stream()
-                .map(this::buildResponse)
-                .toList();
+        List<OrderResponse> content = buildResponseList(page.getContent());
 
         return PageResponse.<OrderResponse>builder()
                 .content(content)
@@ -188,6 +190,34 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse buildResponse(OrderEntity order) {
+        return buildResponse(order, null);
+    }
+
+    /**
+     * Builds every row's response with ONE batched {@code shippingMethodRepository.findAllById}
+     * instead of one lookup per row (avoids an N+1 on top of the per-order {@code buildResponse}
+     * already paying for items separately).
+     */
+    private List<OrderResponse> buildResponseList(List<OrderEntity> orders) {
+        Map<Long, String> shippingMethodNames = shippingMethodRepository
+                .findAllById(orders.stream()
+                        .map(OrderEntity::getShippingMethod)
+                        .filter(Objects::nonNull)
+                        .map(ShippingMethodEntity::getId)
+                        .distinct()
+                        .toList())
+                .stream()
+                .collect(Collectors.toMap(ShippingMethodEntity::getId, ShippingMethodEntity::getName));
+
+        return orders.stream().map(order -> buildResponse(order, shippingMethodNames)).toList();
+    }
+
+    /**
+     * @param shippingMethodNames pre-resolved {@code id -> name} map for batched list callers
+     *                            ({@link #buildResponseList}); {@code null} means "resolve it here"
+     *                            (single-order callers: place/get/updateStatus).
+     */
+    private OrderResponse buildResponse(OrderEntity order, Map<Long, String> shippingMethodNames) {
         OrderResponse response = orderMapper.toResponse(order);
         List<OrderItemResponse> items = orderItemRepository.findByOrder_IdOrderByIdAsc(order.getId()).stream()
                 .map(orderItemMapper::toResponse)
@@ -197,6 +227,20 @@ public class OrderServiceImpl implements OrderService {
         // Online orders that aren't paid yet carry a VietQR so the FE can render it.
         if (order.getPaymentMethod() == PaymentMethod.ONL && order.getPaymentStatus() != PaymentStatus.PAID) {
             response.setPayment(paymentQrService.buildQr(order.getOrderCode(), order.getTotalAmount()));
+        }
+
+        // Resolved via a fresh lookup by id (not `order.getShippingMethod().getName()`):
+        // a proxy's id is always safe to read, but the idempotency-retry path in
+        // placeOrder() re-reads the order outside any transaction, so touching any
+        // other lazy field on that proxy would throw LazyInitializationException.
+        if (order.getShippingMethod() != null) {
+            Long shippingMethodId = order.getShippingMethod().getId();
+            if (shippingMethodNames != null) {
+                response.setShippingMethodName(shippingMethodNames.get(shippingMethodId));
+            } else {
+                shippingMethodRepository.findById(shippingMethodId)
+                        .ifPresent(method -> response.setShippingMethodName(method.getName()));
+            }
         }
         return response;
     }

@@ -64,7 +64,8 @@ public class SecurityConfig {
             "/api/redirects/**",
             "/api/news/**",
             "/api/news-categories/**",
-            "/api/pages/**"
+            "/api/pages/**",
+            "/api/shipping-methods/**"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

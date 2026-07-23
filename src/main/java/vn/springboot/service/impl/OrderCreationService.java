@@ -9,6 +9,7 @@ import vn.springboot.common.exception.ErrorCode;
 import vn.springboot.dto.request.order.OrderItemRequest;
 import vn.springboot.dto.request.order.OrderPlaceRequest;
 import vn.springboot.entity.coupon.CouponEntity;
+import vn.springboot.entity.enums.DiscountType;
 import vn.springboot.entity.enums.OrderStatus;
 import vn.springboot.entity.enums.PaymentMethod;
 import vn.springboot.entity.enums.PaymentStatus;
@@ -16,6 +17,7 @@ import vn.springboot.entity.enums.ProductType;
 import vn.springboot.entity.order.OrderEntity;
 import vn.springboot.entity.order.OrderItemEntity;
 import vn.springboot.entity.product.ProductEntity;
+import vn.springboot.entity.shipping.ShippingMethodEntity;
 import vn.springboot.entity.user.UserEntity;
 import vn.springboot.event.OrderPlacedEvent;
 import vn.springboot.repository.CartItemRepository;
@@ -23,6 +25,7 @@ import vn.springboot.repository.CouponRepository;
 import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
+import vn.springboot.repository.ShippingMethodRepository;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,6 +49,7 @@ public class OrderCreationService {
     private final ProductRepository productRepository;
     private final CouponRepository couponRepository;
     private final CartItemRepository cartItemRepository;
+    private final ShippingMethodRepository shippingMethodRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -79,9 +83,18 @@ public class OrderCreationService {
                 .toList();
         long orderAmount = items.stream().mapToLong(OrderItemEntity::getSubtotal).sum();
 
+        // Shipping: resolved before the coupon so a FREE_SHIP coupon can waive it below.
+        long shippingFee = resolveShippingFee(order, request.getShippingMethodId());
+
         // Coupon: validate every condition, then atomically claim one usage.
         long discount = applyCoupon(order, request.getCouponCode(), user, orderAmount);
-        order.setTotalAmount(orderAmount - discount);
+
+        // FREE_SHIP waives the fee from the total (the discount *is* the waived shipping);
+        // order.getShippingFee() keeps the real resolved fee snapshot for display either way.
+        boolean freeShip = order.getCoupon() != null
+                && order.getCoupon().getDiscountType() == DiscountType.FREE_SHIP;
+        long shippingFeeAddedToTotal = freeShip ? 0L : shippingFee;
+        order.setTotalAmount(orderAmount - discount + shippingFeeAddedToTotal);
 
         orderRepository.save(order);          // may throw on duplicate (user, idempotencyKey)
         orderItemRepository.saveAll(items);
@@ -108,6 +121,24 @@ public class OrderCreationService {
         }
 
         return order;
+    }
+
+    /**
+     * Resolves and snapshots the shipping fee onto the order. {@code null} id → no
+     * shipping method selected, fee 0 (keeps older/omitting clients backward compatible).
+     * The snapshot is set regardless of any later FREE_SHIP coupon — that waiver only
+     * affects what's added to {@code totalAmount} (see {@link #create}), not this value.
+     */
+    private long resolveShippingFee(OrderEntity order, Long shippingMethodId) {
+        if (shippingMethodId == null) {
+            return 0L;
+        }
+        ShippingMethodEntity shippingMethod = shippingMethodRepository.findById(shippingMethodId)
+                .filter(ShippingMethodEntity::isActive)
+                .orElseThrow(() -> new AppException(ErrorCode.SHIPPING_METHOD_NOT_FOUND));
+        order.setShippingMethod(shippingMethod);
+        order.setShippingFee(shippingMethod.getFee());
+        return shippingMethod.getFee();
     }
 
     private Map<Long, ProductEntity> loadProducts(List<OrderItemRequest> lines) {
@@ -196,7 +227,7 @@ public class OrderCreationService {
                         : raw;
             }
             case FIXED -> coupon.getDiscountValue();
-            case FREE_SHIP -> 0L; // shipping handled elsewhere
+            case FREE_SHIP -> 0L; // no line-item discount; waives shipping fee instead (see create())
         };
         return Math.clamp(discount, 0L, orderAmount);
     }

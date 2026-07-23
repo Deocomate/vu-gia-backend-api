@@ -31,9 +31,11 @@ import vn.springboot.entity.product.ProductEntity;
 import vn.springboot.dto.request.order.OrderStatusUpdateRequest;
 import vn.springboot.mapper.OrderItemMapper;
 import vn.springboot.mapper.OrderMapper;
+import vn.springboot.entity.shipping.ShippingMethodEntity;
 import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
+import vn.springboot.repository.ShippingMethodRepository;
 import vn.springboot.security.CustomUserDetails;
 import vn.springboot.service.PaymentQrService;
 import vn.springboot.service.impl.OrderCreationService;
@@ -46,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,6 +63,7 @@ class OrderServiceImplTest {
     @Mock private OrderItemMapper orderItemMapper;
     @Mock private OrderCreationService orderCreationService;
     @Mock private PaymentQrService paymentQrService;
+    @Mock private ShippingMethodRepository shippingMethodRepository;
 
     @InjectMocks private OrderServiceImpl service;
 
@@ -249,5 +253,74 @@ class OrderServiceImplTest {
         OrderResponse response = service.getById(9L);
 
         assertThat(response.getId()).isEqualTo(9L);
+    }
+
+    /**
+     * Regression test for the live-integration bug: the idempotency-retry path re-reads
+     * the order outside any transaction, so {@code order.getShippingMethod()} may be an
+     * uninitialized Hibernate proxy — touching anything but its id (e.g. {@code .getName()})
+     * throws {@code LazyInitializationException}. `buildResponse` must resolve the name via
+     * a fresh {@code shippingMethodRepository.findById}, never via the proxy directly. This
+     * mock's {@code getName()} throws to prove the fix never calls it.
+     */
+    @Test
+    void placeOrder_withShippingMethod_resolvesNameViaFreshLookup_notLazyProxy() {
+        ShippingMethodEntity proxy = mock(ShippingMethodEntity.class);
+        when(proxy.getId()).thenReturn(2L);
+        // Never expected to be called (proves the fix resolves the name via a fresh
+        // repository lookup, not this proxy) — lenient so an unused stub isn't itself
+        // flagged as a test failure by Mockito's strict-stubs mode.
+        org.mockito.Mockito.lenient().when(proxy.getName())
+                .thenThrow(new org.hibernate.LazyInitializationException("no session"));
+
+        OrderEntity created = OrderEntity.builder()
+                .user(user).orderCode("OD1").idempotencyKey("key-1")
+                .shippingMethod(proxy).shippingFee(30_000L).build();
+        created.setId(9L);
+
+        when(orderRepository.findByUser_IdAndIdempotencyKey(1L, "key-1")).thenReturn(Optional.empty());
+        when(orderCreationService.create(any(), any())).thenReturn(created);
+        when(orderMapper.toResponse(created)).thenReturn(OrderResponse.builder().id(9L).build());
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(9L)).thenReturn(List.of());
+        ShippingMethodEntity resolved = ShippingMethodEntity.builder().name("Hoa toc").build();
+        resolved.setId(2L);
+        when(shippingMethodRepository.findById(2L)).thenReturn(Optional.of(resolved));
+
+        OrderResponse response = service.placeOrder(placeRequest());
+
+        assertThat(response.getShippingMethodName()).isEqualTo("Hoa toc");
+        verify(shippingMethodRepository).findById(2L);
+    }
+
+    @Test
+    void searchOrders_batchLoadsShippingMethodNames_oneQueryNotPerRow() {
+        ShippingMethodEntity sm1 = mock(ShippingMethodEntity.class);
+        when(sm1.getId()).thenReturn(2L);
+        ShippingMethodEntity sm2 = mock(ShippingMethodEntity.class);
+        when(sm2.getId()).thenReturn(3L);
+
+        OrderEntity o1 = OrderEntity.builder().user(user).orderCode("OD1").shippingMethod(sm1).build();
+        o1.setId(1L);
+        OrderEntity o2 = OrderEntity.builder().user(user).orderCode("OD2").shippingMethod(sm2).build();
+        o2.setId(2L);
+
+        PageImpl<OrderEntity> page = new PageImpl<>(List.of(o1, o2), PageRequest.of(0, 10), 2);
+        when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+        when(orderMapper.toResponse(o1)).thenReturn(OrderResponse.builder().id(1L).build());
+        when(orderMapper.toResponse(o2)).thenReturn(OrderResponse.builder().id(2L).build());
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(any())).thenReturn(List.of());
+        ShippingMethodEntity nhanh = ShippingMethodEntity.builder().name("Nhanh").build();
+        nhanh.setId(2L);
+        ShippingMethodEntity hoaToc = ShippingMethodEntity.builder().name("Hoa toc").build();
+        hoaToc.setId(3L);
+        when(shippingMethodRepository.findAllById(any())).thenReturn(List.of(nhanh, hoaToc));
+
+        PageResponse<OrderResponse> result =
+                service.searchOrders(OrderAdminSearchRequest.builder().build());
+
+        assertThat(result.getContent()).extracting(OrderResponse::getShippingMethodName)
+                .containsExactly("Nhanh", "Hoa toc");
+        verify(shippingMethodRepository).findAllById(any());
+        verify(shippingMethodRepository, never()).findById(any());
     }
 }

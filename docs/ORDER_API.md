@@ -33,6 +33,13 @@ Tài liệu bàn giao FE cho module **Order (đặt hàng)**.
 - **Đếm "đã bán" (`product.soldCount`)**: chỉ cộng khi đơn chuyển sang **`COMPLETED`** (không cộng lúc đặt,
   tránh sai lệch khi khách huỷ/hoàn tiền). Nếu đơn **rời khỏi `COMPLETED`** (vd `RETURNED`) thì **trừ lại**
   đúng số lượng. Cộng/trừ bằng UPDATE nguyên tử theo từng sản phẩm.
+- **Phí vận chuyển (`shippingMethodId`)**: tuỳ chọn, tham chiếu `GET /api/shipping-methods` (xem
+  `docs/SHIPPING_API.md`). Nếu gửi, server tra `fee` của phương thức tại thời điểm đặt hàng và **cộng
+  vào `totalAmount`**; phương thức không tồn tại hoặc đã bị vô hiệu hoá (`isActive=false`) → lỗi `4060`.
+  Không gửi (hoặc client cũ chưa hỗ trợ) → `shippingFee = 0`, không ảnh hưởng đơn hàng cũ.
+  **Coupon `FREE_SHIP`**: nếu mã áp dụng có `discountType = FREE_SHIP`, phí ship được **miễn** khỏi
+  `totalAmount` (không cộng vào tổng phải trả); `shippingFee` trong response vẫn trả về mức phí gốc của
+  phương thức đã chọn để FE hiển thị đúng "phí ship: 30.000đ → được miễn" thay vì ẩn đi.
 
 ## 2. Envelope & mã lỗi
 
@@ -47,6 +54,7 @@ Envelope `{code, message, data, timestamp}`, `code=1000` = thành công.
 | 4044 | 404 | Sản phẩm trong đơn không tồn tại |
 | 4052 | 404 | Mã giảm giá không tồn tại |
 | 4059 | 404 | Không tìm thấy đơn hàng (id sai hoặc không thuộc bạn) |
+| 4060 | 404 | Phương thức vận chuyển không tồn tại hoặc đã bị vô hiệu hoá |
 | 4105 | 409 | Mã giảm giá không đủ điều kiện áp dụng (message nêu rõ lý do) |
 
 > `4105` dùng chung 1 code, **`message`** cho biết lý do cụ thể: *"Mã giảm giá đã bị vô hiệu hoá" /
@@ -78,6 +86,7 @@ status, createdAt` (mặc định `id`, hướng mặc định `DESC`). Filter l
   ],
   "couponCode": "SALE10",                   // tuỳ chọn
   "paymentMethod": "ONL",                   // tuỳ chọn: COD (mặc định) | ONL
+  "shippingMethodId": 1,                    // tuỳ chọn — id từ GET /api/shipping-methods; null/omit = phí ship 0
   "receiverName": "Nguyễn Văn A",           // bắt buộc, ≤100
   "receiverPhone": "0900123456",            // bắt buộc, ≤20
   "receiverAddress": "123 Lê Lợi, Q1, HCM", // bắt buộc
@@ -108,6 +117,8 @@ Response `200`:
     "totalAmount": 1800000,
     "discountAmount": 200000,
     "couponCode": "SALE10",
+    "shippingFee": 30000,
+    "shippingMethodName": "Giao hàng tiêu chuẩn",
     "receiverName": "Nguyễn Văn A",
     "receiverPhone": "0900123456",
     "receiverAddress": "123 Lê Lợi, Q1, HCM",
@@ -132,7 +143,7 @@ Response `200`:
 ```
 
 Lỗi có thể gặp: `4001` (body sai), `4044` (sản phẩm không tồn tại), `4052` (coupon không tồn tại),
-`4105` (coupon không đủ điều kiện — xem `message`).
+`4060` (phương thức vận chuyển không tồn tại/đã tắt), `4105` (coupon không đủ điều kiện — xem `message`).
 
 ### 3.2 Danh sách đơn của tôi
 
@@ -231,9 +242,11 @@ interface OrderResponse {
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   payment: PaymentInfoResponse | null;   // != null khi ONL & chưa PAID
-  totalAmount: number;   // sau giảm giá
+  totalAmount: number;   // sau giảm giá, đã cộng shippingFee (trừ khi coupon FREE_SHIP)
   discountAmount: number;
   couponCode: string | null;
+  shippingFee: number;          // phí ship đã áp dụng (VND); 0 nếu không chọn phương thức
+  shippingMethodName: string | null;
   receiverName: string;
   receiverPhone: string;
   receiverAddress: string;
@@ -250,6 +263,7 @@ interface OrderPlaceRequest {
   items: OrderItemRequest[];
   couponCode?: string;
   paymentMethod?: PaymentMethod;   // COD (mặc định) | ONL
+  shippingMethodId?: number;       // id từ GET /api/shipping-methods; omit = phí ship 0
   receiverName: string;
   receiverPhone: string;
   receiverAddress: string;
@@ -276,10 +290,10 @@ interface PageResponse<T> {
 > Postman: **Import → Raw text** rồi dán lệnh `curl`.
 
 ```bash
-# Đặt hàng COD (idempotencyKey giữ nguyên khi bấm lại "Đặt hàng")
+# Đặt hàng COD (idempotencyKey giữ nguyên khi bấm lại "Đặt hàng"), kèm phương thức vận chuyển
 curl -X POST http://localhost:8080/api/orders \
   -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Content-Type: application/json" \
-  -d '{"idempotencyKey":"b3f1c2a4-0001","items":[{"productId":10,"quantity":2}],"couponCode":"SALE10","paymentMethod":"COD","receiverName":"Nguyễn Văn A","receiverPhone":"0900123456","receiverAddress":"123 Lê Lợi, Q1, HCM","note":"Giao giờ hành chính"}'
+  -d '{"idempotencyKey":"b3f1c2a4-0001","items":[{"productId":10,"quantity":2}],"couponCode":"SALE10","paymentMethod":"COD","shippingMethodId":1,"receiverName":"Nguyễn Văn A","receiverPhone":"0900123456","receiverAddress":"123 Lê Lợi, Q1, HCM","note":"Giao giờ hành chính"}'
 
 # Đặt hàng ONL → response trả kèm "payment": { qrImageUrl, amount, transferContent=orderCode, ... }
 curl -X POST http://localhost:8080/api/orders \

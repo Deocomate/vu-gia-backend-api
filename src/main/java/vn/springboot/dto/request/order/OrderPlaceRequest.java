@@ -34,6 +34,12 @@ public class OrderPlaceRequest {
     /** Payment method: {@code COD} (default) or {@code ONL} (online VietQR transfer). */
     private PaymentMethod paymentMethod;
 
+    /**
+     * Optional shipping method id. {@code null} → no shipping fee added (kept
+     * optional so older/omitting clients still work with {@code shippingFee = 0}).
+     */
+    private Long shippingMethodId;
+
     @NotBlank
     @Size(max = 100)
     private String receiverName;

@@ -38,6 +38,12 @@ public class OrderResponse {
     /** Snapshot of the coupon code used (null if none). */
     private String couponCode;
 
+    /** Shipping fee (VND) applied — 0 if free/none. Already folded into {@code totalAmount}. */
+    private long shippingFee;
+
+    /** Name of the shipping method chosen (null if none). */
+    private String shippingMethodName;
+
     private String receiverName;
 
     private String receiverPhone;
