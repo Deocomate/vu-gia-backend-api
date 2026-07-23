@@ -175,4 +175,23 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.code").value(1000))
                 .andExpect(jsonPath("$.data.status").value("PROCESSING"));
     }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void cancel_returns200_forAuthenticatedCustomer() throws Exception {
+        when(orderService.cancel(1L))
+                .thenReturn(OrderResponse.builder().id(1L).status(OrderStatus.CANCELLED).build());
+
+        mockMvc.perform(post("/api/orders/1/cancel").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(1000))
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+    }
+
+    @Test
+    void cancel_returns401_whenUnauthenticated() throws Exception {
+        mockMvc.perform(post("/api/orders/1/cancel").with(csrf()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(4010));
+    }
 }

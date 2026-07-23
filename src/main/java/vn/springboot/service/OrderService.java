@@ -23,4 +23,10 @@ public interface OrderService {
 
     /** Admin: advance the order's fulfilment (and optionally payment) status. */
     OrderResponse updateStatus(Long id, OrderStatusUpdateRequest request);
+
+    /**
+     * Owner (or staff): cancel an order still in {@code PENDING_PAYMENT}/{@code PROCESSING}.
+     * Restores any applied coupon's usage count; no stock model exists to restock.
+     */
+    OrderResponse cancel(Long id);
 }

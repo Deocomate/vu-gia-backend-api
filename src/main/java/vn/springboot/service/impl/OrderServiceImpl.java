@@ -29,6 +29,7 @@ import vn.springboot.entity.shipping.ShippingMethodEntity;
 import vn.springboot.entity.user.UserEntity;
 import vn.springboot.mapper.OrderItemMapper;
 import vn.springboot.mapper.OrderMapper;
+import vn.springboot.repository.CouponRepository;
 import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
@@ -52,6 +53,8 @@ public class OrderServiceImpl implements OrderService {
             Set.of("id", "orderCode", "totalAmount", "status", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
     private static final int MAX_PAGE_SIZE = 100;
+    private static final Set<OrderStatus> CANCELLABLE_STATUSES =
+            Set.of(OrderStatus.PENDING_PAYMENT, OrderStatus.PROCESSING);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -61,6 +64,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderCreationService orderCreationService;
     private final PaymentQrService paymentQrService;
     private final ShippingMethodRepository shippingMethodRepository;
+    private final CouponRepository couponRepository;
 
     /**
      * Not {@code @Transactional}: the actual write happens in
@@ -172,6 +176,33 @@ public class OrderServiceImpl implements OrderService {
         return buildResponse(order);
     }
 
+    @Override
+    @Transactional
+    public OrderResponse cancel(Long id) {
+        UserEntity user = currentUser();
+        OrderEntity order = orderRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Owner or staff only; otherwise hide existence with a 404 (same as getById).
+        if (!order.getUser().getId().equals(user.getId()) && !isStaff(user)) {
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (!CANCELLABLE_STATUSES.contains(order.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_NOT_CANCELLABLE);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        // No stock/inventory model exists in this codebase — nothing to restock.
+        if (order.getCoupon() != null) {
+            couponRepository.decrementUsedCount(order.getCoupon().getId());
+        }
+
+        return buildResponse(order);
+    }
+
     /**
      * Keeps {@code product.soldCount} in sync with the COMPLETED boundary: bump it
      * when an order first reaches COMPLETED, and roll it back if the order later
@@ -224,8 +255,15 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
         response.setItems(items);
 
-        // Online orders that aren't paid yet carry a VietQR so the FE can render it.
-        if (order.getPaymentMethod() == PaymentMethod.ONL && order.getPaymentStatus() != PaymentStatus.PAID) {
+        // Online orders that aren't paid yet carry a VietQR so the FE can render it —
+        // but never for a cancelled/returned order (BE-3 lets the customer self-cancel
+        // a PENDING_PAYMENT order; a still-live "scan to pay" QR on a cancelled order
+        // would let a stray transfer mark it PAID via the webhook with no reconciliation
+        // path — see the matching guard in PaymentWebhookServiceImpl.handleSepay).
+        boolean cancelledOrReturned = order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.RETURNED;
+        if (order.getPaymentMethod() == PaymentMethod.ONL
+                && order.getPaymentStatus() != PaymentStatus.PAID
+                && !cancelledOrReturned) {
             response.setPayment(paymentQrService.buildQr(order.getOrderCode(), order.getTotalAmount()));
         }
 

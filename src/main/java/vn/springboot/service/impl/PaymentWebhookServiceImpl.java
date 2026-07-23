@@ -51,6 +51,12 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
             OrderEntity order = orderRepository.findByOrderCode(orderCode.trim()).orElse(null);
             if (order != null
                     && order.getPaymentStatus() == PaymentStatus.PENDING
+                    // A cancelled/returned order must never be payable — the customer can
+                    // self-cancel a PENDING_PAYMENT order (BE-3) while its VietQR is still
+                    // technically transferable; without this guard a stray/late transfer
+                    // would silently mark a cancelled order PAID with no reconciliation path.
+                    && order.getStatus() != OrderStatus.CANCELLED
+                    && order.getStatus() != OrderStatus.RETURNED
                     && payload.getTransferAmount() >= order.getTotalAmount()) {
                 order.setPaymentStatus(PaymentStatus.PAID);
                 if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {

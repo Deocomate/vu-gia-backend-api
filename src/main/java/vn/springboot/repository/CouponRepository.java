@@ -34,4 +34,17 @@ public interface CouponRepository
                AND (c.usageLimit IS NULL OR c.usedCount < c.usageLimit)
             """)
     int incrementUsedCount(@Param("id") Long id);
+
+    /**
+     * Exact inverse of {@link #incrementUsedCount(Long)}: restores one usage on order
+     * cancellation. Floors at 0 so a race (e.g. a double-cancel) can never drive the
+     * counter negative.
+     */
+    @Modifying
+    @Query("""
+            UPDATE CouponEntity c
+               SET c.usedCount = GREATEST(c.usedCount - 1, 0)
+             WHERE c.id = :id
+            """)
+    int decrementUsedCount(@Param("id") Long id);
 }

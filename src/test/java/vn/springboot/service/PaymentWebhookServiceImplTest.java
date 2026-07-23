@@ -115,4 +115,37 @@ class PaymentWebhookServiceImplTest {
         verify(eventPublisher, never()).publishEvent(any());
         verify(paymentTransactionRepository).save(any(PaymentTransactionEntity.class));
     }
+
+    /**
+     * Regression test for the cross-cutting gap found in Phase 5 review: BE-3 lets a customer
+     * self-cancel a PENDING_PAYMENT order, but its VietQR stays technically transferable — a
+     * stray/late transfer must never mark a CANCELLED (or RETURNED) order PAID.
+     */
+    @Test
+    void cancelledOrder_neverMarkedPaid_evenIfAmountMatches() {
+        OrderEntity order = order("OD1", 100_000, OrderStatus.CANCELLED, PaymentStatus.PENDING);
+        when(paymentTransactionRepository.existsBySepayId(1L)).thenReturn(false);
+        when(orderRepository.findByOrderCode("OD1")).thenReturn(Optional.of(order));
+
+        service.handleSepay(payload(1L, "OD1", 100_000, "in"));
+
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        verify(orderRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
+        verify(paymentTransactionRepository).save(any(PaymentTransactionEntity.class));
+    }
+
+    @Test
+    void returnedOrder_neverMarkedPaid_evenIfAmountMatches() {
+        OrderEntity order = order("OD1", 100_000, OrderStatus.RETURNED, PaymentStatus.PENDING);
+        when(paymentTransactionRepository.existsBySepayId(1L)).thenReturn(false);
+        when(orderRepository.findByOrderCode("OD1")).thenReturn(Optional.of(order));
+
+        service.handleSepay(payload(1L, "OD1", 100_000, "in"));
+
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        verify(orderRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
 }

@@ -77,7 +77,8 @@ public enum ErrorCode {
     PAGE_KEY_EXISTED(4104, "Page key already exists", HttpStatus.CONFLICT),
     // Coupon rejected at checkout — carries a specific reason message via AppException(code, message)
     COUPON_NOT_APPLICABLE(4105, "Coupon is not applicable", HttpStatus.CONFLICT),
-    ORDER_EMPTY(4106, "Order must contain at least one item", HttpStatus.BAD_REQUEST);
+    ORDER_EMPTY(4106, "Order must contain at least one item", HttpStatus.BAD_REQUEST),
+    ORDER_NOT_CANCELLABLE(4107, "Order cannot be cancelled in its current status", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

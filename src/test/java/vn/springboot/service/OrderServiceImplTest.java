@@ -32,6 +32,8 @@ import vn.springboot.dto.request.order.OrderStatusUpdateRequest;
 import vn.springboot.mapper.OrderItemMapper;
 import vn.springboot.mapper.OrderMapper;
 import vn.springboot.entity.shipping.ShippingMethodEntity;
+import vn.springboot.entity.coupon.CouponEntity;
+import vn.springboot.repository.CouponRepository;
 import vn.springboot.repository.OrderItemRepository;
 import vn.springboot.repository.OrderRepository;
 import vn.springboot.repository.ProductRepository;
@@ -64,6 +66,7 @@ class OrderServiceImplTest {
     @Mock private OrderCreationService orderCreationService;
     @Mock private PaymentQrService paymentQrService;
     @Mock private ShippingMethodRepository shippingMethodRepository;
+    @Mock private CouponRepository couponRepository;
 
     @InjectMocks private OrderServiceImpl service;
 
@@ -239,6 +242,114 @@ class OrderServiceImplTest {
         service.updateStatus(1L, OrderStatusUpdateRequest.builder().status(OrderStatus.SHIPPING).build());
 
         verify(productRepository, never()).incrementSoldCount(any(), org.mockito.ArgumentMatchers.anyInt());
+    }
+
+    @Test
+    void cancel_pendingPayment_succeeds() {
+        OrderEntity order = orderWithStatus(1L, OrderStatus.PENDING_PAYMENT);
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(1L)).thenReturn(List.of());
+        when(orderMapper.toResponse(order)).thenReturn(OrderResponse.builder().id(1L).build());
+
+        OrderResponse response = service.cancel(1L);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(response.getId()).isEqualTo(1L);
+        verify(orderRepository).save(order);
+        verify(couponRepository, never()).decrementUsedCount(any());
+    }
+
+    @Test
+    void cancel_processing_succeeds() {
+        OrderEntity order = orderWithStatus(1L, OrderStatus.PROCESSING);
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(1L)).thenReturn(List.of());
+        when(orderMapper.toResponse(order)).thenReturn(OrderResponse.builder().id(1L).build());
+
+        service.cancel(1L);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        verify(orderRepository).save(order);
+    }
+
+    /**
+     * Regression test for the Phase 5 review finding: a cancelled ONL order must never carry a
+     * still-payable VietQR in its response (see the `cancelledOrReturned` guard added to
+     * `buildResponse` and the matching guard in `PaymentWebhookServiceImpl.handleSepay`).
+     */
+    @Test
+    void cancel_onlOrder_neverExposesPayment() {
+        OrderEntity order = OrderEntity.builder()
+                .user(user).orderCode("ODONL").status(OrderStatus.PENDING_PAYMENT)
+                .paymentMethod(PaymentMethod.ONL).paymentStatus(vn.springboot.entity.enums.PaymentStatus.PENDING)
+                .totalAmount(500_000L).build();
+        order.setId(1L);
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(1L)).thenReturn(List.of());
+        when(orderMapper.toResponse(order)).thenReturn(OrderResponse.builder().id(1L).build());
+
+        OrderResponse response = service.cancel(1L);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(response.getPayment()).isNull();
+        verify(paymentQrService, never()).buildQr(any(), anyLong());
+    }
+
+    @Test
+    void cancel_withCoupon_restoresUsedCount() {
+        CouponEntity coupon = CouponEntity.builder().code("SALE10").build();
+        coupon.setId(7L);
+        OrderEntity order = OrderEntity.builder()
+                .user(user).orderCode("OD1").status(OrderStatus.PENDING_PAYMENT).coupon(coupon).build();
+        order.setId(1L);
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderItemRepository.findByOrder_IdOrderByIdAsc(1L)).thenReturn(List.of());
+        when(orderMapper.toResponse(order)).thenReturn(OrderResponse.builder().id(1L).build());
+
+        service.cancel(1L);
+
+        verify(couponRepository).decrementUsedCount(7L);
+    }
+
+    @Test
+    void cancel_shippingOrCompleted_throwsNotCancellable() {
+        OrderEntity shipping = orderWithStatus(1L, OrderStatus.SHIPPING);
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(shipping));
+
+        assertThatThrownBy(() -> service.cancel(1L))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ORDER_NOT_CANCELLABLE);
+        assertThat(shipping.getStatus()).isEqualTo(OrderStatus.SHIPPING);
+        verify(orderRepository, never()).save(any());
+
+        OrderEntity completed = orderWithStatus(2L, OrderStatus.COMPLETED);
+        when(orderRepository.findById(2L)).thenReturn(Optional.of(completed));
+
+        assertThatThrownBy(() -> service.cancel(2L))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ORDER_NOT_CANCELLABLE);
+        assertThat(completed.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void cancel_notOwnerAndNotStaff_throwsNotFound() {
+        OrderEntity foreign = order(9L, user(2L, Role.CUSTOMER));
+        when(orderRepository.findById(9L)).thenReturn(Optional.of(foreign));
+
+        assertThatThrownBy(() -> service.cancel(9L))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ORDER_NOT_FOUND);
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void cancel_notFound_throwsNotFound() {
+        when(orderRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.cancel(99L))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ORDER_NOT_FOUND);
     }
 
     @Test

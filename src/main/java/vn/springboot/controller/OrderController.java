@@ -61,4 +61,9 @@ public class OrderController {
             @Valid @RequestBody OrderStatusUpdateRequest request) {
         return ApiResponse.success("Status updated", orderService.updateStatus(id, request));
     }
+
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<OrderResponse> cancel(@PathVariable Long id) {
+        return ApiResponse.success("Order cancelled", orderService.cancel(id));
+    }
 }

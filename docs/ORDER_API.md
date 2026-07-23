@@ -4,8 +4,12 @@ Tài liệu bàn giao FE cho module **Order (đặt hàng)**.
 
 ## 1. Tổng quan & phân quyền
 
-- **Tất cả endpoint yêu cầu đăng nhập** (JWT). Đặt hàng / xem đơn thao tác trên đơn của **chính user
-  đang đăng nhập**; đổi trạng thái đơn là **ADMIN/SUPERADMIN**.
+- **Tất cả endpoint yêu cầu đăng nhập** (JWT). Đặt hàng / xem đơn / huỷ đơn thao tác trên đơn của **chính
+  user đang đăng nhập** (ADMIN/SUPERADMIN có thể thao tác trên mọi đơn); đổi trạng thái đơn là
+  **ADMIN/SUPERADMIN**.
+- **Huỷ đơn (khách tự huỷ)**: chỉ cho phép khi đơn đang `PENDING_PAYMENT`/`PROCESSING`. Huỷ thành công →
+  `status = CANCELLED`, nếu đơn có áp coupon thì **hoàn lại 1 lượt dùng** của coupon đó (`usedCount - 1`,
+  không âm). Hiện tại **chưa có mô hình tồn kho** trong hệ thống nên không có bước hoàn kho.
 - **Snapshot khi đặt hàng**: FE gửi danh sách `{productId, quantity}` (KHÔNG gửi `cartId`). Server tự
   đọc sản phẩm sống và **đóng băng** `productName / productType / unitPrice / subtotal` vào `order_items`.
   Đơn hàng vì thế không đổi khi sau này sản phẩm bị sửa giá/tên.
@@ -56,6 +60,7 @@ Envelope `{code, message, data, timestamp}`, `code=1000` = thành công.
 | 4059 | 404 | Không tìm thấy đơn hàng (id sai hoặc không thuộc bạn) |
 | 4060 | 404 | Phương thức vận chuyển không tồn tại hoặc đã bị vô hiệu hoá |
 | 4105 | 409 | Mã giảm giá không đủ điều kiện áp dụng (message nêu rõ lý do) |
+| 4107 | 409 | Đơn không thể huỷ ở trạng thái hiện tại (không phải `PENDING_PAYMENT`/`PROCESSING`) |
 
 > `4105` dùng chung 1 code, **`message`** cho biết lý do cụ thể: *"Mã giảm giá đã bị vô hiệu hoá" /
 > "chưa có hiệu lực" / "đã hết hạn" / "chưa đạt giá trị tối thiểu" / "bạn đã dùng hết lượt" / "đã hết lượt sử dụng"*.
@@ -72,6 +77,7 @@ status, createdAt` (mặc định `id`, hướng mặc định `DESC`). Filter l
 | GET | `/api/orders/admin` | ADMIN/SUPERADMIN | Search **toàn bộ đơn** (mọi user) + filter đầy đủ |
 | GET | `/api/orders/{id}` | Đăng nhập | Chi tiết đơn (chủ đơn, hoặc ADMIN xem mọi đơn) |
 | PATCH | `/api/orders/{id}/status` | ADMIN/SUPERADMIN | Đổi trạng thái đơn / thanh toán |
+| POST | `/api/orders/{id}/cancel` | Đăng nhập | Khách tự huỷ đơn của mình (hoặc ADMIN huỷ mọi đơn) |
 
 ### 3.1 Đặt hàng
 
@@ -205,6 +211,22 @@ không phải staff.
 > chuyển từ `COMPLETED` sang trạng thái khác (`RETURNED`…) → trừ lại. Đổi giữa các trạng thái không phải
 > `COMPLETED` (vd `PROCESSING → SHIPPING`) không đụng tới `soldCount`.
 
+### 3.5 Huỷ đơn (khách tự huỷ)
+
+`POST /api/orders/{id}/cancel` — không có request body.
+
+Chủ đơn (hoặc ADMIN/SUPERADMIN) có thể huỷ đơn của mình khi đơn đang ở trạng thái `PENDING_PAYMENT` hoặc
+`PROCESSING`. Response `200` trả `OrderResponse` sau khi huỷ (`status = "CANCELLED"`).
+
+Lỗi có thể gặp:
+- `4059` — không tìm thấy đơn, **hoặc** đơn không thuộc về bạn (ẩn tồn tại — không phải chủ đơn/không phải
+  staff nhận cùng lỗi 404 như `getById`, không lộ thông tin đơn tồn tại hay không).
+- `4107` — đơn đang ở trạng thái không thể huỷ (đã `SHIPPING`/`COMPLETED`/`CANCELLED`/`RETURNED`).
+
+> **Tác dụng phụ**: nếu đơn có áp mã giảm giá (`couponCode` != null), server **hoàn lại 1 lượt dùng** của
+> coupon đó (`usedCount - 1`, không âm dù có huỷ đôi do race). Không có bước hoàn kho vì hệ thống chưa có
+> mô hình tồn kho.
+
 ## 4. DTO cho FE (TypeScript)
 
 ```typescript
@@ -315,6 +337,10 @@ curl http://localhost:8080/api/orders/1 -H "Authorization: Bearer <ACCESS_TOKEN>
 curl -X PATCH http://localhost:8080/api/orders/1/status \
   -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>" -H "Content-Type: application/json" \
   -d '{"status":"PROCESSING","paymentStatus":"PAID"}'
+
+# Huỷ đơn (khách tự huỷ đơn của mình — chỉ khi PENDING_PAYMENT/PROCESSING)
+curl -X POST http://localhost:8080/api/orders/1/cancel \
+  -H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
 ## 6. Tổng hợp endpoint
@@ -326,6 +352,7 @@ curl -X PATCH http://localhost:8080/api/orders/1/status \
 | GET | `/api/orders/admin` | JWT | ADMIN/SUPERADMIN | Search toàn bộ đơn + filter đầy đủ |
 | GET | `/api/orders/{id}` | JWT | Đăng nhập | Chi tiết đơn (chủ đơn / admin) |
 | PATCH | `/api/orders/{id}/status` | JWT | ADMIN/SUPERADMIN | Đổi trạng thái đơn / thanh toán |
+| POST | `/api/orders/{id}/cancel` | JWT | Đăng nhập | Khách tự huỷ đơn (chủ đơn / admin), hoàn lượt coupon |
 | POST | `/api/webhooks/sepay` | Chữ ký HMAC | — | Webhook SePay xác nhận thanh toán (server-to-server) |
 
 ## 7. Webhook thanh toán SePay — `POST /api/webhooks/sepay`
