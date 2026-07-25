@@ -50,7 +50,7 @@ Yêu cầu: MySQL đang chạy (ảnh không cần setup gì thêm — xem mục
 ## 4. Chạy bằng Docker (1 lệnh, MySQL + app)
 
 `docker-compose.yml` chạy chung MySQL (`mysql:8.4`) + app trong 1 stack tự chứa — xem
-**[deployment-guide.md](../../docs/deployment-guide.md)** ở repo root cho hướng dẫn đầy đủ (kèm cả
+**[deployment-guide.md](./deployment-guide.md)** cho hướng dẫn đầy đủ (kèm cả
 frontend, biến môi trường, test full-stack qua Docker Desktop). Tóm tắt nhanh:
 
 ```bash

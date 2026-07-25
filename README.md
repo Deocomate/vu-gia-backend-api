@@ -215,11 +215,23 @@ Mọi thứ trong `src/main/resources/application.yaml` đều override được
 
 ---
 
-## 🔌 Tài liệu API
+## 🔌 Tài liệu Dự án & API
 
 Base path **`/api`** · Swagger UI **`/swagger-ui.html`** · Health **`/actuator/health`**.
 
-Tài liệu theo từng module (request/response, error code, curl dán Postman):
+### Tài liệu Kiến trúc & Vận hành
+
+| Chủ đề | Tài liệu |
+|---|---|
+| Tổng quan & Yêu cầu sản phẩm (PDR) | [docs/project-overview-pdr.md](docs/project-overview-pdr.md) |
+| Tổng quan Mã nguồn (Codebase Summary) | [docs/codebase-summary.md](docs/codebase-summary.md) |
+| Quy chuẩn Lập trình & Kiến trúc (Code Standards) | [docs/code-standards.md](docs/code-standards.md) |
+| Sơ đồ Architecture & Technical Design | [docs/system-architecture.md](docs/system-architecture.md) |
+| Lộ trình phát triển (Project Roadmap) | [docs/project-roadmap.md](docs/project-roadmap.md) |
+| Hướng dẫn Triển khai (Deployment Guide) | [docs/deployment-guide.md](docs/deployment-guide.md) |
+| Quy chuẩn Thiết kế API (Design Guidelines) | [docs/design-guidelines.md](docs/design-guidelines.md) |
+
+### Tài liệu API Chi tiết theo Module
 
 | Module | Tài liệu |
 |---|---|
@@ -238,55 +250,41 @@ Tài liệu theo từng module (request/response, error code, curl dán Postman)
 
 **Ví dụ đăng nhập**
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}'
 ```
 
 ---
 
 ## 🛡 Mô hình bảo mật
 
-1. **Login** kiểm tra thông tin qua `AuthenticationManager` + `BCryptPasswordEncoder` (hoặc Google ID token).
-2. Server phát **JWT access token** ngắn hạn (HS512) + **refresh token** dài hạn lưu DB (xoay vòng mỗi lần refresh).
-3. `JwtAuthenticationFilter` kiểm token mỗi request và nạp `SecurityContext`.
-4. **Phân quyền**: **đọc storefront công khai**; **ghi cần staff** (`@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`); quản trị user chỉ `SUPERADMIN`; giỏ hàng/đặt hàng cần user đăng nhập.
-5. Lỗi auth trả JSON nhất quán: **401** (`JwtAuthenticationEntryPoint`) hoặc **403** (`CustomAccessDeniedHandler`).
-
-**Vai trò:** `SUPERADMIN` › `ADMIN` › `CUSTOMER` (lưu ở `users.role`).
+1. **Login**: Authenticate qua `AuthenticationManager` + `BCryptPasswordEncoder` (hoặc Google ID token).
+2. **Tokens**: Phát **JWT access token** (HS512) + **refresh token** lưu DB (rotation).
+3. **Filter**: `JwtAuthenticationFilter` kiểm token mỗi request và nạp `SecurityContext`.
+4. **Phân quyền**: Read công khai; Write cần `@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`; User admin cần `SUPERADMIN`.
+5. **Role Hierarchy**: `SUPERADMIN` › `ADMIN` › `CUSTOMER`.
 
 ---
 
 ## 📦 Định dạng response
 
-**Thành công**
-```json
-{ "code": 1000, "message": "Order placed", "data": { "...": "..." }, "timestamp": "2026-07-11T02:00:00Z" }
-```
-**Lỗi**
-```json
-{ "code": 4105, "message": "Mã giảm giá đã hết hạn", "data": null, "timestamp": "2026-07-11T02:00:00Z" }
-```
+- **Thành công**: `{ "code": 1000, "message": "Success", "data": { ... }, "timestamp": "..." }`
+- **Lỗi**: `{ "code": 4044, "message": "Product not found", "data": null, "timestamp": "..." }`
 
-**Dải error code**
-
-| Dải | Ý nghĩa |
+| Dải Code | Ý nghĩa |
 |---|---|
 | `1000` | Thành công |
-| `4000–4005` | Bad request / validation |
-| `401x` | Xác thực |
-| `4030` | Phân quyền (403) |
-| `404x` | Không tìm thấy |
-| `409x` / `41xx` | Conflict (trùng, coupon không đủ điều kiện…) |
-| `9000–9999` | Lỗi server / nội bộ |
+| `4000–4005` | Bad request / validation payload |
+| `4010–4019` | Lỗi xác thực JWT / Login |
+| `4030` | Lỗi phân quyền (403 Forbidden) |
+| `4040–4049` | Không tìm thấy tài nguyên (404 Not Found) |
+| `4090–4199` | Conflict / Dữ liệu đã tồn tại / Coupon hết hạn |
+| `9000–9999` | Lỗi server nội bộ |
 
 ---
 
 ## 📄 License
 
 Phát hành theo **MIT License**.
-
----
 
 <div align="center">
 

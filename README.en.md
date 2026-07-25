@@ -1,12 +1,12 @@
 <div align="center">
 
-# 🏺 Gốm Sứ Vũ Gia — E-commerce Backend
+# 🏺 Gốm Sứ Vũ Gia — E-Commerce Backend API
 
-**A production-grade Spring Boot REST API for the Gốm Sứ Vũ Gia ceramics store — catalog, cart, orders, coupons, CMS content, admin dashboard, JWT + RBAC, MinIO media and Flyway auto-migrate/seed.**
+**Spring Boot REST API for Gốm Sứ Vũ Gia ceramics storefront — product catalog, cart, order processing, coupons, CMS content, admin dashboard, JWT + RBAC security, local filesystem image storage, and Flyway database migration/seed.**
 
 <br/>
 
-<!-- 🌐 Language switcher / Nút chuyển ngôn ngữ -->
+<!-- 🌐 Language badges -->
 <a href="README.md"><img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-555?style=for-the-badge" alt="Tiếng Việt"/></a>
 <a href="README.en.md"><img src="https://img.shields.io/badge/🇬🇧_English-2C5BFF?style=for-the-badge" alt="English"/></a>
 
@@ -17,7 +17,6 @@
 ![Spring Security](https://img.shields.io/badge/Security-JWT%20%2B%20RBAC-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![Flyway](https://img.shields.io/badge/Flyway-Migrate%20%2B%20Seed-CC0200?style=for-the-badge&logo=flyway&logoColor=white)
-![MinIO](https://img.shields.io/badge/MinIO-Object%20Storage-C72E49?style=for-the-badge&logo=minio&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 </div>
@@ -33,7 +32,7 @@
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
 - [Configuration](#-configuration)
-- [API Reference](#-api-reference)
+- [Project & API Documentation](#-project--api-documentation)
 - [Security Model](#-security-model)
 - [Response Format](#-response-format)
 - [License](#-license)
@@ -42,67 +41,61 @@
 
 ## 🧭 Overview
 
-Backend REST API powering the **Gốm Sứ Vũ Gia** ceramics storefront. It covers the full commerce flow — product catalog, shopping cart, order placement with coupons, plus CMS-style content (news, pages, banners, gallery, showrooms, FAQ) and an admin analytics dashboard.
+Backend REST API for **Gốm Sứ Vũ Gia** storefront. Covers the entire e-commerce flow — product catalog, cart, checkout with coupons, shipping methods, VietQR bank transfers, SePay webhooks — alongside CMS content (news, pages, banners, gallery, showrooms, FAQ) and admin dashboard analytics.
 
-The codebase follows a strict **layered architecture** and **SOLID** principles: every service is coded against an interface, filtering is done with the JPA Specification API, DTO ↔ Entity mapping is compile-time (MapStruct), and cross-cutting concerns (security, errors, auditing) live in their own packages. Schema and demo data are applied automatically on startup via **Flyway**.
+Built with **clean layered architecture** and **SOLID principles**: interface-driven services, dynamic JPA Specifications, compile-time DTO mapping (MapStruct), unified response envelopes, and centralized error handling. Schema and seed data are applied **automatically on startup** via **Flyway**.
 
 ---
 
 ## 🛠 Tech Stack
 
-| Layer | Technology | Version | Purpose |
+| Layer | Technology | Version | Description |
 |---|---|---|---|
-| **Language** | Java | 21 (LTS) | Records, pattern matching, text blocks |
-| **Framework** | Spring Boot | 3.5.10 | Auto-configuration & DI |
-| **Web** | Spring Web (MVC) | — | REST controllers, JSON |
+| **Language** | Java | 21 (LTS) | Record, pattern matching, text blocks |
+| **Framework** | Spring Boot | 3.5.10 | Auto-configuration & Dependency Injection |
+| **Web** | Spring Web (MVC) | — | REST controllers & JSON processing |
 | **Persistence** | Spring Data JPA + Hibernate | — | ORM, repositories, Specification API |
 | **Database** | MySQL | 8.x | Relational DB (`mysql-connector-j`) |
-| **Migrations** | Flyway (+ `flyway-mysql`) | — | Auto migrate schema + seed data on startup |
-| **Security** | Spring Security | — | Auth, method security (`@PreAuthorize`) |
-| **Token** | JJWT | 0.12.6 | JWT access tokens (HS512) + refresh rotation |
-| **OAuth** | Google Identity | — | "Login with Google" (ID-token verification) |
-| **Object storage** | MinIO | 8.5.x | Product/asset images (public buckets) |
-| **Email** | Spring Mail + Thymeleaf | — | Async **HTML** transactional emails |
+| **Migration** | Flyway (+ `flyway-mysql`) | — | Auto schema migration + seed data |
+| **Security** | Spring Security | — | Authentication, Method Security (`@PreAuthorize`) |
+| **Token** | JJWT | 0.12.6 | JWT Access Token (HS512) + Refresh Token Rotation |
+| **OAuth** | Google Identity | — | Google Sign-In (ID-token verification) |
+| **File Storage** | Local Filesystem | — | Uploaded images stored in `data/`, served via `/files/**` |
+| **Email** | Spring Mail + Thymeleaf | — | Asynchronous HTML email templates |
 | **Mapping** | MapStruct | 1.6.3 | Compile-time DTO ↔ Entity mapping |
-| **Validation** | Jakarta Bean Validation | — | `@Valid` request payloads |
+| **Validation** | Jakarta Bean Validation | — | `@Valid` payload constraints |
 | **API Docs** | SpringDoc OpenAPI (Swagger UI) | — | Interactive docs at `/swagger-ui.html` |
-| **Monitoring** | Spring Boot Actuator | — | `/actuator/health`, `/actuator/info` |
-| **Boilerplate** | Lombok | — | Getters/setters/builders |
-| **Build** | Maven (`mvnw` wrapper) | — | Dependency management & packaging |
-| **Test** | JUnit 5 + Mockito + Spring Security Test | — | Service & controller tests |
+| **Monitoring** | Spring Boot Actuator | — | Health checks at `/actuator/health` |
+| **Boilerplate** | Lombok | — | Getter/setter/builder annotations |
+| **Build** | Maven (wrapper `./mvnw`) | — | Dependency & package management |
+| **Testing** | JUnit 5 + Mockito + Spring Security Test | — | Service & Controller tests |
 
 ---
 
 ## ✨ Features & Modules
 
-### Core platform
-- 🔐 **JWT auth + refresh rotation** — stateless HS512 access tokens; DB-backed refresh tokens (real logout/revocation). Login by **username or email**, plus **Google login**.
-- 👥 **RBAC** — single-role model (`Role` enum: `SUPERADMIN` / `ADMIN` / `CUSTOMER`); endpoints guarded with `@PreAuthorize`.
-- 🧾 **Unified envelope** — every response is `{ code, message, data, timestamp }`; `code=1000` = success.
-- 🧯 **Global exception handling** — one `@RestControllerAdvice` maps exceptions to stable business error codes.
-- 🕵️ **JPA auditing** — `createdAt / updatedAt / createdBy / updatedBy` populated automatically.
-- 🔎 **Safe search & pagination** — JPA Specification + whitelisted sorting (1-based paging).
-- 🌱 **Auto migrate + seed** — Flyway runs schema (`db/migration`) then demo data (`db/seed`) on startup; idempotent admin bootstrap.
-- 🖼 **MinIO media** — uploads to public buckets (`assets`, `products`), buckets auto-created & made public-read on startup.
+### Core Infrastructure
+- 🔐 **JWT + Refresh Rotation**: Stateless HS512 access token; DB-backed refresh token rotation with HTTP-only cookies.
+- 👥 **RBAC**: Single role per user (`SUPERADMIN` / `ADMIN` / `CUSTOMER`) protected by `@PreAuthorize`.
+- 🧾 **Unified Envelope**: All responses wrapped in `{ code, message, data, timestamp }`; `code=1000` for success.
+- 🧯 **Centralized Exception Handling**: `@RestControllerAdvice` mapping exceptions to standard error codes.
+- 🕵️ **JPA Auditing**: Automatic `createdAt`, `updatedAt`, `createdBy`, `updatedBy` tracking via `BaseEntity`.
+- 🔎 **Safe Search & Pagination**: JPA Specification filters + whitelist sorting (0-based page index).
+- 🌱 **Auto Migration & Seed**: Flyway executes schema (`db/migration`) and seed data (`db/seed`) on startup.
+- 🖼 **Local File Storage**: Uploaded files stored under `./data` (Docker `/app/data`), served via `/files/**`; `@StorageUrl` converts relative paths to absolute URLs.
 
-### Business modules
-| Domain | Highlights |
-|---|---|
-| **Auth / User** | register · login · refresh · logout · me · Google login · change password · admin user management (list, create, change role, reset password) |
-| **Products** | catalog + categories + images (MinIO), status/featured toggles, **SEO lookup by slug** |
-| **Content / CMS** | News + categories (by slug), **Pages** (by key), Banners, Showrooms, Gallery, FAQ, Redirects |
-| **Marketing** | **Coupons** (PERCENT / FIXED / FREE_SHIP, validate + conditions), Newsletter subscribe, Contact form |
-| **Cart** | per-user cart, accumulate quantity, live totals |
-| **Orders** | **idempotent checkout**, price snapshot, **atomic coupon claim** (race-free), cart deduction, `sold_count` bumped only on **COMPLETED**, **async HTML confirmation email**, admin order search |
-| **Dashboard** | admin KPIs (revenue/orders/customers), daily revenue series, top-selling products |
-
-> Full endpoint reference per module lives in [`docs/`](docs).
+### Business Modules
+- **Auth / User**: Register, login, refresh token, logout, profile (`/me`), Google OAuth2, password change, user management.
+- **Products**: Categories, products, multi-image gallery, status toggle, SEO slugs, safe search.
+- **CMS / Content**: News + categories, dynamic pages, banners, showrooms, gallery, FAQs, URL redirects.
+- **Marketing**: Coupons (`PERCENT`, `FIXED`, `FREE_SHIP`), newsletter subscriptions, contact request form.
+- **Cart**: User cart management with quantity aggregation and price totals.
+- **Orders**: Idempotent checkout, price snapshots, atomic coupon redemption, VietQR payment QR generation, SePay webhooks, async HTML order confirmation emails.
+- **Dashboard**: Admin KPIs (revenue, orders, customers), daily revenue analytics, top selling products.
 
 ---
 
 ## 🏗 Architecture
-
-One-way dependency flow; the web layer never touches persistence directly, and services depend on **interfaces**.
 
 ```text
 HTTP ─▶ Controller ─▶ Service (interface → impl) ─▶ Repository (+ Specification) ─▶ MySQL
@@ -111,9 +104,9 @@ HTTP ─▶ Controller ─▶ Service (interface → impl) ─▶ Repository (+ 
           ▼                     ▼
   GlobalExceptionHandler ◀─ AppException(ErrorCode)
           ▲
-  Security filter chain (JWT) ─▶ 401 EntryPoint / 403 AccessDeniedHandler
+  Security Filter Chain (JWT) ─▶ 401 EntryPoint / 403 AccessDeniedHandler
 
-  Order committed ─▶ @TransactionalEventListener(AFTER_COMMIT) ─▶ @Async HTML email (Thymeleaf)
+  Order Placed ─▶ @TransactionalEventListener(AFTER_COMMIT) ─▶ @Async Email (Thymeleaf)
 ```
 
 ---
@@ -123,167 +116,101 @@ HTTP ─▶ Controller ─▶ Service (interface → impl) ─▶ Repository (+ 
 ```text
 src/main/java/vn/springboot
 ├── Application.java
-├── common
-│   ├── entity/BaseEntity.java            # id + audit fields
-│   ├── exception/                        # ErrorCode, AppException, GlobalExceptionHandler
-│   └── response/ApiResponse.java         # unified envelope
-├── config                                # Async, Jpa auditing, MinIO, bucket init, data seeding
-├── controller                            # 20 REST controllers (per module)
-├── dto/{request,response}                # per-domain request/response DTOs
-├── entity                                # 19 JPA entities (product, order, cart, news, page, …)
-├── event                                 # OrderPlacedEvent + async OrderEmailListener
-├── mapper                                # MapStruct mappers
-├── repository (+ specification)          # Spring Data repos + dynamic filters
-├── security                              # SecurityConfig, JWT, CustomUserDetails, handlers
-└── service (+ impl)                      # business logic behind interfaces
+├── common/                                # BaseEntity, ErrorCode, AppException, ApiResponse, PageResponse
+├── config/                                # SecurityConfig, JpaAuditingConfig, LocalStorageConfig, Seed Data
+├── controller/                            # 22 REST Controllers
+├── dto/{request,response}                # Domain Request/Response DTOs
+├── entity/                                # 19 JPA Entities extending BaseEntity
+├── event/                                 # OrderPlacedEvent & OrderEmailListener
+├── mapper/                                # MapStruct interfaces
+├── repository/ (+ specification)          # Spring Data Repositories & Specifications
+├── security/                              # JWT Filter, Google OAuth2, CustomUserDetails
+└── service/ (+ impl)                      # Business logic contracts & implementations
 
 src/main/resources
-├── application.yaml
-├── db/migration/V1__init_db.sql          # schema (Flyway)
-├── db/seed/V2__seed_db.sql               # demo data (Flyway)
-└── templates/email/order-confirmation.html   # HTML email (Thymeleaf)
+├── application.yaml                       # Application properties
+├── db/migration/V1__init_db.sql          # Database schema (Flyway)
+├── db/seed/V2__seed_db.sql               # Initial seed data (Flyway)
+└── templates/email/order-confirmation.html   # HTML Email Template (Thymeleaf)
 ```
 
 ---
 
 ## 🚦 Getting Started
 
-### Option A — Docker (recommended, one command)
-
-Brings up **MySQL + MinIO + app**; the app auto-migrates the schema and seeds demo data on boot.
+### Option A — Docker Compose (Recommended)
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
-docker compose logs -f app        # watch: "Successfully applied 2 migrations"
+docker compose logs -f app
 ```
+- API Base Path → **http://localhost:8080**
+- Swagger UI → **http://localhost:8080/swagger-ui.html**
 
-- API → **http://localhost:8080** (Swagger: `/swagger-ui.html`)
-- MinIO Console → **http://localhost:9001** (`minioadmin` / `minioadmin123`)
-
-### Option B — Local
-
-**Prerequisites:** JDK 21, MySQL 8 running locally (MinIO optional, only needed to serve images).
+### Option B — Local Maven Execution
 
 ```bash
-# Fresh DB: MySQL auto-creates it via the URL flag; Flyway builds schema + seeds
-DB_URL="jdbc:mysql://localhost:3306/dev_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
+DB_URL="jdbc:mysql://localhost:3306/db_vu_gia_fullstack?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
   ./mvnw spring-boot:run
-
-# Build a runnable jar
-./mvnw clean package && java -jar target/spring-boot-0.0.1-SNAPSHOT.jar
 ```
 
-### Default admin account
-
-| Username | Password | Email |
-|---|---|---|
-| `admin` | `admin123` | `admin@gmail.com` |
-
-> ⚠️ Change the password before deploying.
-
-### Images (MinIO)
-
-The app auto-creates the `assets` and `products` buckets as public-read. Upload the `assets/images/` folder into the **`assets`** bucket via the MinIO console — see **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)** for the full flow. The DB stores **relative** image paths (e.g. `assets/images/gallery/gallery-1.jpg`); the frontend prepends the MinIO base URL.
+### Default Admin Credentials
+- **Username**: `admin` | **Password**: `admin123` | **Email**: `admin@gmail.com`
 
 ---
 
-## ⚙️ Configuration
+## 🔌 Project & API Documentation
 
-Everything in `src/main/resources/application.yaml` is overridable via environment variables.
+### Architecture & Operations Docs
 
-| Env variable | Default | Description |
-|---|---|---|
-| `DB_URL` | `jdbc:mysql://localhost:3306/dev_db` | JDBC URL |
-| `DB_USERNAME` / `DB_PASSWORD` | `root` / `rootpassword` | DB credentials |
-| `APP_JWT_SECRET` | *(dev default)* | Base64 512-bit HS512 key — **must override in prod** |
-| `MINIO_URL` | `http://localhost:9000` | MinIO endpoint (server-side) |
-| `MINIO_PUBLIC_URL` | `http://localhost:9000` | Public base for image URLs (browser-facing / CDN) |
-| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` / `minioadmin123` | MinIO credentials |
-| `MINIO_BUCKET_ASSET` / `MINIO_BUCKET_PRODUCT` | `assets` / `products` | Bucket names |
-| `MAIL_HOST` | `smtp.gmail.com` | SMTP host |
-| `MAIL_USERNAME` / `MAIL_PASSWORD` | *(empty)* | SMTP credentials (required to actually send email) |
-| `APP_MAIL_FROM` | *(empty)* | "From" address for outgoing mail |
-| `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth Web client ID (empty disables the check — dev only) |
-| `VIETQR_BANK` / `VIETQR_ACCOUNT` / `VIETQR_HOLDER` | `MBBank` / `686804076868` / `NGUYEN DUY DAT` | Receiving account for the VietQR image (ONL orders) |
-| `SEPAY_WEBHOOK_SECRET` | *(empty)* | Secret to verify the SePay webhook signature — **empty = reject all webhooks** (fail-closed) |
-| `app.init.enabled` | `true` | Toggle startup admin seeding |
+| Topic | Document |
+|---|---|
+| Project Overview & PDR | [docs/project-overview-pdr.md](docs/project-overview-pdr.md) |
+| Codebase Summary | [docs/codebase-summary.md](docs/codebase-summary.md) |
+| Coding Standards | [docs/code-standards.md](docs/code-standards.md) |
+| Architecture & System Design | [docs/system-architecture.md](docs/system-architecture.md) |
+| Project Roadmap | [docs/project-roadmap.md](docs/project-roadmap.md) |
+| Deployment Guide | [docs/deployment-guide.md](docs/deployment-guide.md) |
+| API Design Guidelines | [docs/design-guidelines.md](docs/design-guidelines.md) |
 
-> 🔒 **Production:** generate a fresh `APP_JWT_SECRET`, set real SMTP + MinIO credentials, and point `MINIO_PUBLIC_URL` at your CDN/domain.
+### Detailed Module API Docs
 
----
-
-## 🔌 API Reference
-
-Base path **`/api`** · Swagger UI **`/swagger-ui.html`** · Health **`/actuator/health`**.
-
-Per-module reference (request/response, error codes, curl-for-Postman):
-
-| Module | Doc |
+| Module | Document |
 |---|---|
 | Auth & User (RBAC) | [docs/AUTH_USER_API.md](docs/AUTH_USER_API.md) |
 | Products & Categories | [docs/PRODUCT_API.md](docs/PRODUCT_API.md) |
 | News & Categories | [docs/NEWS_API.md](docs/NEWS_API.md) |
 | Coupons | [docs/COUPON_API.md](docs/COUPON_API.md) |
-| Cart | [docs/CART_API.md](docs/CART_API.md) |
-| Orders | [docs/ORDER_API.md](docs/ORDER_API.md) |
+| Shopping Cart | [docs/CART_API.md](docs/CART_API.md) |
+| Orders & Payments | [docs/ORDER_API.md](docs/ORDER_API.md) |
 | Admin Dashboard | [docs/DASHBOARD_API.md](docs/DASHBOARD_API.md) |
-| Pages (CMS) | [docs/PAGE_API.md](docs/PAGE_API.md) |
-| Contact | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
+| CMS Pages | [docs/PAGE_API.md](docs/PAGE_API.md) |
+| Contact Requests | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
 | Newsletter | [docs/NEWSLETTER_API.md](docs/NEWSLETTER_API.md) |
-| Banners / Showrooms / Gallery / FAQ / Redirects | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
-| Run & seed & MinIO | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
-
-**Login example**
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-```
+| Basic Modules (Banners, FAQs, etc.) | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
+| File Storage & Image Serving | [docs/FILE_STORAGE_API.md](docs/FILE_STORAGE_API.md) |
 
 ---
 
 ## 🛡 Security Model
 
-1. **Login** validates credentials via `AuthenticationManager` + `BCryptPasswordEncoder` (or a Google ID token).
-2. Server issues a short-lived **JWT access token** (HS512) + a long-lived DB-stored **refresh token** (rotated on each refresh).
-3. `JwtAuthenticationFilter` validates the token per request and populates the `SecurityContext`.
-4. **Authorization**: storefront **reads are public**; **writes require staff** (`@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`); user management is `SUPERADMIN`-only; cart/checkout require any authenticated user.
-5. Auth failures return consistent JSON: **401** (`JwtAuthenticationEntryPoint`) or **403** (`CustomAccessDeniedHandler`).
-
-**Roles:** `SUPERADMIN` › `ADMIN` › `CUSTOMER` (stored on `users.role`).
+1. **Authentication**: BCrypt password hashing + Google OAuth2 ID token verification.
+2. **Tokens**: Short-lived HS512 JWT Access Token + DB Refresh Token with cookie rotation.
+3. **Authorization**: Public read endpoints; Write actions require `@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`.
 
 ---
 
 ## 📦 Response Format
 
-**Success**
-```json
-{ "code": 1000, "message": "Order placed", "data": { "...": "..." }, "timestamp": "2026-07-11T02:00:00Z" }
-```
-**Error**
-```json
-{ "code": 4105, "message": "Mã giảm giá đã hết hạn", "data": null, "timestamp": "2026-07-11T02:00:00Z" }
-```
-
-**Error code ranges**
-
-| Range | Meaning |
-|---|---|
-| `1000` | Success |
-| `4000–4005` | Bad request / validation |
-| `401x` | Authentication |
-| `4030` | Authorization (403) |
-| `404x` | Not found |
-| `409x` / `41xx` | Conflict (already exists, coupon not applicable…) |
-| `9000–9999` | Server / internal errors |
+- **Success**: `{ "code": 1000, "message": "Success", "data": { ... }, "timestamp": "..." }`
+- **Error**: `{ "code": 4044, "message": "Product not found", "data": null, "timestamp": "..." }`
 
 ---
 
 ## 📄 License
 
 Released under the **MIT License**.
-
----
 
 <div align="center">
 

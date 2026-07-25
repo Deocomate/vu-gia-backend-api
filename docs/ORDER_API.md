@@ -38,7 +38,7 @@ Tài liệu bàn giao FE cho module **Order (đặt hàng)**.
   tránh sai lệch khi khách huỷ/hoàn tiền). Nếu đơn **rời khỏi `COMPLETED`** (vd `RETURNED`) thì **trừ lại**
   đúng số lượng. Cộng/trừ bằng UPDATE nguyên tử theo từng sản phẩm.
 - **Phí vận chuyển (`shippingMethodId`)**: tuỳ chọn, tham chiếu `GET /api/shipping-methods` (xem
-  `docs/SHIPPING_API.md`). Nếu gửi, server tra `fee` của phương thức tại thời điểm đặt hàng và **cộng
+  `./SHIPPING_API.md`). Nếu gửi, server tra `fee` của phương thức tại thời điểm đặt hàng và **cộng
   vào `totalAmount`**; phương thức không tồn tại hoặc đã bị vô hiệu hoá (`isActive=false`) → lỗi `4060`.
   Không gửi (hoặc client cũ chưa hỗ trợ) → `shippingFee = 0`, không ảnh hưởng đơn hàng cũ.
   **Coupon `FREE_SHIP`**: nếu mã áp dụng có `discountType = FREE_SHIP`, phí ship được **miễn** khỏi

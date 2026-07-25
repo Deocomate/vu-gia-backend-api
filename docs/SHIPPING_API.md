@@ -11,7 +11,7 @@ Tài liệu bàn giao FE cho module **Shipping Method (phương thức vận chu
 - **PUT là partial update**: chỉ gửi field muốn đổi; field không gửi (null) → giữ nguyên. Ràng buộc
   "bắt buộc" chỉ áp dụng khi **tạo mới (POST)**.
 - **Tích hợp với đặt hàng**: FE gửi `shippingMethodId` (tuỳ chọn) trong `POST /api/orders`. Server tự
-  tra `fee` tại thời điểm đặt hàng và cộng vào `totalAmount` — xem `docs/ORDER_API.md`. Phương thức
+  tra `fee` tại thời điểm đặt hàng và cộng vào `totalAmount` — xem `./ORDER_API.md`. Phương thức
   bị **vô hiệu hoá (`isActive=false`)** sẽ bị từ chối ở bước đặt hàng (lỗi `4060`), tránh khách chọn
   nhầm một phương thức đã ngừng dùng.
 
