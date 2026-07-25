@@ -106,11 +106,11 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         if (request.getPriority() != null) {
             entity.setPriority(request.getPriority());
         }
-        if (request.getLongContent() != null) {
-            entity.setLongContent(request.getLongContent());
+        if (request.getShortDescription() != null) {
+            entity.setShortDescription(request.getShortDescription());
         }
-        if (request.getDes() != null) {
-            entity.setDes(request.getDes());
+        if (request.getDetailContent() != null) {
+            entity.setDetailContent(request.getDetailContent());
         }
         if (request.getIsActive() != null) {
             entity.setActive(request.getIsActive());

@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
+import java.time.Instant;
+
 /** Partial update: mọi field optional; field null → giữ nguyên, không ghi đè. */
 @Data
 @NoArgsConstructor
@@ -33,6 +35,9 @@ public class NewsUpdateRequest {
     private Integer priority;
 
     private ContentStatus status;
+
+    /** Optional; explicit value wins over the auto-set-on-PUBLISHED default (allows backdating). */
+    private Instant publishedAt;
 
     private Long newsCategoryId;
 

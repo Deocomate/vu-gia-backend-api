@@ -7,7 +7,7 @@ Tài liệu bàn giao FE cho domain **Tin tức**: Danh mục tin (`news-categor
 - **Đọc (GET) công khai** (storefront); **ghi (POST/PUT/PATCH/DELETE) yêu cầu `ADMIN`/`SUPERADMIN`** (`Authorization: Bearer <accessToken>`).
 - Slug **tự sinh từ `name`/`title`** (bỏ dấu tiếng Việt), đảm bảo duy nhất (hậu tố `-2, -3…`); client có thể tự gửi `slug`, trùng → 409.
 - **PUT là partial update**: chỉ gửi field muốn đổi; field không gửi → giữ nguyên. Ràng buộc bắt buộc chỉ khi **tạo (POST)**.
-- **`publishedAt` tự động**: set = thời điểm hiện tại **lần đầu** bài viết chuyển sang `PUBLISHED` (qua create/update/đổi trạng thái); sau đó giữ nguyên.
+- **`publishedAt` tự động hoặc tùy chỉnh**: mặc định auto-set = thời điểm hiện tại **lần đầu** bài viết chuyển sang `PUBLISHED` (qua create/update/đổi trạng thái); tuy nhiên có thể truyền `publishedAt` rõ ràng trong request body (POST/PUT) để override (ví dụ backdate hoặc forward-date). Không validation, forward-dating được phép.
 - **`viewCount` tự tăng** mỗi lần gọi `GET /api/news/slug/{slug}` (trang chi tiết công khai). Chỉ đọc, không nhận qua create/update.
 - Ảnh (`thumb`, `seoImage`) là **URL** — upload qua `POST /api/media/upload` (xem PRODUCT_API.md) rồi đưa vào body.
 
@@ -86,7 +86,8 @@ Body tạo:
   "des": "{\"blocks\":[]}",              // bắt buộc (chuỗi JSON nội dung)
   "slug": "",                              // tuỳ chọn; bỏ trống tự sinh từ title
   "priority": 0,                           // tuỳ chọn
-  "status": "DRAFT",                       // tuỳ chọn (mặc định DRAFT); PUBLISHED → set publishedAt
+  "status": "DRAFT",                       // tuỳ chọn (mặc định DRAFT); PUBLISHED → auto-set publishedAt nếu không truyền
+  "publishedAt": "2026-07-10T08:00:00Z",  // tuỳ chọn; override auto-set nếu truyền (khi status=PUBLISHED)
   "newsCategoryId": 2,                     // bắt buộc
   "seoTitle": "...", "seoDescription": "...", "seoImage": "https://cdn/seo.jpg"
 }

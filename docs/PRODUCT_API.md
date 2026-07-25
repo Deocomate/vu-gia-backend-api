@@ -66,14 +66,14 @@ Body tạo/cập nhật:
   "thumb": "https://.../a.jpg", // bắt buộc (URL ảnh, upload qua /api/media trước), ≤ 255
   "slug": "dien-thoai",        // tuỳ chọn; bỏ trống sẽ tự sinh từ name
   "priority": 10,               // tuỳ chọn (mặc định 0)
-  "longContent": "…",          // tuỳ chọn (text dài)
-  "des": "{\"blocks\":[]}",    // tuỳ chọn (chuỗi JSON)
+  "shortDescription": "…",     // tuỳ chọn (text dài — hiển thị tóm tắt danh mục)
+  "detailContent": "{\"blocks\":[]}", // tuỳ chọn (chuỗi JSON — nội dung khối chi tiết)
   "isActive": true,             // tuỳ chọn (mặc định true)
   "seoTitle": "…", "seoDescription": "…", "seoImage": "https://…"
 }
 ```
 
-`ProductCategoryResponse`: `{id, name, thumb, priority, longContent, des, slug, isActive, seoTitle, seoDescription, seoImage, createdAt, updatedAt}`.
+`ProductCategoryResponse`: `{id, name, thumb, priority, shortDescription, detailContent, slug, isActive, seoTitle, seoDescription, seoImage, createdAt, updatedAt}`.
 
 ---
 
@@ -222,7 +222,7 @@ export type ProductStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface ProductCategoryResponse {
   id: number; name: string; thumb: string; priority: number;
-  longContent: string | null; des: string | null; slug: string; isActive: boolean;
+  shortDescription: string | null; detailContent: string | null; slug: string; isActive: boolean;
   seoTitle: string | null; seoDescription: string | null; seoImage: string | null;
   createdAt: string; updatedAt: string;
 }
@@ -314,7 +314,7 @@ curl http://localhost:8080/api/product-categories/1
 # Tạo (ADMIN)
 curl -X POST http://localhost:8080/api/product-categories \
   -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Content-Type: application/json" \
-  -d '{"name":"Điện thoại","thumb":"https://cdn/x.jpg","slug":"","priority":10,"longContent":"...","des":"{\"blocks\":[]}","isActive":true,"seoTitle":"","seoDescription":"","seoImage":""}'
+  -d '{"name":"Điện thoại","thumb":"https://cdn/x.jpg","slug":"","priority":10,"shortDescription":"...","detailContent":"{\"blocks\":[]}","isActive":true,"seoTitle":"","seoDescription":"","seoImage":""}'
 # Cập nhật (ADMIN) — partial, chỉ gửi field muốn đổi
 curl -X PUT http://localhost:8080/api/product-categories/1 \
   -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Content-Type: application/json" \

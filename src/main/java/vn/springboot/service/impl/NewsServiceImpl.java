@@ -121,7 +121,9 @@ public class NewsServiceImpl implements NewsService {
                 .slug(slug)
                 .priority(request.getPriority() != null ? request.getPriority() : 0)
                 .status(status)
-                .publishedAt(status == ContentStatus.PUBLISHED ? Instant.now() : null)
+                .publishedAt(request.getPublishedAt() != null
+                        ? request.getPublishedAt()
+                        : (status == ContentStatus.PUBLISHED ? Instant.now() : null))
                 .newsCategory(category)
                 .seoTitle(request.getSeoTitle())
                 .seoDescription(request.getSeoDescription())
@@ -184,6 +186,9 @@ public class NewsServiceImpl implements NewsService {
             if (request.getStatus() == ContentStatus.PUBLISHED && entity.getPublishedAt() == null) {
                 entity.setPublishedAt(Instant.now());
             }
+        }
+        if (request.getPublishedAt() != null) {
+            entity.setPublishedAt(request.getPublishedAt());
         }
 
         return newsMapper.toResponse(newsRepository.save(entity));

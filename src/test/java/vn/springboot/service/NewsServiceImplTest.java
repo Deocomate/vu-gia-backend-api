@@ -14,6 +14,7 @@ import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
 import vn.springboot.dto.request.news.NewsCreateRequest;
 import vn.springboot.dto.request.news.NewsSearchRequest;
+import vn.springboot.dto.request.news.NewsUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.news.NewsResponse;
 import vn.springboot.entity.enums.ContentStatus;
@@ -24,6 +25,8 @@ import vn.springboot.repository.NewsCategoryRepository;
 import vn.springboot.repository.NewsRepository;
 import vn.springboot.service.impl.NewsServiceImpl;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -155,6 +158,58 @@ class NewsServiceImplTest {
         verify(newsRepository).save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(ContentStatus.DRAFT);
         assertThat(captor.getValue().getPublishedAt()).isNull();
+    }
+
+    @Test
+    void create_explicitPublishedAt_overridesAutoSet() {
+        Instant explicit = Instant.now().minus(10, ChronoUnit.DAYS);
+        when(newsCategoryRepository.findById(5L))
+                .thenReturn(Optional.of(new NewsCategoryEntity()));
+        when(newsRepository.existsBySlug(anyString())).thenReturn(false);
+        when(newsRepository.save(any(NewsEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(newsMapper.toResponse(any(NewsEntity.class))).thenReturn(response(1L, "Hello World", "hello-world"));
+
+        service.create(validCreate().status(ContentStatus.PUBLISHED).publishedAt(explicit).build());
+
+        ArgumentCaptor<NewsEntity> captor = ArgumentCaptor.forClass(NewsEntity.class);
+        verify(newsRepository).save(captor.capture());
+        assertThat(captor.getValue().getPublishedAt()).isEqualTo(explicit);
+    }
+
+    @Test
+    void update_explicitPublishedAt_winsOverStatusAutoSet() {
+        Instant explicit = Instant.now().minus(30, ChronoUnit.DAYS);
+        NewsEntity entity = newsEntity("Hello World", "hello-world");
+        when(newsRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(newsRepository.save(any(NewsEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(newsMapper.toResponse(any(NewsEntity.class))).thenReturn(response(1L, "Hello World", "hello-world"));
+
+        NewsUpdateRequest request = NewsUpdateRequest.builder()
+                .status(ContentStatus.PUBLISHED)
+                .publishedAt(explicit)
+                .build();
+        service.update(1L, request);
+
+        ArgumentCaptor<NewsEntity> captor = ArgumentCaptor.forClass(NewsEntity.class);
+        verify(newsRepository).save(captor.capture());
+        assertThat(captor.getValue().getPublishedAt()).isEqualTo(explicit);
+    }
+
+    @Test
+    void update_omittedPublishedAt_leavesExistingValueUntouched() {
+        Instant existing = Instant.now().minus(5, ChronoUnit.DAYS);
+        NewsEntity entity = newsEntity("Hello World", "hello-world");
+        entity.setStatus(ContentStatus.PUBLISHED);
+        entity.setPublishedAt(existing);
+        when(newsRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(newsRepository.save(any(NewsEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(newsMapper.toResponse(any(NewsEntity.class))).thenReturn(response(1L, "Hello World", "hello-world"));
+
+        service.update(1L, NewsUpdateRequest.builder().title("Updated Title").build());
+
+        ArgumentCaptor<NewsEntity> captor = ArgumentCaptor.forClass(NewsEntity.class);
+        verify(newsRepository).save(captor.capture());
+        assertThat(captor.getValue().getPublishedAt()).isEqualTo(existing);
     }
 
     @Test

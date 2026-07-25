@@ -28,10 +28,10 @@ public class ProductCategoryUpdateRequest {
 
     private Integer priority;
 
-    private String longContent;
+    private String shortDescription;
 
     /** JSON string. */
-    private String des;
+    private String detailContent;
 
     private Boolean isActive;
 

@@ -809,6 +809,9 @@ INSERT INTO
         `status`,
         `published_at`,
         `news_category_id`,
+        `seo_title`,
+        `seo_description`,
+        `seo_image`,
         `created_at`,
         `updated_at`
     )
@@ -819,19 +822,44 @@ VALUES
         'Ý nghĩa chữ Thọ tròn trong không gian tâm linh Việt',
         'assets/images/home/home-new-1.png',
         'Khám phá chiều sâu văn hóa truyền thống và ý nghĩa biểu tượng của họa tiết chữ Thọ tròn tinh xảo trên các tác phẩm thờ cúng.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Khám phá chiều sâu văn hóa truyền thống và ý nghĩa biểu tượng của họa tiết chữ Thọ tròn tinh xảo trên các tác phẩm thờ cúng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/HomeCraftsmanship-1.png',
+                'caption',
+                'Họa tiết chữ Thọ tròn được chạm khắc tinh xảo trên đồ thờ gốm sứ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Chữ Thọ tròn thường xuất hiện trên các vật phẩm thờ cúng, tượng trưng cho ước vọng trường tồn, viên mãn của gia chủ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Chữ Thọ tròn không chỉ là họa tiết trang trí mà còn gửi gắm lời chúc phúc trường thọ, an khang cho cả gia đình.'
             )
-        ),
+        )),
         'y-nghia-chu-tho-tron-trong-tam-linh-viet',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-02-03 09:00:00',
         1,
+        'Ý nghĩa chữ Thọ tròn trong không gian tâm linh Việt',
+        'Khám phá chiều sâu văn hóa truyền thống và ý nghĩa biểu tượng của họa tiết chữ Thọ tròn tinh xảo trên các tác phẩm thờ cúng.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -840,19 +868,100 @@ VALUES
         'Cách bài trí bàn thờ gia tiên chuẩn phong thủy rước tài lộc',
         'assets/images/home/home-new-2.png',
         'Hướng dẫn chi tiết từ nghệ nhân làng nghề cách sắp xếp vị trí bát hương, kỷ nước và mâm bồng mang lại bình an.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
-                'Hướng dẫn chi tiết từ nghệ nhân làng nghề cách sắp xếp vị trí bát hương, kỷ nước và mâm bồng mang lại bình an.'
+                'Bàn thờ gia tiên là nơi linh thiêng nhất trong mỗi gia đình Việt, không chỉ là nơi tưởng nhớ tổ tiên mà còn ảnh hưởng trực tiếp đến vượng khí và tài lộc của cả nhà.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Việc sắp xếp đúng vị trí bát hương, kỷ nước, mâm bồng theo nguyên tắc phong thủy truyền thống sẽ giúp gia chủ đón nhận nhiều may mắn, bình an trong cuộc sống.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Bố cục bàn thờ gia tiên chuẩn mực với bát hương đặt chính giữa.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'heading',
+                'text',
+                'Nguyên tắc sắp xếp bát hương và kỷ nước trên bàn thờ'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Bát hương luôn được đặt ở vị trí trung tâm, ngay hàng thẳng lối với trục giữa bàn thờ, tượng trưng cho sự cân bằng âm dương.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Vị trí bát hương:',
+                        'text',
+                        'Đặt chính giữa bàn thờ, không xê dịch, tránh động bát hương gây ảnh hưởng đến vượng khí gia đình.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Kỷ nước và mâm bồng:',
+                        'text',
+                        'Kỷ nước đặt phía trước bát hương, mâm bồng hoa quả đặt hai bên đối xứng, tạo sự hài hòa cân đối.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/HomeCraftsmanship-1.png',
+                        'caption',
+                        'Kỷ nước ba chén tượng trưng cho sự thanh khiết.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/HomeCraftsmanship-2.png',
+                        'caption',
+                        'Mâm bồng hoa quả bày biện đối xứng hai bên bàn thờ.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Một bàn thờ được sắp xếp gọn gàng, đúng lễ nghi chính là cách con cháu bày tỏ lòng thành kính sâu sắc nhất với tổ tiên.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Ngoài việc sắp xếp đúng vị trí, gia chủ cũng nên thường xuyên lau dọn, thay nước và hương để bàn thờ luôn sạch sẽ, trang nghiêm quanh năm.'
             )
-        ),
+        )),
         'cach-bai-tri-ban-tho-gia-tien-chuan-phong-thuy',
         10,
         'PUBLISHED',
-        NOW(),
+        '2026-02-10 10:30:00',
         1,
+        'Cách bài trí bàn thờ gia tiên chuẩn phong thủy rước tài lộc',
+        'Hướng dẫn chi tiết từ nghệ nhân làng nghề cách sắp xếp vị trí bát hương, kỷ nước và mâm bồng mang lại bình an.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -861,19 +970,57 @@ VALUES
         'Chọn bình hút tài lộc theo bản mệnh gia chủ cát tường',
         'assets/images/home/home-new-1.png',
         'Bí quyết chọn lựa màu men, kiểu dáng bình hút lộc Bát Tràng tương sinh theo Ngũ hành của gia chủ.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Bí quyết chọn lựa màu men, kiểu dáng bình hút lộc Bát Tràng tương sinh theo Ngũ hành của gia chủ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-3.png',
+                'caption',
+                'Bình hút lộc với nhiều màu men phù hợp từng bản mệnh.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Mỗi bản mệnh Ngũ hành sẽ tương ứng với một gam màu men khác nhau, giúp gia chủ chọn được bình hút lộc hợp phong thủy nhất.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Mệnh Kim - Mệnh Thủy:',
+                        'text',
+                        'Nên chọn bình men trắng, men xanh dương hoặc ánh kim.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Mệnh Mộc - Mệnh Hỏa:',
+                        'text',
+                        'Phù hợp với bình men xanh lá, men đỏ hoặc nâu đất.'
+                    )
+                )
             )
-        ),
+        )),
         'chon-binh-hut-tai-loc-theo-ban-menh',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-02-18 14:00:00',
         1,
+        'Chọn bình hút tài lộc theo bản mệnh gia chủ cát tường',
+        'Bí quyết chọn lựa màu men, kiểu dáng bình hút lộc Bát Tràng tương sinh theo Ngũ hành của gia chủ.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -882,19 +1029,44 @@ VALUES
         'Vị trí đặt lộc bình phòng khách mang lại tài lộc dồi dào',
         'assets/images/home/home-new-1.png',
         'Cách bố trí đôi lộc bình trong phòng khách vừa tăng tính thẩm mỹ sang trọng vừa hợp phong thủy.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Cách bố trí đôi lộc bình trong phòng khách vừa tăng tính thẩm mỹ sang trọng vừa hợp phong thủy.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Đôi lộc bình đặt trang trọng hai bên phòng khách.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Lộc bình thường được đặt thành đôi ở hai bên cửa chính hoặc góc phòng khách để cân bằng năng lượng và thu hút vượng khí.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Một đôi lộc bình đặt đúng vị trí không chỉ tô điểm không gian sống mà còn mang lại sinh khí tốt lành cho gia chủ.'
             )
-        ),
+        )),
         'vi-tri-dat-loc-binh-phong-khach',
         10,
         'PUBLISHED',
-        NOW(),
+        '2026-04-10 13:20:00',
         1,
+        'Vị trí đặt lộc bình phòng khách mang lại tài lộc dồi dào',
+        'Cách bố trí đôi lộc bình trong phòng khách vừa tăng tính thẩm mỹ sang trọng vừa hợp phong thủy.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -903,19 +1075,57 @@ VALUES
         'Nguyên tắc tam hợp trong lựa chọn họa tiết gốm tâm linh',
         'assets/images/home/home-new-2.png',
         'Tìm hiểu về nguyên tắc kết hợp họa tiết phong thủy giúp gia đạo êm ấm, công danh thăng tiến.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Tìm hiểu về nguyên tắc kết hợp họa tiết phong thủy giúp gia đạo êm ấm, công danh thăng tiến.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Họa tiết tam hợp được phối hợp hài hòa trên sản phẩm gốm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Nguyên tắc tam hợp giúp kết hợp các họa tiết phong thủy tương sinh, tránh xung khắc, mang lại sự hài hòa cho không gian thờ cúng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Tam hợp bản mệnh:',
+                        'text',
+                        'Chọn họa tiết tương sinh với bản mệnh gia chủ để tăng cường vượng khí.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Tam hợp không gian:',
+                        'text',
+                        'Phối hợp họa tiết phù hợp với diện tích và ánh sáng của không gian thờ.'
+                    )
+                )
             )
-        ),
+        )),
         'nguyen-tac-tam-hop-hoa-tiet-gom',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-04-18 09:00:00',
         1,
+        'Nguyên tắc tam hợp trong lựa chọn họa tiết gốm tâm linh',
+        'Tìm hiểu về nguyên tắc kết hợp họa tiết phong thủy giúp gia đạo êm ấm, công danh thăng tiến.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -924,19 +1134,44 @@ VALUES
         'Ý nghĩa của đôi hạc chầu trên bàn thờ gia tiên Việt',
         'assets/images/home/home-new-1.png',
         'Hạc thờ bằng gốm sứ Bát Tràng biểu tượng cho sự trường thọ, thanh cao và kết nối tâm linh bền chặt.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Hạc thờ bằng gốm sứ Bát Tràng biểu tượng cho sự trường thọ, thanh cao và kết nối tâm linh bền chặt.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Đôi hạc thờ gốm sứ đứng chầu trang nghiêm trên bàn thờ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Hình ảnh đôi hạc đứng trên lưng rùa là biểu tượng quen thuộc trên bàn thờ gia tiên, thể hiện sự trường tồn và kết nối giữa trời và đất.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Đôi hạc chầu không chỉ tô điểm không gian thờ cúng mà còn nhắc nhở con cháu về đạo lý uống nước nhớ nguồn.'
             )
-        ),
+        )),
         'y-nghia-doi-hac-chau-tren-ban-tho',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-04-25 15:10:00',
         1,
+        'Ý nghĩa của đôi hạc chầu trên bàn thờ gia tiên Việt',
+        'Hạc thờ bằng gốm sứ Bát Tràng biểu tượng cho sự trường thọ, thanh cao và kết nối tâm linh bền chặt.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -945,19 +1180,100 @@ VALUES
         'Cách bao sái bàn thờ cuối năm không lo động bát hương',
         'assets/images/home/home-new-1.png',
         'Quy trình lau dọn bàn thờ thành kính, đúng cách để giữ gìn phước đức và may mắn cho năm mới.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
-                'Quy trình lau dọn bàn thờ thành kính, đúng cách để giữ gìn phước đức và may mắn cho năm mới.'
+                'Bao sái bàn thờ cuối năm là nghi lễ quan trọng giúp gia đình tiễn năm cũ, đón năm mới với không gian thờ cúng sạch sẽ, trang nghiêm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Tuy nhiên nhiều gia chủ lo lắng việc lau dọn có thể "động" bát hương, ảnh hưởng đến vượng khí nếu không thực hiện đúng cách.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Nghi thức bao sái bàn thờ cần được thực hiện thành kính, tỉ mỉ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'heading',
+                'text',
+                'Các bước bao sái bàn thờ đúng chuẩn, không lo động bát hương'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Trước khi lau dọn, gia chủ cần thắp hương xin phép tổ tiên và thần linh, sau đó mới tiến hành rút chân hương và lau dọn từng vật phẩm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Rút chân hương:',
+                        'text',
+                        'Giữ lại số chân hương lẻ (thường là 3, 5, 7), phần còn lại đem hóa tro sạch sẽ, tuyệt đối không đổ bỏ tùy tiện.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Lau dọn đồ thờ:',
+                        'text',
+                        'Dùng khăn sạch, nước ấm pha rượu gừng lau nhẹ nhàng từng món đồ thờ, tránh xê dịch vị trí bát hương.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/products/product-content-image-thumb.png',
+                        'caption',
+                        'Chân hương được rút gọn gàng trước khi hóa tro.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/home-new-2.png',
+                        'caption',
+                        'Đồ thờ được lau chùi sáng bóng sau khi bao sái.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Bao sái không phải là xáo trộn mà là làm mới không gian thờ cúng trong sự thành kính và cẩn trọng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Sau khi hoàn tất, gia chủ nên thắp hương tạ lễ và sắp xếp lại đồ thờ đúng vị trí ban đầu để đón năm mới an lành, sung túc.'
             )
-        ),
+        )),
         'cach-bao-sai-ban-tho-cuoi-nam',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-05-02 10:00:00',
         1,
+        'Cách bao sái bàn thờ cuối năm không lo động bát hương',
+        'Quy trình lau dọn bàn thờ thành kính, đúng cách để giữ gìn phước đức và may mắn cho năm mới.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -967,19 +1283,44 @@ VALUES
         'Ý nghĩa lịch sử hào hùng ngày giải phóng miền Nam 30/4/1975',
         'assets/images/home/home-new-2.png',
         'Nhìn lại dòng chảy lịch sử vẻ vang và những cảm hứng nghệ thuật gốm sứ truyền tải thông điệp yêu nước.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Nhìn lại dòng chảy lịch sử vẻ vang và những cảm hứng nghệ thuật gốm sứ truyền tải thông điệp yêu nước.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Tác phẩm gốm sứ lấy cảm hứng từ tinh thần yêu nước hào hùng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Nhiều nghệ nhân Bát Tràng đã khéo léo lồng ghép hình ảnh lịch sử vào các tác phẩm gốm sứ, như một cách tri ân thế hệ cha anh đi trước.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Mỗi tác phẩm gốm mang dấu ấn lịch sử là một lời nhắc nhở về giá trị hòa bình mà cha ông đã đánh đổi.'
             )
-        ),
+        )),
         'giai-phong-mien-nam-30-4-1975-lich-su',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-01-28 08:15:00',
         2,
+        'Ý nghĩa lịch sử hào hùng ngày giải phóng miền Nam 30/4/1975',
+        'Nhìn lại dòng chảy lịch sử vẻ vang và những cảm hứng nghệ thuật gốm sứ truyền tải thông điệp yêu nước.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -988,19 +1329,100 @@ VALUES
         'Phân biệt men rạn cổ và men lam truyền thống Bát Tràng',
         'assets/images/home/home-new-1.png',
         'Giúp người sưu tầm gốm nhận diện rõ nét đặc trưng độc bản của hai dòng men trứ danh ngàn năm tuổi.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
-                'Giúp người sưu tầm gốm nhận diện rõ nét đặc trưng độc bản của hai dòng men trứ danh ngàn năm tuổi.'
+                'Men rạn và men lam là hai dòng men trứ danh làm nên tên tuổi gốm sứ Bát Tràng suốt hàng trăm năm qua.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Dù cùng xuất phát từ một làng nghề, hai dòng men này lại mang những đặc trưng hoàn toàn khác biệt về kỹ thuật chế tác lẫn vẻ đẹp thẩm mỹ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Men rạn cổ với những đường rạn tự nhiên độc đáo trên bề mặt gốm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'heading',
+                'text',
+                'Đặc trưng nhận diện men rạn cổ và men lam Bát Tràng'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Men rạn được tạo ra nhờ sự chênh lệch độ co giãn giữa men và xương gốm khi nung, tạo nên các đường rạn chân chim tự nhiên, không món nào giống món nào.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Men rạn cổ:',
+                        'text',
+                        'Bề mặt có các đường rạn nhỏ như mạng nhện, màu men ngả vàng ngà, mang vẻ đẹp hoài cổ, trầm mặc.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Men lam truyền thống:',
+                        'text',
+                        'Sử dụng oxit coban vẽ họa tiết xanh lam trên nền men trắng, nét vẽ tinh tế, màu sắc trong trẻo, tươi sáng.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/home-new-2.png',
+                        'caption',
+                        'Men lam xanh biếc với họa tiết hoa văn tinh xảo.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/HomeCraftsmanship-2.png',
+                        'caption',
+                        'So sánh trực quan giữa men rạn và men lam trên cùng dáng bình.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Mỗi vết rạn, mỗi nét vẽ lam đều là dấu ấn thời gian và bàn tay tài hoa của nghệ nhân Bát Tràng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Khi lựa chọn, người sưu tầm nên cân nhắc không gian trưng bày và sở thích cá nhân để chọn dòng men phù hợp, vừa tôn lên giá trị thẩm mỹ vừa thể hiện gu thưởng thức tinh tế.'
             )
-        ),
+        )),
         'phan-biet-men-ran-co-va-men-lam',
         10,
         'PUBLISHED',
-        NOW(),
+        '2026-03-05 09:45:00',
         2,
+        'Phân biệt men rạn cổ và men lam truyền thống Bát Tràng',
+        'Giúp người sưu tầm gốm nhận diện rõ nét đặc trưng độc bản của hai dòng men trứ danh ngàn năm tuổi.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1009,19 +1431,57 @@ VALUES
         'Quy trình chế tác đôi lục bình đắp nổi thủ công cầu kỳ',
         'assets/images/home/home-new-1.png',
         'Hành trình từ đất sét thô sơ qua đôi tay nghệ nhân tạo tác hoa văn rồng chầu, hoa sen tinh xảo.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Hành trình từ đất sét thô sơ qua đôi tay nghệ nhân tạo tác hoa văn rồng chầu, hoa sen tinh xảo.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/HomeCraftsmanship-3.png',
+                'caption',
+                'Nghệ nhân đắp nổi hoa văn rồng chầu trên thân lục bình.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Mỗi họa tiết đắp nổi đều được thực hiện hoàn toàn thủ công, đòi hỏi sự kiên nhẫn và tay nghề cao của người nghệ nhân.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Tạo hình thân bình:',
+                        'text',
+                        'Đất sét được vuốt tay hoặc đổ khuôn tạo dáng cơ bản cho lục bình.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Đắp nổi hoa văn:',
+                        'text',
+                        'Nghệ nhân đắp từng chi tiết hoa văn rồng, hoa sen lên thân bình trước khi nung.'
+                    )
+                )
             )
-        ),
+        )),
         'quy-trinh-che-tac-luc-binh-dap-noi',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-03-12 11:00:00',
         2,
+        'Quy trình chế tác đôi lục bình đắp nổi thủ công cầu kỳ',
+        'Hành trình từ đất sét thô sơ qua đôi tay nghệ nhân tạo tác hoa văn rồng chầu, hoa sen tinh xảo.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1030,19 +1490,44 @@ VALUES
         'Đặc điểm nhận biết gốm vuốt tay thủ công cao cấp',
         'assets/images/home/home-new-2.png',
         'Cách cảm nhận xương đất, độ dày và đường nét độc bản của các tác phẩm được chế tác hoàn toàn thủ công.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Cách cảm nhận xương đất, độ dày và đường nét độc bản của các tác phẩm được chế tác hoàn toàn thủ công.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Đôi bàn tay nghệ nhân vuốt tạo hình gốm trên bàn xoay.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Gốm vuốt tay thường có độ dày không đồng đều tự nhiên và những dấu vân tay nhẹ, khác biệt hoàn toàn so với gốm đổ khuôn công nghiệp.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Mỗi sản phẩm gốm vuốt tay là một bản độc bản, không có sản phẩm nào hoàn toàn giống nhau.'
             )
-        ),
+        )),
         'dac-diem-nhan-biet-gom-vuot-tay',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-05-10 09:20:00',
         2,
+        'Đặc điểm nhận biết gốm vuốt tay thủ công cao cấp',
+        'Cách cảm nhận xương đất, độ dày và đường nét độc bản của các tác phẩm được chế tác hoàn toàn thủ công.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -1051,19 +1536,57 @@ VALUES
         'Cách bảo quan và làm sạch bộ đồ thờ men rạn đắp nổi',
         'assets/images/home/home-new-1.png',
         'Mẹo nhỏ giúp giữ gìn độ sáng bóng, tránh bụi bẩn mà không ảnh hưởng đến lớp men rạn quý hiếm.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Mẹo nhỏ giúp giữ gìn độ sáng bóng, tránh bụi bẩn mà không ảnh hưởng đến lớp men rạn quý hiếm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Bộ đồ thờ men rạn đắp nổi cần được vệ sinh nhẹ nhàng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Men rạn có cấu trúc đặc biệt nên khi vệ sinh cần tránh dùng vật cứng chà xát mạnh làm ảnh hưởng đến các đường rạn men.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Vệ sinh định kỳ:',
+                        'text',
+                        'Dùng khăn mềm ẩm lau nhẹ bụi bẩn hàng tuần để giữ độ sáng bóng.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Tránh hóa chất mạnh:',
+                        'text',
+                        'Không dùng chất tẩy rửa mạnh vì có thể làm phai màu men rạn theo thời gian.'
+                    )
+                )
             )
-        ),
+        )),
         'cach-bao-quan-do-tho-men-ran',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-05-18 11:40:00',
         2,
+        'Cách bảo quan và làm sạch bộ đồ thờ men rạn đắp nổi',
+        'Mẹo nhỏ giúp giữ gìn độ sáng bóng, tránh bụi bẩn mà không ảnh hưởng đến lớp men rạn quý hiếm.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1072,19 +1595,100 @@ VALUES
         'Nghệ thuật vẽ vàng 24k trên nền gốm sứ tâm linh Vũ Gia',
         'assets/images/home/home-new-1.png',
         'Tìm hiểu quy trình vẽ nhũ vàng và nung hấp nhiệt độ cao giúp vàng bám chặt bền bỉ cùng thời gian.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
-                'Tìm hiểu quy trình vẽ nhũ vàng và nung hấp nhiệt độ cao giúp vàng bám chặt bền bỉ cùng thời gian.'
+                'Vẽ vàng 24k là kỹ thuật trang trí cao cấp, đòi hỏi sự tỉ mỉ và tay nghề điêu luyện của nghệ nhân Bát Tràng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Lớp vàng thật sau khi nung ở nhiệt độ cao sẽ bám chặt vào cốt gốm, tạo nên vẻ đẹp sang trọng, bền bỉ theo thời gian.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Nghệ nhân tỉ mỉ vẽ từng nét vàng 24k lên bề mặt gốm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'heading',
+                'text',
+                'Quy trình vẽ vàng 24k chuẩn nghệ nhân Bát Tràng'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Trước khi vẽ vàng, sản phẩm gốm phải được nung sơ và làm nguội hoàn toàn để đảm bảo bề mặt láng mịn, không bong tróc.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Pha chế vàng nước:',
+                        'text',
+                        'Vàng 24k nguyên chất được pha cùng dung môi chuyên dụng để tạo độ bám và độ mịn khi vẽ.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Nung hấp nhiệt độ cao:',
+                        'text',
+                        'Sau khi vẽ, sản phẩm được nung hấp ở nhiệt độ chuẩn để lớp vàng bám chắc, không phai màu theo thời gian.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/home-new-2.png',
+                        'caption',
+                        'Chi tiết họa tiết vàng 24k sau khi hoàn thiện.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/products/product-content-image-thumb.png',
+                        'caption',
+                        'Sản phẩm gốm dát vàng lấp lánh dưới ánh sáng.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Một sản phẩm dát vàng đẹp không chỉ nằm ở độ tinh xảo của nét vẽ mà còn ở sự kiên nhẫn của người nghệ nhân.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Chính vì độ khó và giá trị nguyên liệu cao, các sản phẩm gốm dát vàng 24k thường được lựa chọn làm quà tặng cao cấp hoặc vật phẩm thờ cúng trang trọng.'
             )
-        ),
+        )),
         'nghe-thuat-ve-vang-24k-tren-gom',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-05-25 08:50:00',
         2,
+        'Nghệ thuật vẽ vàng 24k trên nền gốm sứ tâm linh Vũ Gia',
+        'Tìm hiểu quy trình vẽ nhũ vàng và nung hấp nhiệt độ cao giúp vàng bám chặt bền bỉ cùng thời gian.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1093,19 +1697,44 @@ VALUES
         'Tại sao ấm trà tử sa Bát Tràng lại được người trà hữu tin dùng?',
         'assets/images/home/home-new-2.png',
         'Sự kết hợp hoàn hảo giữa chất đất khoáng tự nhiên và kỹ thuật nung chuẩn xác giữ trọn hương vị trà.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Sự kết hợp hoàn hảo giữa chất đất khoáng tự nhiên và kỹ thuật nung chuẩn xác giữ trọn hương vị trà.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Ấm trà tử sa với đường nét tinh xảo, chuẩn form dáng cổ điển.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Chất đất tử sa có khả năng giữ nhiệt tốt và hấp thụ hương trà qua nhiều lần pha, giúp hương vị trà ngày càng đậm đà.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Người sành trà thường ví ấm tử sa như một "người bạn" đồng hành, càng dùng lâu càng thêm quý.'
             )
-        ),
+        )),
         'tai-sao-am-tra-tu-sa-duoc-tin-dung',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-06-01 09:15:00',
         2,
+        'Tại sao ấm trà tử sa Bát Tràng lại được người trà hữu tin dùng?',
+        'Sự kết hợp hoàn hảo giữa chất đất khoáng tự nhiên và kỹ thuật nung chuẩn xác giữ trọn hương vị trà.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -1115,19 +1744,100 @@ VALUES
         'Lịch sử ngàn năm gìn giữ và thổi bùng ngọn lửa Bát Tràng',
         'assets/images/home/home-new-1.png',
         'Làng cổ Bát Tràng vượt qua thăng trầm thời gian để giữ vững thương hiệu gốm sứ tinh hoa số một Việt Nam.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
-                'Làng cổ Bát Tràng vượt qua thăng trầm thời gian để giữ vững thương hiệu gốm sứ tinh hoa số một Việt Nam.'
+                'Làng gốm Bát Tràng đã trải qua hơn 700 năm hình thành và phát triển, trở thành cái nôi gốm sứ nổi tiếng bậc nhất Việt Nam.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Từ những lò nung thủ công đơn sơ ban đầu, Bát Tràng dần khẳng định vị thế với những sản phẩm gốm sứ tinh xảo, vươn ra thị trường trong và ngoài nước.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Một góc làng nghề Bát Tràng với những lò gốm truyền thống.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'heading',
+                'text',
+                'Hành trình gìn giữ ngọn lửa nghề gốm qua bao thế hệ'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Trải qua nhiều thăng trầm lịch sử, người dân Bát Tràng vẫn kiên trì giữ lửa nghề, truyền nghề từ đời này sang đời khác.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Thời kỳ hình thành:',
+                        'text',
+                        'Bát Tràng ra đời từ thời Lý, ban đầu chỉ sản xuất gốm gia dụng phục vụ đời sống thường nhật.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Thời kỳ phát triển:',
+                        'text',
+                        'Đến nay, làng nghề đã mở rộng sang gốm mỹ nghệ, gốm tâm linh cao cấp, xuất khẩu đi nhiều quốc gia.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/HomeCraftsmanship-1.png',
+                        'caption',
+                        'Lò nung gốm truyền thống vẫn được gìn giữ đến ngày nay.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/HomeCraftsmanship-3.png',
+                        'caption',
+                        'Sản phẩm gốm Bát Tràng hiện diện trong đời sống hiện đại.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Ngọn lửa lò gốm Bát Tràng đã cháy suốt bảy thế kỷ và sẽ còn tiếp tục cháy mãi nhờ tâm huyết của những người thợ gốm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Ngày nay, Bát Tràng không chỉ là làng nghề mà còn là điểm đến du lịch văn hóa hấp dẫn, nơi du khách có thể tận mắt chứng kiến quy trình làm gốm truyền thống.'
             )
-        ),
+        )),
         'lich-su-ngan-nam-ngon-lua-bat-trang',
         10,
         'PUBLISHED',
-        NOW(),
+        '2026-02-25 10:00:00',
         3,
+        'Lịch sử ngàn năm gìn giữ và thổi bùng ngọn lửa Bát Tràng',
+        'Làng cổ Bát Tràng vượt qua thăng trầm thời gian để giữ vững thương hiệu gốm sứ tinh hoa số một Việt Nam.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1136,19 +1846,44 @@ VALUES
         'Nghệ nhân ưu tú Giang Cao và khát vọng đánh thức đất sét',
         'assets/images/home/home-new-1.png',
         'Lắng nghe những chia sẻ tâm huyết từ thế hệ giữ lửa Bát Tràng truyền thụ tình yêu nghề gốm cho người trẻ.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Lắng nghe những chia sẻ tâm huyết từ thế hệ giữ lửa Bát Tràng truyền thụ tình yêu nghề gốm cho người trẻ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Nghệ nhân ưu tú Giang Cao bên tác phẩm gốm tâm huyết của mình.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Hơn 30 năm gắn bó với nghề, nghệ nhân đã truyền lửa đam mê cho nhiều thế hệ học trò trẻ tại làng gốm Bát Tràng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Đất sét vô tri, nhưng qua bàn tay người nghệ nhân, nó có thể kể lại cả một câu chuyện văn hóa ngàn năm.'
             )
-        ),
+        )),
         'nghe-nhan-uu-tu-giang-cao-va-khay-vong-dat',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-03-20 09:30:00',
         3,
+        'Nghệ nhân ưu tú Giang Cao và khát vọng đánh thức đất sét',
+        'Lắng nghe những chia sẻ tâm huyết từ thế hệ giữ lửa Bát Tràng truyền thụ tình yêu nghề gốm cho người trẻ.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1157,19 +1892,100 @@ VALUES
         'Bí quyết dưỡng ấm trà tử sa chuẩn nghệ thuật thưởng trà',
         'assets/images/home/home-new-2.png',
         'Làm thế nào để chiếc ấm đất của bạn có độ bóng đẹp tự nhiên và giữ trọn hương vị trà thượng hạng.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
-                'Làm thế nào để chiếc ấm đất của bạn có độ bóng đẹp tự nhiên và giữ trọn hương vị trà thượng hạng.'
+                'Ấm trà tử sa được giới sành trà yêu thích không chỉ bởi chất đất quý hiếm mà còn bởi khả năng "dưỡng ấm" theo thời gian sử dụng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Một chiếc ấm tử sa được dưỡng đúng cách sẽ ngày càng lên màu bóng đẹp tự nhiên, giữ trọn hương vị trà thơm ngon hơn.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Ấm trà tử sa Bát Tràng với chất đất mịn màng đặc trưng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'heading',
+                'text',
+                'Bí quyết dưỡng ấm tử sa đúng chuẩn nghệ thuật thưởng trà'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Trước khi sử dụng lần đầu, ấm mới nên được luộc qua nước trà đặc để loại bỏ mùi đất và mở lỗ khí trên thành ấm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Dưỡng ấm hàng ngày:',
+                        'text',
+                        'Sau mỗi lần pha trà, dùng khăn mềm thấm nước trà lau đều thân ấm để tạo lớp bóng tự nhiên.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Vệ sinh đúng cách:',
+                        'text',
+                        'Chỉ tráng ấm bằng nước nóng, không dùng xà phòng hay hóa chất tẩy rửa làm mất đi lớp dưỡng đã hình thành.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/home-new-1.png',
+                        'caption',
+                        'Thân ấm lên nước bóng đẹp sau thời gian dài sử dụng.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/HomeCraftsmanship-2.png',
+                        'caption',
+                        'Nghệ nhân kiểm tra độ kín khít của nắp ấm tử sa.'
+                    )
+                )
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Một chiếc ấm tử sa được dưỡng lâu năm chính là người bạn tri kỷ của những ai đam mê nghệ thuật thưởng trà.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Kiên trì dưỡng ấm mỗi ngày không chỉ giúp ấm đẹp hơn theo thời gian mà còn mang lại trải nghiệm thưởng trà trọn vẹn, đậm đà hương vị truyền thống.'
             )
-        ),
+        )),
         'bi-quyet-duong-am-tra-tu-sa-chuan',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-04-02 08:45:00',
         3,
+        'Bí quyết dưỡng ấm trà tử sa chuẩn nghệ thuật thưởng trà',
+        'Làm thế nào để chiếc ấm đất của bạn có độ bóng đẹp tự nhiên và giữ trọn hương vị trà thượng hạng.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -1178,19 +1994,57 @@ VALUES
         'Kỹ thuật chế tác men ngọc độc bản truyền thừa dòng họ Vũ',
         'assets/images/home/home-new-1.png',
         'Học hỏi phương pháp phối trộn tro trấu và đất sét trắng tạo nên sắc men trong vắt như ngọc bích.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Học hỏi phương pháp phối trộn tro trấu và đất sét trắng tạo nên sắc men trong vắt như ngọc bích.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Sản phẩm men ngọc trong vắt, đặc trưng của dòng họ Vũ.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Bí quyết pha chế men ngọc được gia tộc gìn giữ và truyền lại qua nhiều thế hệ, tạo nên sắc men độc bản khó nhầm lẫn.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Nguyên liệu men ngọc:',
+                        'text',
+                        'Tro trấu kết hợp đất sét trắng tinh khiết theo tỷ lệ bí truyền.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Kỹ thuật nung men:',
+                        'text',
+                        'Nung ở nhiệt độ và thời gian chuẩn xác để men lên màu ngọc bích trong vắt.'
+                    )
+                )
             )
-        ),
+        )),
         'ky-thuat-che-tac-men-ngoc-truyen-thua',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-06-08 10:05:00',
         3,
+        'Kỹ thuật chế tác men ngọc độc bản truyền thừa dòng họ Vũ',
+        'Học hỏi phương pháp phối trộn tro trấu và đất sét trắng tạo nên sắc men trong vắt như ngọc bích.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1199,19 +2053,44 @@ VALUES
         'Hành trình đưa gốm sứ Việt vươn tầm thế giới',
         'assets/images/home/home-new-1.png',
         'Những bước chuyển mình xuất khẩu gốm mỹ nghệ sang thị trường Nhật Bản và châu Âu của nghệ nhân Bát Tràng.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Những bước chuyển mình xuất khẩu gốm mỹ nghệ sang thị trường Nhật Bản và châu Âu của nghệ nhân Bát Tràng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Sản phẩm gốm sứ Việt được trưng bày tại triển lãm quốc tế.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Nhiều lô hàng gốm mỹ nghệ Bát Tràng đã được xuất khẩu thành công sang các thị trường khó tính như Nhật Bản, châu Âu.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Gốm sứ Việt không chỉ là sản phẩm thủ công mà còn là sứ giả văn hóa mang hình ảnh đất nước ra thế giới.'
             )
-        ),
+        )),
         'hanh-trinh-dua-gom-viet-vuon-tam-the-gioi',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-06-15 14:30:00',
         3,
+        'Hành trình đưa gốm sứ Việt vươn tầm thế giới',
+        'Những bước chuyển mình xuất khẩu gốm mỹ nghệ sang thị trường Nhật Bản và châu Âu của nghệ nhân Bát Tràng.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1220,19 +2099,44 @@ VALUES
         'Lễ hội đình làng Bát Tràng - nét đẹp văn hóa tâm linh',
         'assets/images/home/home-new-2.png',
         'Tìm hiểu các hoạt động rước nước, dâng hương tôn vinh các vị tổ nghề gốm truyền thống hàng năm.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Tìm hiểu các hoạt động rước nước, dâng hương tôn vinh các vị tổ nghề gốm truyền thống hàng năm.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-2.png',
+                'caption',
+                'Lễ rước nước truyền thống trong ngày hội đình làng Bát Tràng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Hàng năm, người dân Bát Tràng tổ chức lễ hội để tưởng nhớ công ơn các vị tổ nghề đã khai sinh ra nghề gốm truyền thống.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'quote',
+                'text',
+                'Lễ hội đình làng không chỉ là dịp tri ân tổ nghề mà còn là sợi dây gắn kết cộng đồng làng nghề qua bao thế hệ.'
             )
-        ),
+        )),
         'le-hoi-dinh-lang-bat-trang',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-06-22 09:00:00',
         3,
+        'Lễ hội đình làng Bát Tràng - nét đẹp văn hóa tâm linh',
+        'Tìm hiểu các hoạt động rước nước, dâng hương tôn vinh các vị tổ nghề gốm truyền thống hàng năm.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     ),
@@ -1241,19 +2145,57 @@ VALUES
         'Đất sét trắng - bầu sữa mẹ nuôi dưỡng làng nghề gốm sứ',
         'assets/images/home/home-new-1.png',
         'Cách tuyển chọn và xử lý nguồn đất sét dẻo mịn tạo nên cốt gốm đanh chắc đặc trưng Bát Tràng.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
                 'text',
                 'Cách tuyển chọn và xử lý nguồn đất sét dẻo mịn tạo nên cốt gốm đanh chắc đặc trưng Bát Tràng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'image',
+                'url',
+                'assets/images/home/home-new-1.png',
+                'caption',
+                'Nguồn đất sét trắng quý giá được tuyển chọn kỹ lưỡng.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'paragraph',
+                'text',
+                'Chất lượng đất sét quyết định trực tiếp đến độ bền và vẻ đẹp của sản phẩm gốm sau khi nung.'
+            ),
+            JSON_OBJECT(
+                'type',
+                'list-section',
+                'items',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'label',
+                        '1. Tuyển chọn đất:',
+                        'text',
+                        'Đất sét được sàng lọc kỹ để loại bỏ tạp chất, sạn cát.'
+                    ),
+                    JSON_OBJECT(
+                        'label',
+                        '2. Xử lý đất:',
+                        'text',
+                        'Ngâm ủ đất trong thời gian dài để đạt độ dẻo mịn tối ưu trước khi tạo hình.'
+                    )
+                )
             )
-        ),
+        )),
         'dat-set-trang-bau-sua-me-nuoi-duong',
         0,
         'PUBLISHED',
-        NOW(),
+        '2026-07-01 08:40:00',
         3,
+        'Đất sét trắng - bầu sữa mẹ nuôi dưỡng làng nghề gốm sứ',
+        'Cách tuyển chọn và xử lý nguồn đất sét dẻo mịn tạo nên cốt gốm đanh chắc đặc trưng Bát Tràng.',
+        'assets/images/home/home-new-1.png',
         NOW(),
         NOW()
     ),
@@ -1263,7 +2205,9 @@ VALUES
         'Giải đáp ý nghĩa bát hương rồng 4 móng và rồng 5 móng?',
         'assets/images/home/home-new-2.png',
         'Phân biệt ý nghĩa hình tượng rồng 4 móng và rồng 5 móng trên bát hương thờ cúng theo văn hóa tâm linh Việt.',
-        JSON_ARRAY(
+        JSON_OBJECT(
+            'blocks',
+            JSON_ARRAY(
             JSON_OBJECT(
                 'type',
                 'paragraph',
@@ -1279,7 +2223,7 @@ VALUES
             JSON_OBJECT(
                 'type',
                 'image',
-                'src',
+                'url',
                 'assets/images/home/home-new-2.png',
                 'caption',
                 'Hình 1: Nghệ nhân tại xưởng sản xuất gốm tâm linh Vũ Gia đang thảo luận thiết kế độc quyền.'
@@ -1298,17 +2242,17 @@ VALUES
             ),
             JSON_OBJECT(
                 'type',
-                'list',
+                'list-section',
                 'items',
                 JSON_ARRAY(
                     JSON_OBJECT(
-                        'title',
+                        'label',
                         '1. Rồng 5 móng (Ngũ Trảo Kim Long):',
                         'text',
                         'Rồng 5 móng xưa nay vốn là biểu tượng của Hoàng đế, đại diện cho thiên tử và quyền lực hoàng gia tuyệt đối. Trên các đồ thờ cúng, họa tiết rồng 5 móng thường được đắp nổi tinh xảo, thể hiện sự trang nghiêm tối cao.'
                     ),
                     JSON_OBJECT(
-                        'title',
+                        'label',
                         '2. Rồng 4 móng (Mãng Long):',
                         'text',
                         'Rồng 4 móng thường được dùng cho các quan lại, hoàng thân quốc thích hoặc đền chùa dân gian, mang tính chất gần gũi hơn với đời sống tâm linh của nhân dân.'
@@ -1317,19 +2261,22 @@ VALUES
             ),
             JSON_OBJECT(
                 'type',
-                'image',
-                'src',
-                'assets/images/home/home-new-2.png',
-                'caption',
-                'Quy trình tạo hình gốm vuốt tay thủ công từ phôi đất sét Bát Tràng.'
-            ),
-            JSON_OBJECT(
-                'type',
-                'image',
-                'src',
-                'assets/images/home/home-new-1.png',
-                'caption',
-                'Nghệ nhân vẽ nhũ vàng và họa màu rồng đắp nổi trực tiếp trên cốt gốm.'
+                'image-grid',
+                'images',
+                JSON_ARRAY(
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/home-new-2.png',
+                        'caption',
+                        'Quy trình tạo hình gốm vuốt tay thủ công từ phôi đất sét Bát Tràng.'
+                    ),
+                    JSON_OBJECT(
+                        'url',
+                        'assets/images/home/home-new-1.png',
+                        'caption',
+                        'Nghệ nhân vẽ nhũ vàng và họa màu rồng đắp nổi trực tiếp trên cốt gốm.'
+                    )
+                )
             ),
             JSON_OBJECT(
                 'type',
@@ -1343,12 +2290,15 @@ VALUES
                 'text',
                 'Để chọn được bộ đồ thờ chuẩn phong thủy, quý khách nên chú ý đến kích thước bát hương hài hòa với không gian ban thờ, cũng như màu men tương sinh với bản mệnh gia chủ.'
             )
-        ),
+        )),
         'giai-dap-y-nghia-bat-huong-rong-4-mong-va-5-mong',
         20,
         'PUBLISHED',
         '2026-05-18 09:00:00',
         2,
+        'Giải đáp ý nghĩa bát hương rồng 4 móng và rồng 5 móng?',
+        'Phân biệt ý nghĩa hình tượng rồng 4 móng và rồng 5 móng trên bát hương thờ cúng theo văn hóa tâm linh Việt.',
+        'assets/images/home/home-new-2.png',
         NOW(),
         NOW()
     );

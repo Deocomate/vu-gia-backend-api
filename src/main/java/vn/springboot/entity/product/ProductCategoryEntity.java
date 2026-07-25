@@ -43,12 +43,12 @@ public class ProductCategoryEntity extends BaseEntity {
     @Column(name = "priority")
     private Integer priority = 0;
 
-    @Column(name = "long_content", columnDefinition = "TEXT")
-    private String longContent;
+    @Column(name = "short_description", columnDefinition = "TEXT")
+    private String shortDescription;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "des", columnDefinition = "json")
-    private String des;
+    @Column(name = "detail_content", columnDefinition = "json")
+    private String detailContent;
 
     @Column(name = "slug", unique = true, nullable = false, length = 255)
     private String slug;

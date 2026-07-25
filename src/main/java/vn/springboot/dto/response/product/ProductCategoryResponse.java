@@ -26,9 +26,9 @@ public class ProductCategoryResponse {
 
     private Integer priority;
 
-    private String longContent;
+    private String shortDescription;
 
-    private String des;
+    private String detailContent;
 
     private String slug;
 

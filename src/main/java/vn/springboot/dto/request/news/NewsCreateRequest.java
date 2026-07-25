@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import vn.springboot.common.storage.StorageUrl;
 import vn.springboot.entity.enums.ContentStatus;
 
+import java.time.Instant;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,6 +42,9 @@ public class NewsCreateRequest {
 
     /** {@code null} → defaults to {@code DRAFT} on create. */
     private ContentStatus status;
+
+    /** Optional; {@code null} keeps the default auto-set-on-PUBLISHED behavior. */
+    private Instant publishedAt;
 
     @NotNull
     private Long newsCategoryId;
