@@ -66,7 +66,6 @@ public enum ErrorCode {
     PRODUCT_SLUG_EXISTED(4094, "Product slug already exists", HttpStatus.CONFLICT),
     PRODUCT_SKU_EXISTED(4095, "Product SKU already exists", HttpStatus.CONFLICT),
     PRODUCT_CATEGORY_SLUG_EXISTED(4096, "Product category slug already exists", HttpStatus.CONFLICT),
-    PRODUCT_CATEGORY_HAS_PRODUCTS(4097, "Product category still has products", HttpStatus.CONFLICT),
     REDIRECT_FROM_PATH_EXISTED(4098, "Redirect from-path already exists", HttpStatus.CONFLICT),
     COUPON_CODE_EXISTED(4099, "Coupon code already exists", HttpStatus.CONFLICT),
     // 409x band full — conflicts continue at 41xx

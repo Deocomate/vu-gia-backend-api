@@ -53,8 +53,17 @@ public class ProductCreateRequest {
     /** JSON string. */
     private String description;
 
-    /** JSON string. */
+    /** JSON string; chỉ dùng khi type=SINGLE: [{title, description, image}]. */
+    private String detailSections;
+
+    /** JSON string; chỉ dùng khi type=COMBO: [{productId, quantity, sortOrder}]. */
     private String comboProducts;
+
+    /** JSON string; chỉ dùng khi type=COMBO: [{name, quantity, unit, usage}]. */
+    private String functions;
+
+    /** JSON string; chỉ dùng khi type=COMBO: [{url}]. */
+    private String comboGallery;
 
     /** Optional; auto-generated from {@code name} when blank. */
     @Size(max = 255)

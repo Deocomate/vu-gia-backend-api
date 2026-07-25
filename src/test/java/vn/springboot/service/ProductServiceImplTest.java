@@ -15,6 +15,7 @@ import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
 import vn.springboot.dto.request.product.ProductCreateRequest;
 import vn.springboot.dto.request.product.ProductSearchRequest;
+import vn.springboot.dto.request.product.ProductUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.product.ProductResponse;
 import vn.springboot.entity.enums.ProductStatus;
@@ -191,6 +192,68 @@ class ProductServiceImplTest {
                 .containsExactly("http://img/1.jpg", "http://img/2.jpg");
         // priority: first defaults to its index (0), second keeps the supplied 5
         assertThat(captor.getAllValues()).extracting("priority").containsExactly(0, 5);
+    }
+
+    @Test
+    void create_persistsDetailSectionsFunctionsAndComboGallery() {
+        when(productCategoryRepository.findById(5L))
+                .thenReturn(Optional.of(new ProductCategoryEntity()));
+        when(productRepository.existsBySlug(anyString())).thenReturn(false);
+        when(productRepository.save(any(ProductEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(any())).thenReturn(List.of());
+        when(productMapper.toResponse(any(ProductEntity.class))).thenReturn(response(1L, "Phone X", "phone-x"));
+
+        ProductCreateRequest request = validCreate()
+                .detailSections("[{\"title\":\"A\"}]")
+                .comboProducts("[{\"productId\":2,\"quantity\":3,\"sortOrder\":0}]")
+                .functions("[{\"name\":\"Bát hương\"}]")
+                .comboGallery("[{\"url\":\"products/x.png\"}]")
+                .build();
+
+        service.create(request);
+
+        ArgumentCaptor<ProductEntity> captor = ArgumentCaptor.forClass(ProductEntity.class);
+        verify(productRepository).save(captor.capture());
+        ProductEntity saved = captor.getValue();
+        assertThat(saved.getDetailSections()).isEqualTo("[{\"title\":\"A\"}]");
+        assertThat(saved.getComboProducts()).isEqualTo("[{\"productId\":2,\"quantity\":3,\"sortOrder\":0}]");
+        assertThat(saved.getFunctions()).isEqualTo("[{\"name\":\"Bát hương\"}]");
+        assertThat(saved.getComboGallery()).isEqualTo("[{\"url\":\"products/x.png\"}]");
+    }
+
+    @Test
+    void update_setsNewJsonFields_whenProvided() {
+        ProductEntity e = productEntity("Phone X", "phone-x");
+        when(productRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(productRepository.save(any(ProductEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(any())).thenReturn(List.of());
+        when(productMapper.toResponse(any(ProductEntity.class)))
+                .thenAnswer(inv -> response(1L, "Phone X", "phone-x"));
+
+        service.update(1L, ProductUpdateRequest.builder()
+                .detailSections("[{\"title\":\"B\"}]")
+                .functions("[{\"name\":\"Bát thờ\"}]")
+                .comboGallery("[{\"url\":\"products/y.png\"}]")
+                .build());
+
+        assertThat(e.getDetailSections()).isEqualTo("[{\"title\":\"B\"}]");
+        assertThat(e.getFunctions()).isEqualTo("[{\"name\":\"Bát thờ\"}]");
+        assertThat(e.getComboGallery()).isEqualTo("[{\"url\":\"products/y.png\"}]");
+    }
+
+    @Test
+    void update_leavesNewJsonFieldsUntouched_whenNull() {
+        ProductEntity e = productEntity("Phone X", "phone-x");
+        e.setDetailSections("[{\"title\":\"keep\"}]");
+        when(productRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(productRepository.save(any(ProductEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(any())).thenReturn(List.of());
+        when(productMapper.toResponse(any(ProductEntity.class)))
+                .thenAnswer(inv -> response(1L, "Phone X", "phone-x"));
+
+        service.update(1L, ProductUpdateRequest.builder().name("New Name").build());
+
+        assertThat(e.getDetailSections()).isEqualTo("[{\"title\":\"keep\"}]");
     }
 
     @Test

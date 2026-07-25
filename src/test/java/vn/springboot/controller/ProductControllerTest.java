@@ -123,6 +123,32 @@ class ProductControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void create_returns200_withNewJsonFieldsEchoed() throws Exception {
+        ProductCreateRequest request = validCreateRequest();
+        request.setDetailSections("[{\"title\":\"A\"}]");
+        request.setFunctions("[{\"name\":\"Bát hương\"}]");
+        request.setComboGallery("[{\"url\":\"products/x.png\"}]");
+
+        when(productService.create(any())).thenReturn(ProductResponse.builder()
+                .id(1L).name("Phone X").slug("phone-x")
+                .detailSections("[{\"title\":\"A\"}]")
+                .functions("[{\"name\":\"Bát hương\"}]")
+                .comboGallery("[{\"url\":\"products/x.png\"}]")
+                .build());
+
+        mockMvc.perform(post("/api/products")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(1000))
+                .andExpect(jsonPath("$.data.detailSections").value("[{\"title\":\"A\"}]"))
+                .andExpect(jsonPath("$.data.functions").value("[{\"name\":\"Bát hương\"}]"))
+                .andExpect(jsonPath("$.data.comboGallery").value("[{\"url\":\"products/x.png\"}]"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void create_returns4001_whenBodyInvalid() throws Exception {
         ProductCreateRequest invalid = validCreateRequest();
         invalid.setName(null);

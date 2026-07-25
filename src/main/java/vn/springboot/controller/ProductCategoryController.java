@@ -3,17 +3,14 @@ package vn.springboot.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.springboot.common.response.ApiResponse;
-import vn.springboot.dto.request.product.ProductCategoryCreateRequest;
 import vn.springboot.dto.request.product.ProductCategorySearchRequest;
 import vn.springboot.dto.request.product.ProductCategoryUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
@@ -21,8 +18,9 @@ import vn.springboot.dto.response.product.ProductCategoryResponse;
 import vn.springboot.service.ProductCategoryService;
 
 /**
- * Product category endpoints. Reads are public; writes require staff roles
- * ({@code ADMIN} / {@code SUPERADMIN}).
+ * Product category endpoints. Reads are public. Categories are a fixed set of 6
+ * ({@link vn.springboot.entity.enums.CategoryType}) — no create/delete, only
+ * {@code ADMIN}/{@code SUPERADMIN} can update a category's content/SEO fields.
  */
 @RestController
 @RequestMapping("/api/product-categories")
@@ -48,25 +46,11 @@ public class ProductCategoryController {
         return ApiResponse.success(productCategoryService.getBySlug(slug));
     }
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    public ApiResponse<ProductCategoryResponse> create(
-            @Valid @RequestBody ProductCategoryCreateRequest request) {
-        return ApiResponse.success("Created successfully", productCategoryService.create(request));
-    }
-
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ApiResponse<ProductCategoryResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody ProductCategoryUpdateRequest request) {
         return ApiResponse.success("Updated successfully", productCategoryService.update(id, request));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    public ApiResponse<Void> delete(@PathVariable Long id) {
-        productCategoryService.delete(id);
-        return ApiResponse.success("Deleted successfully", null);
     }
 }

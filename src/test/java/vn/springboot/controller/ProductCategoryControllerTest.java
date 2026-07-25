@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import vn.springboot.dto.request.product.ProductCategoryCreateRequest;
+import vn.springboot.dto.request.product.ProductCategoryUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.product.ProductCategoryResponse;
 import vn.springboot.security.CustomAccessDeniedHandler;
@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,10 +57,9 @@ class ProductCategoryControllerTest {
                 .build();
     }
 
-    private ProductCategoryCreateRequest validCreateRequest() {
-        return ProductCategoryCreateRequest.builder()
+    private ProductCategoryUpdateRequest validUpdateRequest() {
+        return ProductCategoryUpdateRequest.builder()
                 .name("Phones")
-                .thumb("http://img/x.png")
                 .build();
     }
 
@@ -89,36 +88,36 @@ class ProductCategoryControllerTest {
     }
 
     @Test
-    void create_returns401_whenUnauthenticated() throws Exception {
-        mockMvc.perform(post("/api/product-categories")
+    void update_returns401_whenUnauthenticated() throws Exception {
+        mockMvc.perform(put("/api/product-categories/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validCreateRequest())))
+                        .content(objectMapper.writeValueAsString(validUpdateRequest())))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(4010));
     }
 
     @Test
     @WithMockUser(roles = "CUSTOMER")
-    void create_returns403_forInsufficientRole() throws Exception {
-        mockMvc.perform(post("/api/product-categories")
+    void update_returns403_forInsufficientRole() throws Exception {
+        mockMvc.perform(put("/api/product-categories/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validCreateRequest())))
+                        .content(objectMapper.writeValueAsString(validUpdateRequest())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(4030));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void create_returns200_forAdmin() throws Exception {
-        when(productCategoryService.create(any()))
+    void update_returns200_forAdmin() throws Exception {
+        when(productCategoryService.update(any(), any()))
                 .thenReturn(ProductCategoryResponse.builder().id(1L).name("Phones").slug("phones").build());
 
-        mockMvc.perform(post("/api/product-categories")
+        mockMvc.perform(put("/api/product-categories/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validCreateRequest())))
+                        .content(objectMapper.writeValueAsString(validUpdateRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1000))
                 .andExpect(jsonPath("$.data.name").value("Phones"));

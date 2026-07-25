@@ -68,9 +68,25 @@ public class ProductEntity extends BaseEntity {
     @Column(name = "description", columnDefinition = "json")
     private String description;
 
+    /** Chỉ dùng khi type=SINGLE: [{title, description, image}]. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "detail_sections", columnDefinition = "json")
+    private String detailSections;
+
+    /** Chỉ dùng khi type=COMBO: [{productId, quantity, sortOrder}]. */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "combo_products", columnDefinition = "json")
     private String comboProducts;
+
+    /** Chỉ dùng khi type=COMBO: [{name, quantity, unit, usage}]. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "functions", columnDefinition = "json")
+    private String functions;
+
+    /** Chỉ dùng khi type=COMBO: [{url}] - slider ảnh full-width. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "combo_gallery", columnDefinition = "json")
+    private String comboGallery;
 
     @Column(name = "slug", unique = true, nullable = false, length = 255)
     private String slug;

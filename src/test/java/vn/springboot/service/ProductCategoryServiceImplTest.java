@@ -11,25 +11,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
-import vn.springboot.dto.request.product.ProductCategoryCreateRequest;
 import vn.springboot.dto.request.product.ProductCategorySearchRequest;
+import vn.springboot.dto.request.product.ProductCategoryUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.product.ProductCategoryResponse;
 import vn.springboot.entity.product.ProductCategoryEntity;
 import vn.springboot.mapper.ProductCategoryMapper;
 import vn.springboot.repository.ProductCategoryRepository;
-import vn.springboot.repository.ProductRepository;
 import vn.springboot.service.impl.ProductCategoryServiceImpl;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,9 +33,6 @@ class ProductCategoryServiceImplTest {
 
     @Mock
     private ProductCategoryRepository productCategoryRepository;
-
-    @Mock
-    private ProductRepository productRepository;
 
     @Mock
     private ProductCategoryMapper productCategoryMapper;
@@ -105,52 +98,37 @@ class ProductCategoryServiceImplTest {
     }
 
     @Test
-    void create_generatesSlug_whenBlank() {
-        ProductCategoryCreateRequest request = ProductCategoryCreateRequest.builder()
-                .name("Điện thoại")
-                .thumb("http://img/x.png")
+    void update_appliesPartialFields() {
+        ProductCategoryEntity e = entity(1L, "Phones", "phones");
+        ProductCategoryUpdateRequest request = ProductCategoryUpdateRequest.builder()
+                .name("Bộ đồ thờ cao cấp")
                 .build();
-        when(productCategoryRepository.existsBySlug(anyString())).thenReturn(false);
+        when(productCategoryRepository.findById(1L)).thenReturn(Optional.of(e));
         when(productCategoryRepository.save(any(ProductCategoryEntity.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         when(productCategoryMapper.toResponse(any(ProductCategoryEntity.class)))
                 .thenAnswer(inv -> {
-                    ProductCategoryEntity e = inv.getArgument(0);
-                    return response(1L, e.getName(), e.getSlug());
+                    ProductCategoryEntity saved = inv.getArgument(0);
+                    return response(1L, saved.getName(), saved.getSlug());
                 });
 
-        ProductCategoryResponse result = service.create(request);
+        ProductCategoryResponse result = service.update(1L, request);
 
-        assertThat(result.getSlug()).isEqualTo("dien-thoai");
-        verify(productCategoryRepository).save(any(ProductCategoryEntity.class));
+        assertThat(result.getName()).isEqualTo("Bộ đồ thờ cao cấp");
+        assertThat(result.getSlug()).isEqualTo("phones");
     }
 
     @Test
-    void create_clientSlugConflict_throws() {
-        ProductCategoryCreateRequest request = ProductCategoryCreateRequest.builder()
-                .name("Phones")
-                .thumb("http://img/x.png")
-                .slug("phones")
+    void update_slugConflict_throws() {
+        ProductCategoryEntity e = entity(1L, "Phones", "phones");
+        ProductCategoryUpdateRequest request = ProductCategoryUpdateRequest.builder()
+                .slug("binh-phong-thuy")
                 .build();
-        when(productCategoryRepository.existsBySlug("phones")).thenReturn(true);
+        when(productCategoryRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(productCategoryRepository.existsBySlugAndIdNot("binh-phong-thuy", 1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.create(request))
+        assertThatThrownBy(() -> service.update(1L, request))
                 .isInstanceOf(AppException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.PRODUCT_CATEGORY_SLUG_EXISTED);
-
-        verify(productCategoryRepository, never()).save(any());
-    }
-
-    @Test
-    void delete_withProducts_throws() {
-        ProductCategoryEntity e = entity(1L, "Phones", "phones");
-        when(productCategoryRepository.findById(1L)).thenReturn(Optional.of(e));
-        when(productRepository.existsByProductCategoryId(1L)).thenReturn(true);
-
-        assertThatThrownBy(() -> service.delete(1L))
-                .isInstanceOf(AppException.class)
-                .extracting("errorCode").isEqualTo(ErrorCode.PRODUCT_CATEGORY_HAS_PRODUCTS);
-
-        verify(productCategoryRepository, never()).delete(any(ProductCategoryEntity.class));
     }
 }

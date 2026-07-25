@@ -130,7 +130,10 @@ public class ProductServiceImpl implements ProductService {
                 .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
                 .description(request.getDescription())
+                .detailSections(request.getDetailSections())
                 .comboProducts(request.getComboProducts())
+                .functions(request.getFunctions())
+                .comboGallery(request.getComboGallery())
                 .slug(slug)
                 .priority(request.getPriority() != null ? request.getPriority() : 0)
                 .productCategory(category)
@@ -220,8 +223,17 @@ public class ProductServiceImpl implements ProductService {
         if (request.getDescription() != null) {
             entity.setDescription(request.getDescription());
         }
+        if (request.getDetailSections() != null) {
+            entity.setDetailSections(request.getDetailSections());
+        }
         if (request.getComboProducts() != null) {
             entity.setComboProducts(request.getComboProducts());
+        }
+        if (request.getFunctions() != null) {
+            entity.setFunctions(request.getFunctions());
+        }
+        if (request.getComboGallery() != null) {
+            entity.setComboGallery(request.getComboGallery());
         }
         if (request.getPriority() != null) {
             entity.setPriority(request.getPriority());

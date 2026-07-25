@@ -109,8 +109,11 @@ Body tạo:
   "compareAtPrice": 22990000,       // tuỳ chọn (giá gạch ngang)
   "isFeatured": false,              // tuỳ chọn (mặc định false)
   "status": "DRAFT",                // tuỳ chọn (mặc định DRAFT)
-  "description": "{\"blocks\":[]}", // tuỳ chọn (chuỗi JSON)
-  "comboProducts": "[{\"productId\":2,\"sortOrder\":1}]", // chỉ dùng khi type=COMBO (chuỗi JSON)
+  "description": "{\"blocks\":[]}", // tuỳ chọn (chuỗi JSON) — chỉ hiển thị khi type=COMBO ở FE
+  "detailSections": "[{\"title\":\"…\",\"description\":\"…\",\"image\":\"https://…\"}]", // tuỳ chọn, chỉ dùng khi type=SINGLE (chuỗi JSON)
+  "comboProducts": "[{\"productId\":2,\"quantity\":1,\"sortOrder\":1}]", // chỉ dùng khi type=COMBO (chuỗi JSON); quantity mặc định 1
+  "functions": "[{\"name\":\"Bát hương\",\"quantity\":\"3\",\"unit\":\"Chiếc\",\"usage\":\"…\"}]", // tuỳ chọn, chỉ dùng khi type=COMBO (chuỗi JSON)
+  "comboGallery": "[{\"url\":\"https://…\"}]", // tuỳ chọn, chỉ dùng khi type=COMBO (chuỗi JSON) — slider ảnh full-width, tách biệt gallery chính
   "slug": "iphone-15",              // tuỳ chọn; bỏ trống tự sinh
   "priority": 0,                    // tuỳ chọn
   "productCategoryId": 3,           // bắt buộc
@@ -140,7 +143,8 @@ Body đổi trạng thái (`PATCH /{id}/status`): `{ "status": "PUBLISHED" }`.
   "id": 12, "name": "iPhone 15", "thumb": "https://…", "sku": "IP15-128",
   "type": "SINGLE", "price": 19990000, "compareAtPrice": 22990000,
   "soldCount": 0, "isFeatured": false, "status": "DRAFT",
-  "description": "…", "comboProducts": null, "slug": "iphone-15", "priority": 0,
+  "description": "…", "detailSections": null, "comboProducts": null,
+  "functions": null, "comboGallery": null, "slug": "iphone-15", "priority": 0,
   "category": { "id": 3, "name": "Điện thoại", "slug": "dien-thoai" },
   "images": [ { "id": 1, "url": "https://…/products/abc.jpg", "priority": 0 } ],
   "seoTitle": "…", "seoDescription": "…", "seoImage": "https://…",
@@ -150,6 +154,14 @@ Body đổi trạng thái (`PATCH /{id}/status`): `{ "status": "PUBLISHED" }`.
 
 > Lưu ý: endpoint **list** trả `images = null` (chỉ có `thumb`) để tránh N+1; **chi tiết**
 > (`/{id}`, `/slug/{slug}`) mới kèm đầy đủ `images` theo thứ tự `priority`.
+
+> **Field theo `type` (BE lưu opaque JSON string, không validate cấu trúc bên trong):**
+> - `type=SINGLE` dùng `detailSections` (vùng "Chi tiết sản phẩm" ở FE); `type=COMBO` dùng
+>   `description`, `comboProducts`, `functions`, `comboGallery`. Field không thuộc `type` hiện
+>   tại vẫn được lưu nếu có (đổi `type` qua lại không xoá), FE chỉ đọc field khớp `type`.
+> - `comboProducts` item: `{productId, quantity, sortOrder}` — thiếu `quantity` (data cũ) → FE
+>   mặc định `1`.
+> - Rỗng/`null` → FE hiển thị nội dung tĩnh mặc định, không phải lỗi.
 
 ---
 
@@ -222,12 +234,19 @@ export interface ProductResponse {
   id: number; name: string; thumb: string; sku: string | null;
   type: ProductType; price: number; compareAtPrice: number | null;
   soldCount: number; isFeatured: boolean; status: ProductStatus;
-  description: string | null; comboProducts: string | null; slug: string; priority: number;
+  description: string | null; detailSections: string | null; comboProducts: string | null;
+  functions: string | null; comboGallery: string | null; slug: string; priority: number;
   category: ProductCategoryBrief;
   images: ProductImageResponse[] | null; // null ở list, có ở chi tiết
   seoTitle: string | null; seoDescription: string | null; seoImage: string | null;
   createdAt: string; updatedAt: string;
 }
+
+// Shape JSON đã parse của các field opaque ở trên (FE tự JSON.parse/stringify)
+export interface ProductDetailSection { title: string; description: string; image: string; } // type=SINGLE
+export interface ProductFunctionRow { name: string; quantity: string; unit: string; usage: string; } // type=COMBO
+export interface ComboGalleryItem { url: string; } // type=COMBO
+export interface ComboProductItem { productId: number; quantity: number; sortOrder: number; } // type=COMBO
 
 export interface UploadResponse { url: string; }
 
@@ -317,7 +336,8 @@ curl -X POST http://localhost:8080/api/products \
   -d '{
     "name":"iPhone 15","thumb":"https://cdn/thumb.jpg","sku":"IP15-128","type":"SINGLE",
     "price":19990000,"compareAtPrice":22990000,"isFeatured":false,"status":"DRAFT",
-    "description":"{\"blocks\":[]}","comboProducts":null,"slug":"","priority":0,"productCategoryId":1,
+    "description":"{\"blocks\":[]}","detailSections":"[{\"title\":\"…\",\"description\":\"…\",\"image\":\"https://cdn/d.jpg\"}]",
+    "comboProducts":null,"functions":null,"comboGallery":null,"slug":"","priority":0,"productCategoryId":1,
     "seoTitle":"iPhone 15","seoDescription":"...","seoImage":"https://cdn/seo.jpg",
     "images":[{"url":"https://cdn/a.jpg","priority":0},{"url":"https://cdn/b.jpg"}]
   }'

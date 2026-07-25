@@ -10,8 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
-import vn.springboot.common.util.SlugUtils;
-import vn.springboot.dto.request.product.ProductCategoryCreateRequest;
 import vn.springboot.dto.request.product.ProductCategorySearchRequest;
 import vn.springboot.dto.request.product.ProductCategoryUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
@@ -19,7 +17,6 @@ import vn.springboot.dto.response.product.ProductCategoryResponse;
 import vn.springboot.entity.product.ProductCategoryEntity;
 import vn.springboot.mapper.ProductCategoryMapper;
 import vn.springboot.repository.ProductCategoryRepository;
-import vn.springboot.repository.ProductRepository;
 import vn.springboot.repository.specification.ProductCategorySpecification;
 import vn.springboot.service.ProductCategoryService;
 
@@ -39,7 +36,6 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ProductCategoryRepository productCategoryRepository;
-    private final ProductRepository productRepository;
     private final ProductCategoryMapper productCategoryMapper;
 
     @Override
@@ -87,35 +83,6 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     @Override
     @Transactional
-    public ProductCategoryResponse create(ProductCategoryCreateRequest request) {
-        String slug;
-        if (request.getSlug() != null && !request.getSlug().isBlank()) {
-            slug = request.getSlug().trim();
-            if (productCategoryRepository.existsBySlug(slug)) {
-                throw new AppException(ErrorCode.PRODUCT_CATEGORY_SLUG_EXISTED);
-            }
-        } else {
-            slug = generateUniqueSlug(SlugUtils.toSlug(request.getName()));
-        }
-
-        ProductCategoryEntity entity = ProductCategoryEntity.builder()
-                .name(request.getName())
-                .thumb(request.getThumb())
-                .slug(slug)
-                .priority(request.getPriority() != null ? request.getPriority() : 0)
-                .longContent(request.getLongContent())
-                .des(request.getDes())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .seoTitle(request.getSeoTitle())
-                .seoDescription(request.getSeoDescription())
-                .seoImage(request.getSeoImage())
-                .build();
-
-        return productCategoryMapper.toResponse(productCategoryRepository.save(entity));
-    }
-
-    @Override
-    @Transactional
     public ProductCategoryResponse update(Long id, ProductCategoryUpdateRequest request) {
         ProductCategoryEntity entity = productCategoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_CATEGORY_NOT_FOUND));
@@ -159,30 +126,6 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         }
 
         return productCategoryMapper.toResponse(productCategoryRepository.save(entity));
-    }
-
-    @Override
-    @Transactional
-    public void delete(Long id) {
-        ProductCategoryEntity entity = productCategoryRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_CATEGORY_NOT_FOUND));
-
-        if (productRepository.existsByProductCategoryId(id)) {
-            throw new AppException(ErrorCode.PRODUCT_CATEGORY_HAS_PRODUCTS);
-        }
-
-        productCategoryRepository.delete(entity);
-    }
-
-    /** Ensures slug uniqueness by appending {@code -2, -3, ...} on collision. */
-    private String generateUniqueSlug(String base) {
-        String candidate = base;
-        int suffix = 2;
-        while (productCategoryRepository.existsBySlug(candidate)) {
-            candidate = base + "-" + suffix;
-            suffix++;
-        }
-        return candidate;
     }
 
     private Sort resolveSort(ProductCategorySearchRequest request) {

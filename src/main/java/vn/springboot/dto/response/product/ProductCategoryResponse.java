@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.springboot.common.storage.StorageUrl;
+import vn.springboot.entity.enums.CategoryType;
 
 import java.time.Instant;
 
@@ -15,6 +16,8 @@ import java.time.Instant;
 public class ProductCategoryResponse {
 
     private Long id;
+
+    private CategoryType categoryType;
 
     private String name;
 

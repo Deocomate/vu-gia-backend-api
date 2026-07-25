@@ -2,6 +2,8 @@ package vn.springboot.entity.product;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +15,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import vn.springboot.common.entity.BaseEntity;
+import vn.springboot.entity.enums.CategoryType;
 
 @Entity
 @Getter
@@ -24,6 +27,11 @@ import vn.springboot.common.entity.BaseEntity;
 @DynamicUpdate
 @Table(name = "product_categories")
 public class ProductCategoryEntity extends BaseEntity {
+
+    /** Fixed 1:1 tag — exactly one row per {@link CategoryType} value, never created/deleted at runtime. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category_type", nullable = false, unique = true, length = 30)
+    private CategoryType categoryType;
 
     @Column(name = "name", nullable = false, length = 50)
     private String name;
