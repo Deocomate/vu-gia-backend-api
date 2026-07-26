@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Remove Flyway and Switch to Code-First"
-status: pending
+status: done
 priority: P1
 effort: "S"
 dependencies: [1, 2]
@@ -44,10 +44,16 @@ With Phase 1 (entity fidelity) and Phase 2 (Java seeder, tested against the Flyw
 
 ## Success Criteria
 
-- [ ] `grep -ri flyway` across `pom.xml`, `src/`, `docker-compose*.yml`, `.env*` returns zero matches
-- [ ] `ddl-auto=update` in `application.yaml`, no per-profile override needed
-- [ ] Fresh empty DB + `APP_ENV=development` boots clean: schema auto-created, all 13 domains seeded
-- [ ] `db/migration/` and `db/seed/` directories no longer exist
+- [x] `grep -ri flyway` across `pom.xml`, `src/`, `docker-compose*.yml`, `.env*` returns zero matches
+- [x] `ddl-auto=update` in `application.yaml`, no per-profile override needed
+- [x] Fresh empty DB + `APP_ENV=development` boots clean: schema auto-created, all 13 domains seeded
+- [x] `db/migration/` and `db/seed/` directories no longer exist
+
+## Execution Notes (2026-07-27)
+
+- Removed `flyway-core`/`flyway-mysql` from `pom.xml`, deleted `FlywayDevCleanConfig.java` and `application-development.yaml` (its only content was the now-moot Flyway property), flipped `ddl-auto` to `update` with an inline comment recording the accepted tradeoffs (no orphan column/table cleanup, no schema-diff audit trail). Updated `docker-compose.yml` and `.env.example` comments to describe the seeder's `APP_ENV` behavior instead of Flyway's.
+- Deleted `db/migration/V1__init_db.sql` and `db/seed/V2__seed_db.sql` in the same commit as the rest — one atomic, revertible "remove Flyway" commit, per the plan's rollback-safety requirement (Phase 1/2 were already committed separately beforehand).
+- **Verified against a genuinely fresh MySQL volume** (removed the existing `vu-gia-backend-api_mysql-data` docker volume entirely, not just the container, then recreated it empty): app booted clean with zero Flyway involvement — Hibernate created all 21 tables directly from entities (confirmed via `SHOW TABLES`), `SeedRunner` populated all 13 domains with correct row counts, `OrphanReferenceChecker` passed. Spot-checked `GET /api/shipping-methods`, `GET /api/products`, and `/swagger-ui/index.html` all responding correctly on the pure code-first schema. Container torn down afterward.
 
 ## Risk Assessment
 

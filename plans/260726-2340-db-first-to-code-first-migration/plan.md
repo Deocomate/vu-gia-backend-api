@@ -39,7 +39,7 @@ Migrate `vu-gia-backend-api` from DB-first (Flyway `V1__init_db.sql` schema + `V
 |-------|------|--------|
 | 1 | [Entity Schema Fidelity Fixes](./phase-01-entity-schema-fidelity-fixes.md) | Done |
 | 2 | [Java Seeder Framework and Data Port](./phase-02-java-seeder-framework-and-data-port.md) | Done |
-| 3 | [Remove Flyway and Switch to Code-First](./phase-03-remove-flyway-and-switch-to-code-first.md) | Pending |
+| 3 | [Remove Flyway and Switch to Code-First](./phase-03-remove-flyway-and-switch-to-code-first.md) | Done |
 | 4 | [Verification and Documentation](./phase-04-verification-and-documentation.md) | Pending |
 
 ## Dependencies
