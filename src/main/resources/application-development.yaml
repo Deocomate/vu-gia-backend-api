@@ -1,0 +1,6 @@
+# Chỉ áp dụng khi APP_ENV=development. KHÔNG dùng cho production: DB coi là
+# disposable, mismatch checksum (do sửa migration/seed đã áp dụng) sẽ khiến
+# Flyway DROP toàn bộ schema rồi chạy lại từ đầu thay vì chặn boot.
+spring:
+  flyway:
+    clean-on-validation-error: true

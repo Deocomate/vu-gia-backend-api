@@ -1,6 +1,11 @@
 spring:
   application:
     name: vu-gia
+  profiles:
+    # APP_ENV=development bật application-development.yaml (Flyway tự
+    # clean+remigrate khi checksum lệch). Không set (hoặc "production") ->
+    # giữ hành vi mặc định: mismatch chặn boot, KHÔNG tự đụng vào dữ liệu.
+    active: ${APP_ENV:production}
   servlet:
     multipart:
       max-file-size: 10MB         # mỗi file tối đa 10MB

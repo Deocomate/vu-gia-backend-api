@@ -41,6 +41,12 @@ services:
       db:
         condition: service_healthy
     environment:
+      # --- Môi trường ---
+      # development -> Flyway tự clean+remigrate khi checksum migration/seed
+      # lệch (DB coi là disposable). Không set/production -> mismatch chặn
+      # boot, không tự đụng dữ liệu. Xem application-development.yaml.
+      APP_ENV: ${APP_ENV:-production}
+
       # --- Database (service "db" ở trên) ---
       DB_URL: jdbc:mysql://db:3306/db_vu_gia_fullstack?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
       DB_USERNAME: ${DB_USERNAME:-root}
