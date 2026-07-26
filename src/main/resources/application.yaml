@@ -98,10 +98,11 @@ app:
     # "From" address for outgoing mail (EmailService)
     from: ${APP_MAIL_FROM:}
   init:
-    # Seed default roles/permissions/admin account on startup
+    # Seed default admin account on startup (UserSeeder); canonical identity below
+    # matches the real V2__seed_db.sql data
     enabled: true
     admin-username: admin
-    admin-email: admin@gmail.com
+    admin-email: admin@gomvugia.vn
     admin-password: admin123
   payment:
     # Tài khoản nhận tiền để sinh ảnh VietQR cho đơn thanh toán online (ONL)

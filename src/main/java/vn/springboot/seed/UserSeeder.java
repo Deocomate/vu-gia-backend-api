@@ -16,6 +16,12 @@ import vn.springboot.repository.UserRepository;
  * overrides, but seeds {@code role=ADMIN} (the real seeded value) instead of the old
  * dead-code default of {@code SUPERADMIN}, which never actually ran once the SQL seed
  * had already inserted the "admin" username first.
+ *
+ * <p>{@code app.init.enabled} is preserved as this seeder's own kill-switch (its only
+ * scope is the admin row — other domains still seed normally when this is
+ * {@code false}), matching {@code DataInitializer}'s original {@code @ConditionalOnProperty}
+ * behavior. It can't be re-expressed as a bean condition here since {@link SeedRunner}
+ * injects this seeder unconditionally as a concrete type.
  */
 @Slf4j
 @Component
@@ -34,6 +40,9 @@ public class UserSeeder implements DomainSeeder {
     @Value("${app.init.admin-password:admin123}")
     private String adminPassword;
 
+    @Value("${app.init.enabled:true}")
+    private boolean initEnabled;
+
     @Override
     public boolean isEmpty() {
         return userRepository.count() == 0;
@@ -48,7 +57,7 @@ public class UserSeeder implements DomainSeeder {
     @Override
     @Transactional
     public void seed() {
-        if (userRepository.existsByUsername(adminUsername)) {
+        if (!initEnabled || userRepository.existsByUsername(adminUsername)) {
             return;
         }
         userRepository.save(UserEntity.builder()
