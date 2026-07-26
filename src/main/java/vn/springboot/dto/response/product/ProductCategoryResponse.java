@@ -32,7 +32,14 @@ public class ProductCategoryResponse {
 
     private String slug;
 
-    private boolean isActive;
+    /**
+     * Wrapper {@code Boolean} (not primitive) deliberately: a primitive {@code boolean}
+     * field named {@code isActive} makes Lombok's getter/JSON property name "active"
+     * (the "is" prefix is stripped for primitive booleans), which silently mismatches
+     * the FE-facing "isActive" wire contract. The wrapper type keeps the standard
+     * {@code getIsActive()}/{@code isActive} JSON-key pairing with no ambiguity.
+     */
+    private Boolean isActive;
 
     private String seoTitle;
 

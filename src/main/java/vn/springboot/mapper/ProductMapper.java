@@ -19,6 +19,7 @@ public interface ProductMapper {
 
     @Mapping(target = "category", source = "productCategory")
     @Mapping(target = "images", ignore = true)
+    @Mapping(target = "isFeatured", source = "featured")
     ProductResponse toResponse(ProductEntity entity);
 
     ProductCategoryBriefResponse toBrief(ProductCategoryEntity entity);

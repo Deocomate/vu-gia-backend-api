@@ -102,14 +102,14 @@ class BannerServiceImplTest {
                     BannerEntity e = inv.getArgument(0);
                     BannerResponse r = response(1L, e.getTitle());
                     r.setSortOrder(e.getSortOrder());
-                    r.setActive(e.isActive());
+                    r.setIsActive(e.isActive());
                     return r;
                 });
 
         BannerResponse result = service.create(request);
 
         assertThat(result.getSortOrder()).isEqualTo(0);
-        assertThat(result.isActive()).isTrue();
+        assertThat(result.getIsActive()).isTrue();
         verify(bannerRepository).save(any(BannerEntity.class));
     }
 }

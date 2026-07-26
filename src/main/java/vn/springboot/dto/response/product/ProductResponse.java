@@ -34,7 +34,14 @@ public class ProductResponse {
 
     private int soldCount;
 
-    private boolean isFeatured;
+    /**
+     * Wrapper {@code Boolean} (not primitive) deliberately: a primitive {@code boolean}
+     * field named {@code isFeatured} makes Lombok's getter/JSON property name "featured"
+     * (the "is" prefix is stripped for primitive booleans), which silently mismatches
+     * the FE-facing "isFeatured" wire contract. The wrapper type keeps the standard
+     * {@code getIsFeatured()}/{@code isFeatured} JSON-key pairing with no ambiguity.
+     */
+    private Boolean isFeatured;
 
     private ProductStatus status;
 
