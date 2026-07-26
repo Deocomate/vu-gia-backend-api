@@ -28,7 +28,14 @@ import vn.springboot.entity.enums.ContentStatus;
 @Table(name = "pages")
 public class PageEntity extends BaseEntity {
 
-    @Column(name = "key", unique = true, nullable = false, length = 255)
+    /**
+     * Backtick-quoted deliberately: {@code key} is a MySQL reserved word, and Hibernate
+     * doesn't auto-quote column names by default — every unquoted reference (including
+     * derived queries like {@code findByKey}) fails with a SQL syntax error at the DB,
+     * not at compile time. Discovered when {@link vn.springboot.seed.PageSeeder} first
+     * tried to insert a row through this entity against real MySQL.
+     */
+    @Column(name = "`key`", unique = true, nullable = false, length = 255)
     private String key;
 
     @Column(name = "title", length = 255)
