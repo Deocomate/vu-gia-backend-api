@@ -15,7 +15,7 @@ Phiên bản **v1.0.0** đã hoàn thành 100% các tính năng thương mại c
   - [x] Đăng nhập Google OAuth2 (xác thực Google ID Token).
   - [x] Hệ thống Phân quyền Role-based (`SUPERADMIN`, `ADMIN`, `CUSTOMER`).
   - [x] Envelope Response thống nhất (`ApiResponse<T>`) và Xử lý lỗi tập trung (`GlobalExceptionHandler`).
-  - [x] Khởi tạo CSDL tự động qua Flyway (`V1__init_db.sql` schema + `V2__seed_db.sql` data).
+  - [x] Schema code-first qua JPA entity (`ddl-auto=update`) + seed dữ liệu qua `SeedRunner`/`DomainSeeder` (Java).
   - [x] Quản lý lưu trữ tệp tin local đĩa cứng với Annotation `@StorageUrl`.
 
 - [x] **Quản lý Sản phẩm (Product Catalog)**:

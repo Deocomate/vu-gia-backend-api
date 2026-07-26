@@ -1,7 +1,7 @@
 # 🏺 Gốm Sứ Vũ Gia — Backend REST API
 
 > **Hệ thống Backend REST API cho Nền tảng Thương mại Điện tử Gốm Sứ Vũ Gia**  
-> Xây dựng trên nền **Spring Boot 3.5.10 (Java 21)**, **MySQL 8.0**, **Flyway Migration** và **Spring Security (JWT + OAuth2)**.
+> Xây dựng trên nền **Spring Boot 3.5.10 (Java 21)**, **MySQL 8.0 (code-first, Hibernate `ddl-auto=update`)** và **Spring Security (JWT + OAuth2)**.
 
 ---
 
@@ -18,7 +18,7 @@
 | Thành phần | Công nghệ / Thư viện | M Describes / Ghi chú |
 |---|---|---|
 | **Core Framework** | Spring Boot 3.5.10, Java 21 | Kiến trúc REST API hiệu năng cao |
-| **Database & Migration** | MySQL 8.0, Flyway 10 | Quản lý phiên bản schema (V1–V2) & seed data hợp nhất |
+| **Database & Seeding** | MySQL 8.0, Hibernate `ddl-auto=update` | Schema code-first từ entity; `SeedRunner` seed dữ liệu qua 12 `DomainSeeder` |
 | **Data Access** | Spring Data JPA, Hibernate | JPA Specification tìm kiếm động & phân trang an toàn |
 | **Security & Auth** | Spring Security 6, JJWT 0.12.6 | JWT Access Token, Refresh Token Rotation & Google OAuth2 |
 | **Mapping & Utils** | MapStruct 1.6.3, Lombok | Ánh xạ DTO ↔ Entity compile-time |
@@ -48,15 +48,14 @@ vu-gia-backend-api/
 │   ├── config/              # SecurityConfig, AsyncConfig, LocalStorageConfig, OpenApiConfig
 │   ├── controller/          # 22 REST Controllers
 │   ├── dto/                 # Request & Response DTOs
-│   ├── entity/              # 19 JPA Entities (extending BaseEntity)
+│   ├── entity/              # 21 JPA Entities (extending BaseEntity)
 │   ├── event/               # OrderPlacedEvent & OrderEmailListener
 │   ├── mapper/              # MapStruct mappers
 │   ├── repository/          # Spring Data JPA Repositories & Specifications
 │   ├── security/            # JWT Service, JwtFilter, GoogleTokenVerifier, SepaySignatureVerifier
+│   ├── seed/                # DomainSeeder framework: SeedRunner, 12 domain seeders, OrphanReferenceChecker
 │   └── service/             # Business Logic Interfaces & Implementations
 ├── src/main/resources/
-│   ├── db/migration/        # Flyway schema migrations (V1, V3..V9)
-│   ├── db/seed/             # Flyway seed data (V2)
 │   ├── templates/email/     # Thymeleaf HTML Email Templates
 │   └── application.yaml     # Application configuration
 ├── docs/                    # Tài liệu kiến trúc & hệ thống
@@ -136,7 +135,7 @@ vu-gia-backend-api/
    ```bash
    ./mvnw spring-boot:run
    ```
-   *Flyway sẽ tự động chạy script DDL hợp nhất (`V1`) và khởi tạo dữ liệu mẫu chuẩn (`V2`).*
+   *Hibernate (`ddl-auto=update`) tự động tạo/cập nhật schema từ entity, sau đó `SeedRunner` seed dữ liệu mẫu qua 12 `DomainSeeder`. Đặt `APP_ENV=development` để mỗi lần khởi động đều xoá sạch và seed lại toàn bộ (kể cả bảng giao dịch); để trống/`production` thì chỉ seed bảng còn trống.*
 
 ---
 
@@ -153,11 +152,11 @@ Hệ thống sẽ dựng 2 dịch vụ:
 
 ## 🔑 6. Tài khoản Mặc định & Phân quyền Initial
 
-Khi khởi tạo thành công, hệ thống tự động tạo tài khoản SuperAdmin ban đầu (`DataInitializer`):
+Khi khởi tạo thành công, hệ thống tự động tạo tài khoản Admin ban đầu (`UserSeeder`, ghi đè được qua `app.init.*`):
 - **Username**: `admin`
-- **Email**: `admin@gmail.com`
+- **Email**: `admin@gomvugia.vn`
 - **Mật khẩu**: `admin123`
-- **Vai trò**: `SUPERADMIN`, `ADMIN`, `CUSTOMER`
+- **Vai trò**: `ADMIN` (hệ thống có 3 vai trò: `SUPERADMIN`, `ADMIN`, `CUSTOMER` — tài khoản seed mặc định chỉ có `ADMIN`)
 
 ---
 
@@ -212,7 +211,7 @@ Sau khi ứng dụng khởi động thành công, truy cập Swagger UI tương 
 Để tìm hiểu chi tiết về thiết kế kiến trúc, quy chuẩn mã nguồn và lộ trình phát triển, vui lòng tham khảo các tài liệu trong thư mục `docs/`:
 
 - [📜 `project-overview-pdr.md`](docs/project-overview-pdr.md) — Tổng quan dự án, ma trận yêu cầu chức năng & phi chức năng (PDR).
-- [📁 `codebase-summary.md`](docs/codebase-summary.md) — Bản đồ chi tiết package Java, bảng CSDL & các Flyway migration.
+- [📁 `codebase-summary.md`](docs/codebase-summary.md) — Bản đồ chi tiết package Java, bảng CSDL & seeder framework.
 - [📏 `code-standards.md`](docs/code-standards.md) — Quy chuẩn kiến trúc phân tầng, envelope response, mã lỗi `ErrorCode` & testing.
 - [🏛 `system-architecture.md`](docs/system-architecture.md) — Sơ đồ kiến trúc Mermaid (Auth JWT/OAuth2, Order Flow, SePay Webhook, Storage).
 - [🗺 `project-roadmap.md`](docs/project-roadmap.md) — Trạng thái tính năng v1.0.0 & Kế hoạch phát triển các phiên bản tương lai.

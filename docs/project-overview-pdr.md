@@ -2,7 +2,7 @@
 
 > **Dự án**: Backend REST API Thương mại điện tử Gốm Sứ Vũ Gia  
 > **Phiên bản**: v1.0.0  
-> **Tech Stack**: Java 21, Spring Boot 3.5.10, MySQL 8, Flyway, Spring Security (JWT + OAuth2), MapStruct, Lombok
+> **Tech Stack**: Java 21, Spring Boot 3.5.10, MySQL 8 (code-first, Hibernate `ddl-auto=update`), Spring Security (JWT + OAuth2), MapStruct, Lombok
 
 ---
 
@@ -80,7 +80,7 @@ Hệ thống được thiết kế theo kiến trúc phân tầng hiện đại 
 |---|---|
 | **Hiệu năng (Performance)** | MapStruct ánh xạ DTO compile-time; JPA Specification tối ưu query DB; phân trang bắt buộc clamp `size <= 100`. |
 | **Bảo mật (Security)** | Mật khẩu mã hóa BCrypt; JWT token HMAC-SHA512; kiểm soát quyền `@PreAuthorize`; xác thực webhook SePay qua signature HMAC; vô hiệu hóa CSRF cho Stateless API. |
-| **Tính sẵn sàng & Khởi tạo** | Tự động nâng cấp Schema và Seed Data bằng Flyway (`V1__init_db.sql`, `V2__seed_db.sql`) giúp khởi chạy 1-click qua Docker Compose. |
+| **Tính sẵn sàng & Khởi tạo** | Hibernate tự tạo/cập nhật schema từ entity (`ddl-auto=update`) và `SeedRunner` (12 `DomainSeeder`) seed dữ liệu mẫu, giúp khởi chạy 1-click qua Docker Compose. |
 | **Tính toàn vẹn dữ liệu** | Sử dụng `@Transactional` đúng phạm vi; xử lý race condition khi dùng mã giảm giá và kho hàng bằng truy vấn nguyên tử. |
 | **Khả năng quan sát (Observability)** | Tích hợp Spring Boot Actuator cung cấp `/actuator/health` và `/actuator/info`. |
 
@@ -89,7 +89,7 @@ Hệ thống được thiết kế theo kiến trúc phân tầng hiện đại 
 ## 5. Danh mục Tài liệu Kỹ thuật Liên quan
 
 - [`README.md`](../README.md) — Hướng dẫn cài đặt, cấu hình môi trường, chạy Docker & Tóm tắt nhóm REST API
-- [`codebase-summary.md`](codebase-summary.md) — Bản đồ chi tiết package Java, bảng CSDL & các Flyway migration (V1–V9)
+- [`codebase-summary.md`](codebase-summary.md) — Bản đồ chi tiết package Java, bảng CSDL & seeder framework
 - [`code-standards.md`](code-standards.md) — Quy chuẩn lập trình, envelope response, mã lỗi `ErrorCode` & testing
 - [`system-architecture.md`](system-architecture.md) — Sơ đồ kiến trúc Mermaid (Auth JWT/OAuth2, Order Flow, SePay Webhook, Storage)
 - [`project-roadmap.md`](project-roadmap.md) — Lộ trình phát triển & trạng thái hoàn thiện các tính năng v1.0.0

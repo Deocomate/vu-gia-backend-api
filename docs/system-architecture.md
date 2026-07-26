@@ -6,7 +6,7 @@
 
 ## 1. Tổng quan Kiến trúc Hệ thống (System Architecture)
 
-Hệ thống Backend Gốm Sứ Vũ Gia xây dựng trên nền **Spring Boot 3.5.10 (Java 21)** kết hợp với **MySQL 8.0** và **Flyway Database Migration**.
+Hệ thống Backend Gốm Sứ Vũ Gia xây dựng trên nền **Spring Boot 3.5.10 (Java 21)** kết hợp với **MySQL 8.0**, schema quản lý code-first qua Hibernate (`ddl-auto=update`) và seed dữ liệu qua framework `DomainSeeder` (Java, xem mục 6).
 
 ```mermaid
 graph TD
@@ -133,3 +133,31 @@ graph LR
 
 - **Entity & DTO**: Cơ sở dữ liệu chỉ lưu đường dẫn tương đối (Relative Path, ví dụ `products/ceramic-vase.jpg`).
 - **Annotation `@StorageUrl`**: Tự động biến đổi Relative Path thành Absolute URL đầy đủ khi trả về JSON client (ví dụ `http://localhost:8080/files/products/ceramic-vase.jpg`).
+
+---
+
+## 6. Quản lý Schema Code-First & Seed Dữ liệu (`vn.springboot.seed`)
+
+Từ 2026-07, dự án chuyển từ quản lý schema qua migration SQL sang **code-first**: JPA Entity là nguồn chân lý duy nhất của schema, không còn file migration SQL nào.
+
+```mermaid
+graph TD
+    Boot[App Startup] -->|ddl-auto=update| Hibernate[Hibernate tạo/cập nhật schema từ Entity]
+    Hibernate --> SeedRunner[SeedRunner CommandLineRunner]
+    SeedRunner -->|APP_ENV=development| ResetAll[Reset toàn bộ 12 domain + TransactionalDataCleaner]
+    SeedRunner -->|other profile| SeedEmpty[Seed từng domain nếu rỗng]
+    ResetAll --> SeedForward[Seed lại theo thứ tự FK-safe]
+    SeedForward --> OrphanCheck[OrphanReferenceChecker]
+    SeedEmpty --> OrphanCheck
+    OrphanCheck -->|throw nếu có orphan| Boot
+```
+
+- **12 `DomainSeeder`** (interface `isEmpty()`/`reset()`/`seed()`), điều phối bởi `SeedRunner` theo thứ tự FK-safe cố định (không dựa vào thứ tự Spring tự inject `List<DomainSeeder>`).
+- **`APP_ENV=development`**: mỗi lần khởi động xoá sạch (children-first) và seed lại toàn bộ 12 domain **và** 6 bảng giao dịch không seed (`orders`, `order_items`, `cart_items`, `payment_transactions`, `refresh_tokens`, `contact_requests`) qua `TransactionalDataCleaner` — DB coi là hoàn toàn disposable.
+- **Profile khác**: mỗi domain chỉ seed nếu đang rỗng (idempotent), không bao giờ đụng vào dữ liệu đã có; 6 bảng giao dịch không bị `TransactionalDataCleaner` chạm tới.
+- **`OrphanReferenceChecker`**: chạy sau mỗi lần seed, ở mọi profile — `V1` (cũ) không khai báo `FOREIGN KEY` thật nào ở tầng CSDL, nên một lỗi thứ tự seed sẽ tạo ra tham chiếu treo (dangling reference) âm thầm thay vì lỗi loud; checker kiểm tra 3 tham chiếu chéo thực tế (`product_images.product_id`, `products.product_category_id`, `news.news_category_id`) và `throw` nếu phát hiện orphan.
+
+### Đánh đổi đã chấp nhận (Accepted Tradeoffs)
+
+1. **`ddl-auto=update` áp dụng ở mọi môi trường, kể cả production** (không có override theo profile). Đây là một anti-pattern được biết đến của Hibernate: `update` không bao giờ tự xoá cột/bảng mồ côi khi một field bị xoá khỏi entity, và không còn file migration nào để review diff schema qua code review (công cụ migration trước đây có tính năng này). Chấp nhận có chủ đích vì dự án chưa có dữ liệu production thật ở thời điểm chuyển đổi (2026-07-27); không có kế hoạch bổ sung tooling diff schema ở quy mô hiện tại.
+2. **`/actuator/health` có thể báo `UP` trước khi `SeedRunner` seed xong.** `SeedRunner` là một `CommandLineRunner`, chạy sau khi Tomcat đã khởi động xong — nghĩa là có một khoảng hở ngắn mà health check có thể trả về "khỏe mạnh" trong khi catalog vẫn đang rỗng (đặc biệt rõ ở lần boot đầu tiên trên DB trống). Chấp nhận không thêm `HealthIndicator` tùy chỉnh để đóng khoảng hở này; ghi nhận như một giới hạn đã biết.
