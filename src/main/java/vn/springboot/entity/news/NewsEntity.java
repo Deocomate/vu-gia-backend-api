@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -30,7 +31,12 @@ import java.time.Instant;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "news")
+@Table(name = "news", indexes = {
+        @Index(name = "idx_news_news_category_id", columnList = "news_category_id"),
+        @Index(name = "idx_news_priority", columnList = "priority"),
+        @Index(name = "idx_news_status", columnList = "status"),
+        @Index(name = "idx_news_published_at", columnList = "published_at")
+})
 public class NewsEntity extends BaseEntity {
 
     @Column(name = "title", nullable = false, columnDefinition = "TEXT")

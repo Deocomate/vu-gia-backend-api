@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,14 @@ import java.time.Instant;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "coupons")
+@Table(name = "coupons", indexes = {
+        @Index(name = "idx_coupons_is_active", columnList = "is_active"),
+        @Index(name = "idx_coupons_created_at", columnList = "created_at"),
+        @Index(name = "idx_coupons_ends_at", columnList = "ends_at"),
+        @Index(name = "idx_coupons_starts_at", columnList = "starts_at"),
+        @Index(name = "idx_coupons_used_count", columnList = "used_count"),
+        @Index(name = "idx_coupons_discount_value", columnList = "discount_value")
+})
 public class CouponEntity extends BaseEntity {
 
     @Column(name = "code", unique = true, nullable = false, length = 50)

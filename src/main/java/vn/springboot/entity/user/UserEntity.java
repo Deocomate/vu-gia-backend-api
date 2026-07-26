@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,7 +31,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(
+        name = "uidx_users_provider_provider_id", columnNames = {"provider", "provider_id"}))
 public class UserEntity extends BaseEntity {
 
     @Column(name = "username", unique = true, nullable = false, length = 50)

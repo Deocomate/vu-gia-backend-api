@@ -62,6 +62,7 @@ class ShippingMethodControllerTest {
     private ShippingMethodCreateRequest validCreateRequest() {
         return ShippingMethodCreateRequest.builder()
                 .name("Standard")
+                .code("STANDARD")
                 .fee(30_000L)
                 .build();
     }

@@ -77,8 +77,15 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
     @Override
     @Transactional
     public ShippingMethodResponse create(ShippingMethodCreateRequest request) {
+        if (shippingMethodRepository.existsByCode(request.getCode())) {
+            throw new AppException(ErrorCode.SHIPPING_METHOD_CODE_EXISTED);
+        }
+
         ShippingMethodEntity entity = ShippingMethodEntity.builder()
                 .name(request.getName())
+                .code(request.getCode())
+                .description(request.getDescription())
+                .estimatedDelivery(request.getEstimatedDelivery())
                 .fee(request.getFee())
                 .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
@@ -95,6 +102,19 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
 
         if (request.getName() != null) {
             entity.setName(request.getName());
+        }
+        if (request.getCode() != null) {
+            if (!request.getCode().equals(entity.getCode())
+                    && shippingMethodRepository.existsByCodeAndIdNot(request.getCode(), id)) {
+                throw new AppException(ErrorCode.SHIPPING_METHOD_CODE_EXISTED);
+            }
+            entity.setCode(request.getCode());
+        }
+        if (request.getDescription() != null) {
+            entity.setDescription(request.getDescription());
+        }
+        if (request.getEstimatedDelivery() != null) {
+            entity.setEstimatedDelivery(request.getEstimatedDelivery());
         }
         if (request.getFee() != null) {
             entity.setFee(request.getFee());

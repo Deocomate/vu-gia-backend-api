@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -32,8 +33,19 @@ import vn.springboot.entity.user.UserEntity;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "orders", uniqueConstraints = @UniqueConstraint(
-        name = "uidx_orders_user_idempotency", columnNames = {"user_id", "idempotency_key"}))
+@Table(name = "orders",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uidx_orders_user_idempotency", columnNames = {"user_id", "idempotency_key"}),
+        indexes = {
+                @Index(name = "idx_orders_user_id", columnList = "user_id"),
+                @Index(name = "idx_orders_status", columnList = "status"),
+                @Index(name = "idx_orders_payment_status", columnList = "payment_status"),
+                @Index(name = "idx_orders_coupon_id", columnList = "coupon_id"),
+                @Index(name = "idx_orders_shipping_method_id", columnList = "shipping_method_id"),
+                @Index(name = "idx_orders_user_status", columnList = "user_id, status"),
+                @Index(name = "idx_orders_user_id_id", columnList = "user_id, id"),
+                @Index(name = "idx_orders_coupon_user", columnList = "coupon_id, user_id")
+        })
 public class OrderEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

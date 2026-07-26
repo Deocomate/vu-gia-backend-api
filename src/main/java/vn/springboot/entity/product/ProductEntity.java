@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -29,7 +30,14 @@ import vn.springboot.entity.enums.ProductType;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_products_type", columnList = "type"),
+        @Index(name = "idx_products_priority", columnList = "priority"),
+        @Index(name = "idx_products_product_category_id", columnList = "product_category_id"),
+        @Index(name = "idx_products_is_featured", columnList = "is_featured"),
+        @Index(name = "idx_products_type_priority", columnList = "type, priority"),
+        @Index(name = "idx_products_status_is_featured", columnList = "status, is_featured")
+})
 public class ProductEntity extends BaseEntity {
 
     @Column(name = "name", nullable = false, length = 255)

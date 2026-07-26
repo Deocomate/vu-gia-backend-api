@@ -17,6 +17,15 @@ public class ShippingMethodUpdateRequest {
     @Size(max = 100)
     private String name;
 
+    @Size(max = 50)
+    private String code;
+
+    @Size(max = 500)
+    private String description;
+
+    @Size(max = 100)
+    private String estimatedDelivery;
+
     @PositiveOrZero
     private Long fee;
 

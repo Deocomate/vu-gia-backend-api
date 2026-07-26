@@ -26,6 +26,15 @@ public class ShippingMethodEntity extends BaseEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column(name = "code", unique = true, nullable = false, length = 50)
+    private String code;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "estimated_delivery", length = 100)
+    private String estimatedDelivery;
+
     /** Shipping fee in VND. */
     @Builder.Default
     @Column(name = "fee", nullable = false)

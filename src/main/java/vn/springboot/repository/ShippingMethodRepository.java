@@ -8,4 +8,8 @@ import vn.springboot.entity.shipping.ShippingMethodEntity;
 @Repository
 public interface ShippingMethodRepository
         extends JpaRepository<ShippingMethodEntity, Long>, JpaSpecificationExecutor<ShippingMethodEntity> {
+
+    boolean existsByCode(String code);
+
+    boolean existsByCodeAndIdNot(String code, Long id);
 }

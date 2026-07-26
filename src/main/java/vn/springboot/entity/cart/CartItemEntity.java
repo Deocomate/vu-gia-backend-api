@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,7 +30,8 @@ import vn.springboot.entity.user.UserEntity;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "cart_items")
+@Table(name = "cart_items", uniqueConstraints = @UniqueConstraint(
+        name = "uidx_cart_items_user_product", columnNames = {"user_id", "product_id"}))
 public class CartItemEntity {
 
     @Id

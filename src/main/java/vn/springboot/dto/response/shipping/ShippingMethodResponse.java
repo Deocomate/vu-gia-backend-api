@@ -17,6 +17,12 @@ public class ShippingMethodResponse {
 
     private String name;
 
+    private String code;
+
+    private String description;
+
+    private String estimatedDelivery;
+
     private Long fee;
 
     private Integer sortOrder;
