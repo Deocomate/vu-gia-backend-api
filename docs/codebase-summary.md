@@ -11,44 +11,28 @@ vu-gia-backend-api/
 ├── .claude/                             # Cấu hình workspace Claude Kit
 ├── assets/                              # Tài nguyên hình ảnh minh họa / sơ đồ
 ├── data/                                # Thư mục đĩa lưu ảnh upload local (ignored in git)
-├── docs/                                # Thư mục chứa toàn bộ tài liệu dự án
-│   ├── AUTH_USER_API.md
-│   ├── PRODUCT_API.md
-│   ├── ORDER_API.md
-│   ├── CART_API.md
-│   ├── COUPON_API.md
-│   ├── NEWS_API.md
-│   ├── PAGE_API.md
-│   ├── DASHBOARD_API.md
-│   ├── BASIC_MODULES_API.md
-│   ├── CONTACT_API.md
-│   ├── NEWSLETTER_API.md
-│   ├── SHIPPING_API.md
-│   ├── FILE_STORAGE_API.md
-│   ├── RUN_AND_SEED.md
-│   ├── MINIO_DOCKER_PRODUCTION_SETUP.md
-│   ├── MYSQL_DOCKER_PRODUCTION_SETUP.md
+├── docs/                                # Thư mục chứa toàn bộ tài liệu hệ thống
 │   ├── project-overview-pdr.md          # Project Overview & PDR
 │   ├── codebase-summary.md              # Tài liệu này
 │   ├── code-standards.md                # Quy chuẩn lập trình & kiến trúc
 │   ├── system-architecture.md           # Sơ đồ & Kiến trúc hệ thống
-│   ├── project-roadmap.md               # Lộ trình phát triển
-│   ├── deployment-guide.md              # Hướng dẫn triển khai
-│   └── design-guidelines.md             # Quy chuẩn API & Response
+│   └── project-roadmap.md               # Lộ trình phát triển & tính năng
 ├── plans/                               # Các kế hoạch phát triển / refactor
 ├── src/
 │   ├── main/
 │   │   ├── java/vn/springboot/          # Mã nguồn Java chính
 │   │   └── resources/                   # Application config, Flyway migrations & templates
-│   └── test/java/vn/springboot/         # Unit test & Controller test
-├── docker-compose.yml                   # Docker Compose môi trường production
-├── docker-compose.local.yml             # Docker Compose môi trường dev
+│   │       ├── db/migration/            # Flyway Schema migrations (V1, V3..V9)
+│   │       ├── db/seed/                 # Flyway Seed data (V2)
+│   │       ├── templates/email/         # Thymeleaf HTML Email Templates
+│   │       └── application.yaml         # Spring Boot Config
+│   └── test/java/vn/springboot/         # Unit test & Controller integration test
+├── docker-compose.yml                   # Docker Compose môi trường production (MySQL + App)
+├── docker-compose.local.yml             # Docker Compose môi trường dev (MySQL standalone)
 ├── Dockerfile                           # Docker build multi-stage
 ├── mvnw / mvnw.cmd                      # Maven Wrapper
 ├── pom.xml                              # Khai báo phụ thuộc Maven
-├── CLAUDE.md                            # Quy trình hướng dẫn AI & team
-├── README.md                            # Document chính dự án (Tiếng Việt)
-└── README.en.md                         # Document chính dự án (English)
+└── README.md                            # Document chính dự án (Tiếng Việt)
 ```
 
 ---
@@ -73,12 +57,12 @@ vu-gia-backend-api/
 
 ## 3. Quản lý Cơ sở dữ liệu & Migrations (`src/main/resources`)
 
-Dự án áp dụng **Flyway Database Migration** để quản lý phiên bản CSDL và khởi tạo dữ liệu tự động:
+Dự án áp dụng **Flyway Database Migration** chuẩn hóa với 2 script khởi tạo duy nhất:
 
-- `src/main/resources/db/migration/V1__init_db.sql`: DDL định nghĩa toàn bộ 19 bảng trong CSDL MySQL, bao gồm khóa chính, khóa ngoại, chỉ mục (Index) và ràng buộc duy nhất (Unique Constraints).
-- `src/main/resources/db/seed/V2__seed_db.sql`: Dữ liệu khởi tạo mẫu (Seed data) về danh mục sản phẩm, sản phẩm, mã giảm giá, bài viết tin tức, thông tin cửa hàng và cấu hình hệ thống.
-- `src/main/resources/templates/email/order-confirmation.html`: Template Email HTML giao diện đẹp render bằng Thymeleaf để gửi thông báo đơn hàng.
-- `src/main/resources/application.yaml`: Tập tin cấu hình môi trường chuẩn của Spring Boot.
+- `src/main/resources/db/migration/V1__init_db.sql`: DDL hợp nhất định nghĩa toàn bộ 19 bảng trong CSDL MySQL với cấu trúc chuẩn cuối cùng, bao gồm khóa chính, khóa ngoại, chỉ mục (Index) và ràng buộc duy nhất (Unique Constraints).
+- `src/main/resources/db/seed/V2__seed_db.sql`: Dữ liệu khởi tạo mẫu (Seed data) đồng bộ chuẩn hóa cho toàn bộ danh mục sản phẩm (`CategoryType`), tài khoản quản trị, sản phẩm, tin tức, banner, showroom, phương thức vận chuyển và cấu hình hệ thống.
+- `src/main/resources/templates/email/order-confirmation.html`: Template Email HTML giao diện chuẩn render bằng Thymeleaf để gửi thông báo đơn hàng.
+- `src/main/resources/application.yaml`: Tập tin cấu hình môi trường chính của Spring Boot.
 
 ---
 

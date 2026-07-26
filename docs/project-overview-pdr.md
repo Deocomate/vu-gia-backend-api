@@ -86,15 +86,12 @@ Hệ thống được thiết kế theo kiến trúc phân tầng hiện đại 
 
 ---
 
-## 5. Danh mục Tài liệu API liên quan
+## 5. Danh mục Tài liệu Kỹ thuật Liên quan
 
-- [`AUTH_USER_API.md`](AUTH_USER_API.md) — Chi tiết API Xác thực, Phân quyền & Quản lý User
-- [`PRODUCT_API.md`](PRODUCT_API.md) — Chi tiết API Sản phẩm & Danh mục
-- [`CART_API.md`](CART_API.md) — Chi tiết API Giỏ hàng
-- [`ORDER_API.md`](ORDER_API.md) — Chi tiết API Đơn hàng & Thanh toán
-- [`COUPON_API.md`](COUPON_API.md) — Chi tiết API Mã giảm giá
-- [`NEWS_API.md`](NEWS_API.md) — Chi tiết API Tin tức & Danh mục tin
-- [`PAGE_API.md`](PAGE_API.md) — Chi tiết API Trang CMS
-- [`DASHBOARD_API.md`](DASHBOARD_API.md) — Chi tiết API Dashboard Admin
-- [`BASIC_MODULES_API.md`](BASIC_MODULES_API.md) — Chi tiết API Banner, Showroom, Gallery, FAQ, Redirect
-- [`FILE_STORAGE_API.md`](FILE_STORAGE_API.md) — Chi tiết Cơ chế Lưu trữ & Phục vụ Ảnh local
+- [`README.md`](../README.md) — Hướng dẫn cài đặt, cấu hình môi trường, chạy Docker & Tóm tắt nhóm REST API
+- [`codebase-summary.md`](codebase-summary.md) — Bản đồ chi tiết package Java, bảng CSDL & các Flyway migration (V1–V9)
+- [`code-standards.md`](code-standards.md) — Quy chuẩn lập trình, envelope response, mã lỗi `ErrorCode` & testing
+- [`system-architecture.md`](system-architecture.md) — Sơ đồ kiến trúc Mermaid (Auth JWT/OAuth2, Order Flow, SePay Webhook, Storage)
+- [`project-roadmap.md`](project-roadmap.md) — Lộ trình phát triển & trạng thái hoàn thiện các tính năng v1.0.0
+- **Tài liệu REST API Tương tác**: Swagger UI tại URL `http://localhost:8080/swagger-ui.html` (OpenAPI 3.0 spec tại `/v3/api-docs`).
+

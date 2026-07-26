@@ -1,293 +1,222 @@
-<div align="center">
+# 🏺 Gốm Sứ Vũ Gia — Backend REST API
 
-# 🏺 Gốm Sứ Vũ Gia — Backend Thương mại điện tử
-
-**REST API Spring Boot cho cửa hàng gốm sứ Vũ Gia — danh mục sản phẩm, giỏ hàng, đặt hàng, mã giảm giá, nội dung CMS, dashboard quản trị, JWT + RBAC, lưu ảnh local filesystem và tự động migrate/seed bằng Flyway.**
-
-<br/>
-
-<!-- 🌐 Nút chuyển ngôn ngữ -->
-<a href="README.md"><img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-2C5BFF?style=for-the-badge" alt="Tiếng Việt"/></a>
-<a href="README.en.md"><img src="https://img.shields.io/badge/🇬🇧_English-555?style=for-the-badge" alt="English"/></a>
-
-<br/><br/>
-
-![Java](https://img.shields.io/badge/Java-21-007396?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![Spring Security](https://img.shields.io/badge/Security-JWT%20%2B%20RBAC-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Flyway](https://img.shields.io/badge/Flyway-Migrate%20%2B%20Seed-CC0200?style=for-the-badge&logo=flyway&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
-</div>
+> **Hệ thống Backend REST API cho Nền tảng Thương mại Điện tử Gốm Sứ Vũ Gia**  
+> Xây dựng trên nền **Spring Boot 3.5.10 (Java 21)**, **MySQL 8.0**, **Flyway Migration** và **Spring Security (JWT + OAuth2)**.
 
 ---
 
-## 📑 Mục lục
+## 📋 1. Tổng quan Dự án
 
-- [Tổng quan](#-tổng-quan)
-- [Công nghệ](#-công-nghệ)
-- [Chức năng & Module](#-chức-năng--module)
-- [Kiến trúc](#-kiến-trúc)
-- [Cấu trúc dự án](#-cấu-trúc-dự-án)
-- [Bắt đầu](#-bắt-đầu)
-- [Cấu hình](#-cấu-hình)
-- [Tài liệu API](#-tài-liệu-api)
-- [Mô hình bảo mật](#-mô-hình-bảo-mật)
-- [Định dạng response](#-định-dạng-response)
-- [License](#-license)
+`vu-gia-backend-api` là dịch vụ backend trung tâm cung cấp toàn bộ REST API cho hai ứng dụng frontend:
+- **Storefront (Khách hàng)**: Duyệt sản phẩm, tìm kiếm, giỏ hàng, đặt hàng trực tuyến, áp dụng coupon, nhận email thông báo và theo dõi đơn hàng.
+- **Admin Dashboard (Quản trị)**: Quản lý sản phẩm, danh mục, đơn hàng, coupon, bài viết tin tức, trang CMS tĩnh, banner, showroom và báo cáo doanh thu.
 
 ---
 
-## 🧭 Tổng quan
+## 🛠 2. Công nghệ Sử dụng (Tech Stack)
 
-Backend REST API cho storefront **Gốm Sứ Vũ Gia**. Phủ toàn bộ luồng thương mại — danh mục sản phẩm, giỏ hàng, đặt hàng kèm mã giảm giá — cùng nội dung dạng CMS (tin tức, trang, banner, gallery, showroom, FAQ) và dashboard thống kê cho admin.
-
-Mã nguồn bám **kiến trúc phân tầng** chặt chẽ và nguyên tắc **SOLID**: mỗi service viết theo interface, lọc động bằng JPA Specification, map DTO ↔ Entity ở compile-time (MapStruct), các mối quan tâm chéo (bảo mật, lỗi, auditing) nằm ở package riêng. Schema và dữ liệu mẫu được áp dụng **tự động khi khởi động** bằng **Flyway**.
-
----
-
-## 🛠 Công nghệ
-
-| Tầng | Công nghệ | Version | Vai trò |
-|---|---|---|---|
-| **Ngôn ngữ** | Java | 21 (LTS) | record, pattern matching, text block |
-| **Framework** | Spring Boot | 3.5.10 | Auto-config & DI |
-| **Web** | Spring Web (MVC) | — | REST controller, JSON |
-| **Persistence** | Spring Data JPA + Hibernate | — | ORM, repository, Specification API |
-| **CSDL** | MySQL | 8.x | DB quan hệ (`mysql-connector-j`) |
-| **Migration** | Flyway (+ `flyway-mysql`) | — | Tự migrate schema + seed data lúc khởi động |
-| **Bảo mật** | Spring Security | — | Xác thực, method security (`@PreAuthorize`) |
-| **Token** | JJWT | 0.12.6 | JWT access token (HS512) + refresh rotation |
-| **OAuth** | Google Identity | — | Đăng nhập Google (xác thực ID-token) |
-| **Lưu trữ ảnh** | Local filesystem | — | Ảnh upload lưu trong `data/`, phục vụ qua `/files/**` |
-| **Email** | Spring Mail + Thymeleaf | — | Email **HTML** bất đồng bộ |
-| **Mapping** | MapStruct | 1.6.3 | Map DTO ↔ Entity compile-time |
-| **Validation** | Jakarta Bean Validation | — | Kiểm tra payload `@Valid` |
-| **API Docs** | SpringDoc OpenAPI (Swagger UI) | — | Tài liệu tương tác `/swagger-ui.html` |
-| **Monitoring** | Spring Boot Actuator | — | `/actuator/health`, `/actuator/info` |
-| **Boilerplate** | Lombok | — | getter/setter/builder |
-| **Build** | Maven (wrapper `mvnw`) | — | Quản lý phụ thuộc & đóng gói |
-| **Test** | JUnit 5 + Mockito + Spring Security Test | — | Test service & controller |
+| Thành phần | Công nghệ / Thư viện | M Describes / Ghi chú |
+|---|---|---|
+| **Core Framework** | Spring Boot 3.5.10, Java 21 | Kiến trúc REST API hiệu năng cao |
+| **Database & Migration** | MySQL 8.0, Flyway 10 | Quản lý phiên bản schema (V1–V2) & seed data hợp nhất |
+| **Data Access** | Spring Data JPA, Hibernate | JPA Specification tìm kiếm động & phân trang an toàn |
+| **Security & Auth** | Spring Security 6, JJWT 0.12.6 | JWT Access Token, Refresh Token Rotation & Google OAuth2 |
+| **Mapping & Utils** | MapStruct 1.6.3, Lombok | Ánh xạ DTO ↔ Entity compile-time |
+| **API Docs & Monitoring**| Springdoc OpenAPI 2.8.6, Actuator | Swagger UI tại `/swagger-ui.html`, Health check tại `/actuator/health` |
+| **Email & Storage** | Spring Mail, Thymeleaf, Local Storage| Gửi email HTML bất đồng bộ (`@Async`) & phục vụ file qua `/files/**` |
 
 ---
 
-## ✨ Chức năng & Module
+## 🏗 3. Kiến trúc Phân tầng (Layered Architecture)
 
-### Nền tảng lõi
-- 🔐 **JWT + refresh rotation** — access token HS512 stateless; refresh token lưu DB (logout/thu hồi thật). Đăng nhập bằng **username hoặc email**, kèm **đăng nhập Google**.
-- 👥 **RBAC** — mô hình 1 vai trò (`Role` enum: `SUPERADMIN` / `ADMIN` / `CUSTOMER`); chặn quyền bằng `@PreAuthorize`.
-- 🧾 **Envelope thống nhất** — mọi response là `{ code, message, data, timestamp }`; `code=1000` = thành công.
-- 🧯 **Xử lý lỗi tập trung** — một `@RestControllerAdvice` map exception → error code ổn định.
-- 🕵️ **JPA auditing** — `createdAt / updatedAt / createdBy / updatedBy` tự điền.
-- 🔎 **Search & phân trang an toàn** — JPA Specification + whitelist sort (phân trang 1-based).
-- 🌱 **Tự migrate + seed** — Flyway chạy schema (`db/migration`) rồi data mẫu (`db/seed`); seed admin idempotent.
-- 🖼 **Ảnh local filesystem** — upload lưu trực tiếp trên đĩa (`app.storage.root`), phục vụ qua `/files/**`; DB lưu relative path, JSON tự ghép/cắt domain (`@StorageUrl`) — xem [`docs/FILE_STORAGE_API.md`](docs/FILE_STORAGE_API.md).
-
-### Các module nghiệp vụ
-| Miền | Điểm nổi bật |
-|---|---|
-| **Auth / User** | đăng ký · đăng nhập · refresh · logout · me · đăng nhập Google · đổi mật khẩu · quản trị user (list, tạo, đổi vai trò, reset mật khẩu) |
-| **Sản phẩm** | catalog + danh mục + ảnh (local storage), bật/tắt trạng thái & nổi bật, **tra cứu theo slug (SEO)** |
-| **Nội dung / CMS** | Tin tức + danh mục (theo slug), **Trang** (theo key), Banner, Showroom, Gallery, FAQ, Redirect |
-| **Marketing** | **Mã giảm giá** (PERCENT / FIXED / FREE_SHIP, validate + điều kiện), đăng ký Newsletter, form Liên hệ |
-| **Giỏ hàng** | giỏ theo user, cộng dồn số lượng, tính tổng trực tiếp |
-| **Đơn hàng** | **đặt hàng idempotent**, snapshot giá, **trừ lượt coupon nguyên tử** (race-free), trừ giỏ, `sold_count` chỉ tăng khi **COMPLETED**, **email xác nhận HTML bất đồng bộ**, admin search đơn |
-| **Dashboard** | KPI admin (doanh thu/đơn/khách), doanh thu theo ngày, top sản phẩm bán chạy |
-
-> Tài liệu endpoint đầy đủ theo từng module nằm trong [`docs/`](docs).
-
----
-
-## 🏗 Kiến trúc
-
-Luồng phụ thuộc một chiều; tầng web không đụng thẳng persistence, service phụ thuộc **interface**.
+Dự án tuân thủ nghiêm ngặt mô hình phân tầng đơn hướng (Clean Layered Architecture):
 
 ```text
-HTTP ─▶ Controller ─▶ Service (interface → impl) ─▶ Repository (+ Specification) ─▶ MySQL
-          │                     │
-          │ ApiResponse<T>      │ MapStruct mapper
-          ▼                     ▼
-  GlobalExceptionHandler ◀─ AppException(ErrorCode)
-          ▲
-  Chuỗi filter bảo mật (JWT) ─▶ 401 EntryPoint / 403 AccessDeniedHandler
-
-  Đơn commit ─▶ @TransactionalEventListener(AFTER_COMMIT) ─▶ @Async email HTML (Thymeleaf)
+HTTP Request ──▶ REST Controller ──▶ Service Interface ──▶ ServiceImpl ──▶ Repository / Spec ──▶ MySQL DB
+                      │                                        │
+                ApiResponse<T>                           MapStruct Mapper
+                      ▲                                        │
+           GlobalExceptionHandler ◀── AppException         Entity ↔ DTO
 ```
 
----
-
-## 📂 Cấu trúc dự án
+### Cấu trúc Thư mục Nguồn:
 
 ```text
-src/main/java/vn/springboot
-├── Application.java
-├── common
-│   ├── entity/BaseEntity.java            # id + cột audit
-│   ├── exception/                        # ErrorCode, AppException, GlobalExceptionHandler
-│   └── response/ApiResponse.java         # envelope thống nhất
-├── config                                # Async, JPA auditing, local storage, seed admin
-├── controller                            # 20 REST controller (theo module)
-├── dto/{request,response}                # DTO request/response theo miền
-├── entity                                # 19 entity JPA (product, order, cart, news, page, …)
-├── event                                 # OrderPlacedEvent + OrderEmailListener (async)
-├── mapper                                # MapStruct mapper
-├── repository (+ specification)          # Spring Data repo + filter động
-├── security                              # SecurityConfig, JWT, CustomUserDetails, handler
-└── service (+ impl)                      # nghiệp vụ sau interface
-
-src/main/resources
-├── application.yaml
-├── db/migration/V1__init_db.sql          # schema (Flyway)
-├── db/seed/V2__seed_db.sql               # data mẫu (Flyway)
-└── templates/email/order-confirmation.html   # email HTML (Thymeleaf)
+vu-gia-backend-api/
+├── src/main/java/vn/springboot/
+│   ├── common/              # ApiResponse, PageResponse, AppException, ErrorCode, BaseEntity
+│   ├── config/              # SecurityConfig, AsyncConfig, LocalStorageConfig, OpenApiConfig
+│   ├── controller/          # 22 REST Controllers
+│   ├── dto/                 # Request & Response DTOs
+│   ├── entity/              # 19 JPA Entities (extending BaseEntity)
+│   ├── event/               # OrderPlacedEvent & OrderEmailListener
+│   ├── mapper/              # MapStruct mappers
+│   ├── repository/          # Spring Data JPA Repositories & Specifications
+│   ├── security/            # JWT Service, JwtFilter, GoogleTokenVerifier, SepaySignatureVerifier
+│   └── service/             # Business Logic Interfaces & Implementations
+├── src/main/resources/
+│   ├── db/migration/        # Flyway schema migrations (V1, V3..V9)
+│   ├── db/seed/             # Flyway seed data (V2)
+│   ├── templates/email/     # Thymeleaf HTML Email Templates
+│   └── application.yaml     # Application configuration
+├── docs/                    # Tài liệu kiến trúc & hệ thống
+├── Dockerfile               # Multi-stage Dockerfile
+├── docker-compose.yml       # Production Compose (MySQL + Backend)
+└── docker-compose.local.yml # Development Compose (MySQL standalone)
 ```
 
 ---
 
-## 🚦 Bắt đầu
+## ⚡ 4. Tính năng Cốt lõi (Key Features)
 
-### Cách A — Docker (khuyến nghị, 1 lệnh)
+1. **Xác thực & Phân quyền (Auth & RBAC)**:
+   - Đăng nhập Username/Email + Mật khẩu mã hóa BCrypt.
+   - Đăng nhập nhanh bằng Google OAuth2 ID Token.
+   - Cơ chế JWT Access Token (1 giờ) & Refresh Token Rotation lưu DB (7 ngày) chống hijacking.
+   - Phân quyền theo vai trò (`SUPERADMIN`, `ADMIN`, `CUSTOMER`).
 
-Dựng **MySQL + app** trong 1 stack tự chứa; app tự migrate schema và seed data khi khởi động. Ảnh
-upload lưu trên named volume `upload-data` (mount vào `/app/data`), sống qua restart. Hướng dẫn đầy
-đủ (kèm frontend, env matrix, test full-stack) xem **[docs/deployment-guide.md](../docs/deployment-guide.md)**.
+2. **Quản lý Sản phẩm (Product Catalog)**:
+   - Cấu trúc danh mục phân cấp tự động tạo Slug SEO (`V7`, `V9`).
+   - Quản lý thông tin chi tiết sản phẩm, SKU, tồn kho, giá bán, giá khuyến mãi, trạng thái nổi bật (`is_featured`), lượt bán (`sold_count`).
+   - Lọc động đa tiêu chí với JPA Specification, chống SQL Injection và clamp kích thước trang (`<= 100`).
+
+3. **Nghiệp vụ Đơn hàng & Thanh toán**:
+   - Giỏ hàng lưu trữ theo tài khoản người dùng.
+   - Đặt hàng an toàn chống trùng (Idempotent Key) & snapshot giá nguyên tử tại thời điểm đặt.
+   - Áp dụng mã giảm giá nguyên tử (Atomic Coupon Redemption) tránh race condition.
+   - Sinh ảnh chuyển khoản VietQR tự động (`VietQrPaymentService`).
+   - Tiếp nhận và xác thực chữ ký HMAC-SHA256 Webhook từ SePay (`PaymentWebhookController`) tự động duyệt đơn sang `PAID`.
+
+4. **Quản trị CMS & Marketing**:
+   - Quản lý bài viết Tin tức (`News`), Danh mục tin (`NewsCategory`) theo Slug.
+   - Nội dung Trang động CMS (`Page`), Slide/Banner (`Banner`), Showroom cửa hàng (`Showroom`), Bộ sưu tập (`GalleryImage`), FAQ & Redirect.
+   - Tiếp nhận Form liên hệ (`ContactRequest`) và Đăng ký bản tin (`NewsletterSubscriber`).
+
+5. **Báo cáo & Thống kê (Dashboard)**:
+   - Tổng quan các chỉ số KPI: Doanh thu, số lượng đơn hàng, số khách hàng, tổng sản phẩm.
+   - Biểu đồ thống kê doanh thu theo khoảng thời gian và danh sách top sản phẩm bán chạy.
+
+6. **Lưu trữ Ảnh & Email**:
+   - Upload & phục vụ ảnh local tại thư mục `./data` qua đường dẫn `/files/**`.
+   - Ghép URL tuyệt đối tự động qua Annotation `@StorageUrl`.
+   - Gửi email HTML xác nhận đơn hàng bất đồng bộ bằng Thymeleaf & Spring Mail.
+
+---
+
+## 🚀 5. Hướng dẫn Khởi chạy Dự án (Getting Started)
+
+### Yêu cầu Tiền đề (Prerequisites):
+- **Java OpenJDK 21** trở lên.
+- **Maven 3.9+** (hoặc sử dụng `./mvnw` đính kèm).
+- **MySQL 8.0** (chạy local trên port 3306/3307 hoặc qua Docker).
+
+---
+
+### Cách 1: Chạy Môi trường Dev (Local MySQL + Maven)
+
+1. **Khởi chạy container MySQL (Docker)**:
+   ```bash
+   docker-compose -f docker-compose.local.yml up -d
+   ```
+   *Lưu ý: MySQL sẽ chạy trên port `3307`, database `db_vu_gia_fullstack`, username `root`, password `admin`.*
+
+2. **Cấu hình môi trường (`.env` hoặc Biến môi trường)**:
+   Mặc định `src/main/resources/application.yaml` đã thiết lập sẵn tham số cho môi trường Dev. Bạn có thể tạo file `.env` nếu muốn ghi đè:
+   ```env
+   DB_URL=jdbc:mysql://localhost:3307/db_vu_gia_fullstack?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
+   DB_USERNAME=root
+   DB_PASSWORD=admin
+   APP_JWT_SECRET=fJV2+5QqrlNHmoqnaO4FliZ6rdwxbyi4ohpjMeKCKI+OXbe4y6eup8Vj0TaJem/aj8reEfbkK9aWenBdS7xlIg==
+   APP_STORAGE_ROOT=./data
+   APP_STORAGE_PUBLIC_URL=http://localhost:8080
+   SEPAY_WEBHOOK_SECRET=your_sepay_secret
+   ```
+
+3. **Chạy ứng dụng Backend**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   *Flyway sẽ tự động chạy script DDL hợp nhất (`V1`) và khởi tạo dữ liệu mẫu chuẩn (`V2`).*
+
+---
+
+### Cách 2: Chạy Toàn bộ Hệ thống bằng Docker Compose
 
 ```bash
-cp .env.example .env   # điền secret thật
-docker compose up -d --build
-docker compose logs -f app        # xem: "Successfully applied ... migrations"
+docker-compose up -d --build
 ```
+Hệ thống sẽ dựng 2 dịch vụ:
+- `mysql`: Database MySQL 8.0 trên port `3306`.
+- `backend`: Spring Boot App trên port `8080` (tự động chờ MySQL sẵn sàng qua healthcheck).
 
-- API → **http://localhost:8080** (Swagger: `/swagger-ui.html`)
-- MySQL → **localhost:3306** (expose ra host cho DBeaver/dev)
+---
 
-### Cách B — Chạy local
+## 🔑 6. Tài khoản Mặc định & Phân quyền Initial
 
-**Yêu cầu:** JDK 21, MySQL 8 đang chạy.
+Khi khởi tạo thành công, hệ thống tự động tạo tài khoản SuperAdmin ban đầu (`DataInitializer`):
+- **Username**: `admin`
+- **Email**: `admin@gmail.com`
+- **Mật khẩu**: `admin123`
+- **Vai trò**: `SUPERADMIN`, `ADMIN`, `CUSTOMER`
 
-```bash
-# DB mới: MySQL tự tạo qua flag URL; Flyway dựng schema + seed
-DB_URL="jdbc:mysql://localhost:3306/db_vu_gia_fullstack?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false" \
-  ./mvnw spring-boot:run
+---
 
-# Build jar chạy được
-./mvnw clean package && java -jar target/spring-boot-0.0.1-SNAPSHOT.jar
-```
+## 📖 7. Danh sách REST API & Documentation
 
-### Tài khoản admin mặc định
+### OpenAPI / Swagger UI:
+Sau khi ứng dụng khởi động thành công, truy cập Swagger UI tương tác tại:
+🔗 **`http://localhost:8080/swagger-ui.html`**  
+🔗 **OpenAPI Spec JSON**: `http://localhost:8080/v3/api-docs`
 
-| Username | Password | Email |
+### Tóm tắt Nhóm REST API:
+
+| Nhóm API | Base Path | Mô tả / Chức năng |
 |---|---|---|
-| `admin` | `admin123` | `admin@gmail.com` |
-
-> ⚠️ Đổi mật khẩu trước khi deploy.
-
-### Ảnh (local filesystem)
-
-Ảnh upload qua admin lưu trực tiếp trên đĩa (`app.storage.root`, mặc định `./data`/Docker `/app/data`),
-phục vụ qua `GET /files/**` (public, không cần JWT). Ảnh demo/seed là file bundle sẵn trong frontend
-(`vu-gia-client/public/assets/`), không qua backend — **không cần setup bucket/upload gì cả**. Chi
-tiết xem **[docs/FILE_STORAGE_API.md](docs/FILE_STORAGE_API.md)** và **[docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md)**.
-
----
-
-## ⚙️ Cấu hình
-
-Mọi thứ trong `src/main/resources/application.yaml` đều override được qua biến môi trường.
-
-| Biến môi trường | Mặc định | Mô tả |
-|---|---|---|
-| `DB_URL` | `jdbc:mysql://localhost:3307/db_vu_gia_fullstack` | JDBC URL |
-| `DB_USERNAME` / `DB_PASSWORD` | `root` / `admin` | Thông tin DB |
-| `APP_JWT_SECRET` | *(mặc định dev)* | Khoá HS512 base64 512-bit — **phải override ở prod** |
-| `APP_STORAGE_ROOT` | `./data` (Docker: `/app/data`) | Thư mục gốc lưu file upload trên đĩa |
-| `APP_STORAGE_PUBLIC_URL` | `http://localhost:8080` | Base URL công khai ghép vào link ảnh trả JSON — **bắt buộc đúng domain thật ở prod** |
-| `MAIL_HOST` | `smtp.gmail.com` | SMTP host |
-| `MAIL_USERNAME` / `MAIL_PASSWORD` | *(rỗng)* | Tài khoản SMTP (cần để gửi email thật) |
-| `APP_MAIL_FROM` | *(rỗng)* | Địa chỉ "From" cho email |
-| `GOOGLE_CLIENT_ID` | *(rỗng)* | Google OAuth Web client ID (rỗng = tắt kiểm tra — chỉ dev) |
-| `VIETQR_BANK` / `VIETQR_ACCOUNT` / `VIETQR_HOLDER` | `MBBank` / `686804076868` / `NGUYEN DUY DAT` | Tài khoản nhận tiền để sinh QR VietQR (đơn ONL) |
-| `SEPAY_WEBHOOK_SECRET` | *(rỗng)* | Secret verify chữ ký webhook SePay — **rỗng = chặn mọi webhook** (fail-closed) |
-| `app.init.enabled` | `true` | Bật/tắt seed admin khi khởi động |
-
-> 🔒 **Prod:** sinh `APP_JWT_SECRET` mới, đặt SMTP thật, trỏ `APP_STORAGE_PUBLIC_URL` về domain thật (không để `localhost`).
+| **Xác thực** | `/api/auth` | Login, Register, Google OAuth, Refresh Token, Logout |
+| **Người dùng** | `/api/users` | Profile cá nhân, đổi mật khẩu, Quản lý tài khoản (Admin) |
+| **Danh mục SP** | `/api/product-categories` | Cây danh mục, slug SEO, CRUD danh mục |
+| **Sản phẩm** | `/api/products` | Danh sách sản phẩm, lọc, chi tiết, CRUD sản phẩm |
+| **Ảnh Sản phẩm** | `/api/products/{id}/images` | Upload & Xóa bộ sưu tập ảnh sản phẩm |
+| **Giỏ hàng** | `/api/cart` | Xem giỏ hàng, thêm/sửa/xóa item, làm sạch giỏ hàng |
+| **Đơn hàng** | `/api/orders` | Đặt hàng, chi tiết đơn, hủy đơn, cập nhật trạng thái (Admin) |
+| **Mã giảm giá** | `/api/coupons` | Kiểm tra coupon, áp dụng, CRUD coupon (Admin) |
+| **Tin tức** | `/api/news`, `/api/news-categories` | Bài viết tin tức & danh mục bài viết |
+| **Trang CMS** | `/api/pages` | Trang nội dung động (Giới thiệu, Chính sách, Điều khoản) |
+| **Banner / Slider**| `/api/banners` | Quản lý banner hiển thị trang chủ |
+| **Showroom** | `/api/showrooms` | Hệ thống cửa hàng & đại lý |
+| **Gallery** | `/api/gallery-images` | Bộ sưu tập hình ảnh gốm sứ thực tế |
+| **FAQ / Redirect** | `/api/faqs`, `/api/redirects` | Câu hỏi thường gặp & chuyển hướng URL (301/302) |
+| **Liên hệ & Mail** | `/api/contact-requests`, `/api/newsletter` | Form liên hệ & Đăng ký bản tin |
+| **Vận chuyển** | `/api/shipping-methods` | Phương thức giao hàng & tính phí |
+| **Dashboard** | `/api/dashboard` | Thống kê KPI, doanh thu, top sản phẩm (Admin) |
+| **Webhook Payment**| `/api/webhooks/sepay` | Tiếp nhận webhook xác thực chuyển khoản SePay |
+| **Media Storage** | `/api/media` | Upload & Quản lý file ảnh local |
 
 ---
 
-## 🔌 Tài liệu Dự án & API
+## 🧪 8. Kiểm thử & Kiểm tra Sức khỏe (Testing & Observability)
 
-Base path **`/api`** · Swagger UI **`/swagger-ui.html`** · Health **`/actuator/health`**.
-
-### Tài liệu Kiến trúc & Vận hành
-
-| Chủ đề | Tài liệu |
-|---|---|
-| Tổng quan & Yêu cầu sản phẩm (PDR) | [docs/project-overview-pdr.md](docs/project-overview-pdr.md) |
-| Tổng quan Mã nguồn (Codebase Summary) | [docs/codebase-summary.md](docs/codebase-summary.md) |
-| Quy chuẩn Lập trình & Kiến trúc (Code Standards) | [docs/code-standards.md](docs/code-standards.md) |
-| Sơ đồ Architecture & Technical Design | [docs/system-architecture.md](docs/system-architecture.md) |
-| Lộ trình phát triển (Project Roadmap) | [docs/project-roadmap.md](docs/project-roadmap.md) |
-| Hướng dẫn Triển khai (Deployment Guide) | [docs/deployment-guide.md](docs/deployment-guide.md) |
-| Quy chuẩn Thiết kế API (Design Guidelines) | [docs/design-guidelines.md](docs/design-guidelines.md) |
-
-### Tài liệu API Chi tiết theo Module
-
-| Module | Tài liệu |
-|---|---|
-| Auth & User (RBAC) | [docs/AUTH_USER_API.md](docs/AUTH_USER_API.md) |
-| Sản phẩm & Danh mục | [docs/PRODUCT_API.md](docs/PRODUCT_API.md) |
-| Tin tức & Danh mục | [docs/NEWS_API.md](docs/NEWS_API.md) |
-| Mã giảm giá | [docs/COUPON_API.md](docs/COUPON_API.md) |
-| Giỏ hàng | [docs/CART_API.md](docs/CART_API.md) |
-| Đơn hàng | [docs/ORDER_API.md](docs/ORDER_API.md) |
-| Dashboard admin | [docs/DASHBOARD_API.md](docs/DASHBOARD_API.md) |
-| Trang (CMS) | [docs/PAGE_API.md](docs/PAGE_API.md) |
-| Liên hệ | [docs/CONTACT_API.md](docs/CONTACT_API.md) |
-| Newsletter | [docs/NEWSLETTER_API.md](docs/NEWSLETTER_API.md) |
-| Banner / Showroom / Gallery / FAQ / Redirect | [docs/BASIC_MODULES_API.md](docs/BASIC_MODULES_API.md) |
-| Chạy & seed & lưu trữ ảnh | [docs/RUN_AND_SEED.md](docs/RUN_AND_SEED.md) |
-
-**Ví dụ đăng nhập**
+### 1. Chạy Unit Tests & Controller Integration Tests:
 ```bash
-curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}'
+./mvnw test
 ```
 
----
-
-## 🛡 Mô hình bảo mật
-
-1. **Login**: Authenticate qua `AuthenticationManager` + `BCryptPasswordEncoder` (hoặc Google ID token).
-2. **Tokens**: Phát **JWT access token** (HS512) + **refresh token** lưu DB (rotation).
-3. **Filter**: `JwtAuthenticationFilter` kiểm token mỗi request và nạp `SecurityContext`.
-4. **Phân quyền**: Read công khai; Write cần `@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`; User admin cần `SUPERADMIN`.
-5. **Role Hierarchy**: `SUPERADMIN` › `ADMIN` › `CUSTOMER`.
+### 2. Kiểm tra Sức khỏe Hệ thống (Actuator Health Check):
+- **Health Check**: `GET http://localhost:8080/actuator/health`
+- **Application Info**: `GET http://localhost:8080/actuator/info`
 
 ---
 
-## 📦 Định dạng response
+## 📚 9. Danh mục Tài liệu Kỹ thuật Chi tiết
 
-- **Thành công**: `{ "code": 1000, "message": "Success", "data": { ... }, "timestamp": "..." }`
-- **Lỗi**: `{ "code": 4044, "message": "Product not found", "data": null, "timestamp": "..." }`
+Để tìm hiểu chi tiết về thiết kế kiến trúc, quy chuẩn mã nguồn và lộ trình phát triển, vui lòng tham khảo các tài liệu trong thư mục `docs/`:
 
-| Dải Code | Ý nghĩa |
-|---|---|
-| `1000` | Thành công |
-| `4000–4005` | Bad request / validation payload |
-| `4010–4019` | Lỗi xác thực JWT / Login |
-| `4030` | Lỗi phân quyền (403 Forbidden) |
-| `4040–4049` | Không tìm thấy tài nguyên (404 Not Found) |
-| `4090–4199` | Conflict / Dữ liệu đã tồn tại / Coupon hết hạn |
-| `9000–9999` | Lỗi server nội bộ |
+- [📜 `project-overview-pdr.md`](docs/project-overview-pdr.md) — Tổng quan dự án, ma trận yêu cầu chức năng & phi chức năng (PDR).
+- [📁 `codebase-summary.md`](docs/codebase-summary.md) — Bản đồ chi tiết package Java, bảng CSDL & các Flyway migration.
+- [📏 `code-standards.md`](docs/code-standards.md) — Quy chuẩn kiến trúc phân tầng, envelope response, mã lỗi `ErrorCode` & testing.
+- [🏛 `system-architecture.md`](docs/system-architecture.md) — Sơ đồ kiến trúc Mermaid (Auth JWT/OAuth2, Order Flow, SePay Webhook, Storage).
+- [🗺 `project-roadmap.md`](docs/project-roadmap.md) — Trạng thái tính năng v1.0.0 & Kế hoạch phát triển các phiên bản tương lai.
 
 ---
 
-## 📄 License
-
-Phát hành theo **MIT License**.
-
-<div align="center">
-
-**Gốm Sứ Vũ Gia** — Xây bằng ❤️ với Spring Boot
-
-</div>
+© 2026 Gốm Sứ Vũ Gia. All rights reserved.

@@ -36,12 +36,13 @@ TRUNCATE TABLE `users`;
 
 TRUNCATE TABLE `coupons`;
 
+TRUNCATE TABLE `shipping_methods`;
+
 SET
     FOREIGN_KEY_CHECKS = 1;
 
 -- ---------------------------------------------------------------------
--- USERS  (không có trong FE tĩnh — tạo sẵn tài khoản quản trị)
--- Mật khẩu mẫu bên dưới là bcrypt của "password" — ĐỔI trước khi dùng thật.
+-- USERS  (Tài khoản quản trị khởi tạo mặc định admin/admin123)
 -- ---------------------------------------------------------------------
 INSERT INTO
     `users` (
@@ -71,15 +72,58 @@ VALUES
     );
 
 -- ---------------------------------------------------------------------
--- PRODUCT CATEGORIES  (từ CategoryNavigation.jsx / ProductToolbar.jsx)
+-- SHIPPING METHODS (Phương thức vận chuyển)
+-- ---------------------------------------------------------------------
+INSERT INTO
+    `shipping_methods` (
+        `id`,
+        `name`,
+        `code`,
+        `description`,
+        `fee`,
+        `estimated_delivery`,
+        `is_active`,
+        `sort_order`,
+        `created_at`,
+        `updated_at`
+    )
+VALUES
+    (
+        1,
+        'Giao hàng tiêu chuẩn',
+        'STANDARD',
+        'Giao hàng tận nơi từ 2 - 4 ngày làm việc',
+        30000,
+        '2 - 4 ngày',
+        TRUE,
+        1,
+        NOW(),
+        NOW()
+    ),
+    (
+        2,
+        'Giao hàng hỏa tốc',
+        'EXPRESS',
+        'Giao hàng nhanh nội thành trong 24h',
+        50000,
+        'Trong 24h',
+        TRUE,
+        2,
+        NOW(),
+        NOW()
+    );
+
+-- ---------------------------------------------------------------------
+-- PRODUCT CATEGORIES (6 CategoryType enum cố định)
 -- ---------------------------------------------------------------------
 INSERT INTO
     `product_categories` (
         `id`,
+        `category_type`,
         `name`,
         `thumb`,
         `priority`,
-        `long_content`,
+        `short_description`,
         `slug`,
         `is_active`,
         `seo_title`,
@@ -90,66 +134,85 @@ INSERT INTO
 VALUES
     (
         1,
-        'Men lam',
+        'BO_DO_THO',
+        'Bộ đồ thờ',
         'assets/images/products/product-category-thumb.png',
         1,
-        'Dòng gốm men lam truyền thống Bát Tràng, sắc men xanh cổ điển vẽ tay tinh xảo.',
-        'men-lam',
+        'Bộ đồ thờ gốm sứ Bát Tràng chế tác thủ công, trang nghiêm cho không gian thờ cúng gia tiên.',
+        'bo-do-tho',
         TRUE,
-        'Men lam',
-        'Gốm sứ men lam Bát Tràng chính hãng Vũ Gia.',
+        'Bộ đồ thờ Bát Tràng',
+        'Bộ đồ thờ gốm sứ Bát Tràng chính hãng Vũ Gia.',
         NOW(),
         NOW()
     ),
     (
         2,
-        'Men rạn',
+        'BINH_PHONG_THUY',
+        'Bình phong thủy',
         'assets/images/products/product-category-thumb.png',
         2,
-        'Dòng gốm men rạn cổ kính, vết rạn tự nhiên trang nghiêm cho không gian thờ tự.',
-        'men-ran',
+        'Bình phong thủy gốm sứ Bát Tràng, hoạ tiết tài lộc phú quý, hợp mệnh gia chủ.',
+        'binh-phong-thuy',
         TRUE,
-        'Men rạn',
-        'Gốm sứ men rạn cổ Bát Tràng chính hãng Vũ Gia.',
+        'Bình phong thủy Bát Tràng',
+        'Bình phong thủy gốm sứ Bát Tràng chính hãng Vũ Gia.',
         NOW(),
         NOW()
     ),
     (
         3,
-        'Men lam vẽ vàng',
+        'LUC_BINH_GOM_SU',
+        'Lục bình gốm sứ',
         'assets/images/products/product-category-thumb.png',
         3,
-        'Men lam kết hợp vẽ vàng 24k cao cấp, sang trọng và bền màu theo thời gian.',
-        'men-lam-ve-vang',
+        'Lục bình gốm sứ Bát Tràng dáng cổ, hoạ tiết tinh xảo, trang trí không gian sang trọng.',
+        'luc-binh-gom-su',
         TRUE,
-        'Men lam vẽ vàng',
-        'Gốm sứ men lam vẽ vàng 24k Bát Tràng Vũ Gia.',
+        'Lục bình gốm sứ Bát Tràng',
+        'Lục bình gốm sứ Bát Tràng chính hãng Vũ Gia.',
         NOW(),
         NOW()
     ),
     (
         4,
-        'Men rạn dát vàng',
+        'AM_CHEN_BAT_TRANG',
+        'Ấm chén Bát Tràng',
         'assets/images/products/product-category-thumb.png',
         4,
-        'Men rạn cổ dát vàng, đắp nổi thủ công, đẳng cấp cho bộ đồ thờ gia tiên.',
-        'men-ran-dat-vang',
+        'Ấm chén Bát Tràng men lam, men rạn cổ, phù hợp dùng hàng ngày hoặc làm quà tặng.',
+        'am-chen-bat-trang',
         TRUE,
-        'Men rạn dát vàng',
-        'Gốm sứ men rạn dát vàng Bát Tràng Vũ Gia.',
+        'Ấm chén Bát Tràng',
+        'Ấm chén gốm sứ Bát Tràng chính hãng Vũ Gia.',
         NOW(),
         NOW()
     ),
     (
         5,
-        'Men màu theo mệnh',
+        'QUA_TANG_GOM_SU',
+        'Quà tặng gốm sứ',
         'assets/images/products/product-category-thumb.png',
         5,
-        'Bộ sưu tập men màu phong thủy, phối màu tương sinh theo Ngũ hành bản mệnh gia chủ.',
-        'men-mau-theo-menh',
+        'Quà tặng gốm sứ Bát Tràng cao cấp, phù hợp biếu tặng dịp lễ, tết, khai trương.',
+        'qua-tang-gom-su',
         TRUE,
-        'Men màu theo mệnh',
-        'Gốm sứ men màu phong thủy theo mệnh Vũ Gia.',
+        'Quà tặng gốm sứ Bát Tràng',
+        'Quà tặng gốm sứ Bát Tràng chính hãng Vũ Gia.',
+        NOW(),
+        NOW()
+    ),
+    (
+        6,
+        'CHUM_SANH_NGAM_RUOU',
+        'Chum sành ngâm rượu',
+        'assets/images/products/product-category-thumb.png',
+        6,
+        'Chum sành ngâm rượu Bát Tràng, chất sành tự nhiên giúp rượu êm và tròn vị hơn theo thời gian.',
+        'chum-sanh-ngam-ruou',
+        TRUE,
+        'Chum sành ngâm rượu Bát Tràng',
+        'Chum sành ngâm rượu Bát Tràng chính hãng Vũ Gia.',
         NOW(),
         NOW()
     );
