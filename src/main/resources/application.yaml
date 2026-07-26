@@ -2,9 +2,10 @@ spring:
   application:
     name: vu-gia
   profiles:
-    # APP_ENV=development bật application-development.yaml (Flyway tự
-    # clean+remigrate khi checksum lệch). Không set (hoặc "production") ->
-    # giữ hành vi mặc định: mismatch chặn boot, KHÔNG tự đụng vào dữ liệu.
+    # APP_ENV=development -> SeedRunner truncates và re-seed toàn bộ dữ liệu
+    # (kể cả các bảng giao dịch như orders/cart_items) ở MỌI lần khởi động; coi
+    # DB là disposable. Không set (hoặc "production") -> chỉ seed các bảng còn
+    # trống (idempotent), KHÔNG bao giờ đụng vào dữ liệu đã có.
     active: ${APP_ENV:production}
   servlet:
     multipart:
@@ -17,8 +18,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      # Flyway là nguồn chân lý của schema; Hibernate chỉ kiểm tra khớp (không tự sửa DB).
-      ddl-auto: validate
+      # Entity là nguồn chân lý của schema (code-first); Hibernate tự tạo/cập
+      # nhật bảng từ entity ở MỌI profile, kể cả production. Đây là đánh đổi có
+      # chủ đích: dự án chưa có dữ liệu production thật (re-xác nhận sau
+      # red-team review 2026-07-27). Lưu ý: update KHÔNG bao giờ tự xoá
+      # cột/bảng mồ côi khi entity bị xoá field, và không còn file migration
+      # nào để review diff schema (mất audit trail thay đổi schema) — chấp
+      # nhận thiếu sót này ở quy mô hiện tại của dự án.
+      ddl-auto: update
     show-sql: true
     open-in-view: false
     properties:
@@ -30,14 +37,6 @@ spring:
   # Jackson tuần tự hoá thời gian theo giờ Việt Nam trong JSON response.
   jackson:
     time-zone: Asia/Ho_Chi_Minh
-  flyway:
-    enabled: true
-    # Chạy schema (db/migration) trước, rồi seed (db/seed) theo thứ tự version.
-    locations: classpath:db/migration,classpath:db/seed
-    # DB đã có sẵn bảng (chưa có lịch sử Flyway) sẽ được baseline ở version 1
-    # (bỏ qua V1 để KHÔNG drop/xoá dữ liệu hiện có); chỉ chạy seed V2 trở đi.
-    baseline-on-migrate: true
-    baseline-version: 1
   mail:
     port: 465
     host: ${MAIL_HOST:smtp.gmail.com}

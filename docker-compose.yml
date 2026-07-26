@@ -42,9 +42,10 @@ services:
         condition: service_healthy
     environment:
       # --- Môi trường ---
-      # development -> Flyway tự clean+remigrate khi checksum migration/seed
-      # lệch (DB coi là disposable). Không set/production -> mismatch chặn
-      # boot, không tự đụng dữ liệu. Xem application-development.yaml.
+      # development -> SeedRunner truncate + re-seed toàn bộ dữ liệu (kể cả
+      # bảng giao dịch orders/cart_items/...) ở MỌI lần khởi động, DB coi là
+      # disposable. Không set/production -> chỉ seed bảng còn trống
+      # (idempotent), không bao giờ đụng vào dữ liệu đã có.
       APP_ENV: ${APP_ENV:-production}
 
       # --- Database (service "db" ở trên) ---
@@ -103,8 +104,11 @@ services:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 3s
-      # 90s: lần boot đầu tiên (DB rỗng) Flyway chạy V1->V5 gồm seed lớn
-      # (700+ dòng INSERT) trước khi Actuator lên UP; 40s dễ báo unhealthy sớm.
+      # 90s: lần boot đầu tiên (DB rỗng) Hibernate tạo toàn bộ schema rồi
+      # SeedRunner seed dữ liệu lớn trước khi Actuator lên UP; 40s dễ báo
+      # unhealthy sớm. Lưu ý (chấp nhận, không sửa ở đây): SeedRunner chạy
+      # dưới dạng CommandLineRunner SAU khi Tomcat đã start, nên có khoảng hở
+      # ngắn /actuator/health có thể báo UP trước khi seed xong.
       start_period: 90s
       retries: 3
 
