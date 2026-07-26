@@ -1,6 +1,15 @@
 # Chỉ áp dụng khi APP_ENV=development. KHÔNG dùng cho production: DB coi là
 # disposable, mismatch checksum (do sửa migration/seed đã áp dụng) sẽ khiến
 # Flyway DROP toàn bộ schema rồi chạy lại từ đầu thay vì chặn boot.
+#
+# Flyway 10+ đã xoá property `spring.flyway.clean-on-validation-error`
+# (FlywayException: "cleanOnValidationError has been removed"). Hành vi
+# clean+remigrate khi validate fail giờ được implement thủ công bằng
+# FlywayMigrationStrategy bean, xem vn.springboot.config.FlywayDevCleanConfig.
+#
+# clean-disabled mặc định true (Spring Boot chặn clean() để tránh xoá nhầm dữ
+# liệu prod) -> phải tắt ở đây, nếu không flyway.clean() trong bean trên sẽ ném
+# FlywayException ("clean disabled") và app crash-loop y hệt lỗi cleanOnValidationError.
 spring:
   flyway:
-    clean-on-validation-error: true
+    clean-disabled: false
