@@ -38,4 +38,8 @@ public interface NewsRepository
     @Modifying
     @Query("UPDATE NewsEntity n SET n.viewCount = n.viewCount + 1 WHERE n.id = :id")
     void incrementViewCount(@Param("id") Long id);
+
+    /** Used by {@link vn.springboot.seed.OrphanReferenceChecker} — no DB-level FK to catch this otherwise. */
+    @Query("SELECT COUNT(n) FROM NewsEntity n WHERE n.newsCategory.id NOT IN (SELECT c.id FROM NewsCategoryEntity c)")
+    long countWithOrphanedCategory();
 }

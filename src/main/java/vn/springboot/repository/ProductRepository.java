@@ -46,4 +46,8 @@ public interface ProductRepository
     @Modifying
     @Query("UPDATE ProductEntity p SET p.soldCount = p.soldCount + :quantity WHERE p.id = :id")
     int incrementSoldCount(@Param("id") Long id, @Param("quantity") int quantity);
+
+    /** Used by {@link vn.springboot.seed.OrphanReferenceChecker} — no DB-level FK to catch this otherwise. */
+    @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.productCategory.id NOT IN (SELECT c.id FROM ProductCategoryEntity c)")
+    long countWithOrphanedCategory();
 }
