@@ -1,6 +1,7 @@
 package vn.springboot.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,12 +20,14 @@ import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.contact.ContactRequestResponse;
 import vn.springboot.entity.contact.ContactRequestEntity;
 import vn.springboot.entity.enums.ContactStatus;
+import vn.springboot.event.ContactRequestSubmittedEvent;
 import vn.springboot.mapper.ContactRequestMapper;
 import vn.springboot.repository.ContactRequestRepository;
 import vn.springboot.repository.UserRepository;
 import vn.springboot.repository.specification.ContactRequestSpecification;
 import vn.springboot.service.ContactRequestService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -43,6 +46,7 @@ public class ContactRequestServiceImpl implements ContactRequestService {
     private final ContactRequestRepository contactRequestRepository;
     private final ContactRequestMapper contactRequestMapper;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -91,7 +95,13 @@ public class ContactRequestServiceImpl implements ContactRequestService {
                 .status(ContactStatus.NEW)
                 .build();
 
-        return contactRequestMapper.toResponse(contactRequestRepository.save(entity));
+        ContactRequestEntity saved = contactRequestRepository.save(entity);
+
+        eventPublisher.publishEvent(new ContactRequestSubmittedEvent(
+                saved.getName(), saved.getEmail(), saved.getPhone(), saved.getContent(),
+                LocalDateTime.now()));
+
+        return contactRequestMapper.toResponse(saved);
     }
 
     @Override

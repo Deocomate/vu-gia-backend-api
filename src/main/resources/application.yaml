@@ -96,6 +96,9 @@ app:
   mail:
     # "From" address for outgoing mail (EmailService)
     from: ${APP_MAIL_FROM:}
+    # Admin recipient for contact-request notification emails; empty disables sending
+    # (ContactRequestEmailListener logs-and-skips instead of mailing a blank address).
+    contact-notify-to: ${CONTACT_NOTIFY_EMAIL:}
   init:
     # Seed default admin account on startup (UserSeeder); canonical identity below
     # matches the real V2__seed_db.sql data

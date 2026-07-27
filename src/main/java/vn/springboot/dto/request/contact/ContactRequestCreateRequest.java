@@ -27,5 +27,6 @@ public class ContactRequestCreateRequest {
     private String phone;
 
     @NotBlank
+    @Size(max = 2000)
     private String content;
 }

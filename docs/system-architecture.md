@@ -161,3 +161,70 @@ graph TD
 
 1. **`ddl-auto=update` áp dụng ở mọi môi trường, kể cả production** (không có override theo profile). Đây là một anti-pattern được biết đến của Hibernate: `update` không bao giờ tự xoá cột/bảng mồ côi khi một field bị xoá khỏi entity, và không còn file migration nào để review diff schema qua code review (công cụ migration trước đây có tính năng này). Chấp nhận có chủ đích vì dự án chưa có dữ liệu production thật ở thời điểm chuyển đổi (2026-07-27); không có kế hoạch bổ sung tooling diff schema ở quy mô hiện tại.
 2. **`/actuator/health` có thể báo `UP` trước khi `SeedRunner` seed xong.** `SeedRunner` là một `CommandLineRunner`, chạy sau khi Tomcat đã khởi động xong — nghĩa là có một khoảng hở ngắn mà health check có thể trả về "khỏe mạnh" trong khi catalog vẫn đang rỗng (đặc biệt rõ ở lần boot đầu tiên trên DB trống). Chấp nhận không thêm `HealthIndicator` tùy chỉnh để đóng khoảng hở này; ghi nhận như một giới hạn đã biết.
+
+---
+
+## 7. Site Settings Singleton Config (Feature Flag: Cart-Mode Toggle)
+
+Quản lý cấu hình toàn site (chẳng hạn như bật/tắt chế độ giỏ hàng) thông qua một entity singleton.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Frontend
+    participant GET as GET /api/site-settings
+    participant PUT as PUT /api/site-settings
+    participant Seeder as SiteSettingSeeder
+    participant DB as MySQL DB
+
+    Seeder->>DB: Boot: nếu count(site_setting)==0 → insert 1 row (cartEnabled=true)
+    Note over Seeder: Ngăn chặn race condition: admin viết + seeder viết cùng lúc
+    
+    Client->>GET: Fetch cấu hình công khai
+    GET->>DB: SELECT * FROM site_setting LIMIT 1
+    GET-->>Client: {cartEnabled: boolean} (Công khai, không cần token)
+    
+    Note over Client, PUT: Admin mở trang settings
+    Client->>PUT: PUT /api/site-settings {cartEnabled: boolean}
+    PUT->>PUT: Kiểm tra hasRole('SUPERADMIN')
+    PUT->>DB: UPDATE site_setting SET cartEnabled = ?
+    PUT-->>Client: {cartEnabled: boolean} (trả lại giá trị sau khi lưu)
+```
+
+**Lưu ý về thực thi (Enforcement Boundary):** `cartEnabled=false` là một **UI-only gate** trên client (header, giỏ hàng, checkout bị ẩn; Product pages/Customizer mở contact form modal). Backend **không** kiểm tra flag này trên các endpoint cart/coupon — `/api/cart`, `/api/coupons/validate`, `POST /api/orders` đều vẫn chấp nhận request. Điều này là đã chấp nhận: frontend hoàn toàn kiểm soát UX hiển thị, backend tin tưởng vào quyết định frontend.
+
+---
+
+## 8. Contact Request Notification Email Flow
+
+Mỗi khi khách hàng gửi form liên hệ (thông qua `/lien-he` page hoặc modal từ product page), hệ thống gửi email thông báo tới admin.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Frontend
+    participant POST as POST /api/contact-requests
+    participant EventBus as Spring Event Publisher
+    participant Listener as ContactRequestEmailListener
+    participant Mail as SMTP Email Server
+    participant Admin as Admin (CONTACT_NOTIFY_EMAIL)
+
+    Client->>POST: Gửi {name, email, phone, content}
+    POST->>POST: Validate + Save ContactRequestEntity
+    POST->>EventBus: Publish ContactRequestSubmittedEvent(contactRequestId)
+    POST-->>Client: HTTP 200 OK (đơn xin được lưu, UX phản hồi thành công ngay)
+    
+    async Email (Background)
+        EventBus->>Listener: @Async @TransactionalEventListener(AFTER_COMMIT)
+        Listener->>Listener: Render HTML via Thymeleaf (contact-notification.html)
+        Listener->>Mail: Gửi email tới CONTACT_NOTIFY_EMAIL
+        Mail->>Admin: Nhận email thông báo (nếu CONTACT_NOTIFY_EMAIL != empty)
+    end
+    
+    Note over POST, Admin: Nếu CONTACT_NOTIFY_EMAIL trống → không gửi email (no-op, không lỗi)
+```
+
+**Cấu hình:**
+- **`app.mail.contact-notify-to`** / **`CONTACT_NOTIFY_EMAIL`**: Địa chỉ email nhận thông báo liên hệ. Mặc định trống (rỗng string, không phải null) → email không gửi.
+- **`contact-notification.html`**: Thymeleaf template hiển thị thông tin contact (name, email, phone, content) với `th:text` (không `th:utext`) để tránh HTML injection từ trường `content` của khách.
+- **Async & No-Block:** Email được gửi bất đồng bộ trong background (`@Async`), không chặn response HTTP. Nếu gửi email thất bại, request vẫn trả về 200 OK (failure-safe).

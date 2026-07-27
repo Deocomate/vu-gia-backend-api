@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Yêu cầu liên hệ mới</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f1ec; font-family:Arial, Helvetica, sans-serif; color:#2b2b2b;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f1ec; padding:24px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                   style="width:600px; max-width:100%; background-color:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #e6e0d6;">
+                <!-- Header -->
+                <tr>
+                    <td style="background-color:#7a5230; padding:24px 32px; text-align:center;">
+                        <h1 style="margin:0; color:#ffffff; font-size:22px; letter-spacing:1px;">GỐM SỨ VŨ GIA</h1>
+                        <p style="margin:6px 0 0; color:#e9dcc9; font-size:13px;">Thông báo nội bộ — yêu cầu liên hệ mới</p>
+                    </td>
+                </tr>
+
+                <!-- Intro -->
+                <tr>
+                    <td style="padding:28px 32px 8px;">
+                        <p style="margin:0; font-size:14px; line-height:1.6; color:#555;">
+                            Có một yêu cầu liên hệ mới được gửi từ website. Đây là email thông báo nội bộ dành cho
+                            quản trị viên, không phải email gửi cho khách hàng.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Details -->
+                <tr>
+                    <td style="padding:12px 32px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                               style="background-color:#faf7f2; border:1px solid #ece4d7; border-radius:6px;">
+                            <tr>
+                                <td style="padding:12px 16px; font-size:13px; color:#666; width:120px;">Họ tên:</td>
+                                <td style="padding:12px 16px 0 0; font-size:14px;" th:text="${name}">Nguyễn Văn A</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:0 16px 12px; font-size:13px; color:#666;">Email:</td>
+                                <td style="padding:0 16px 12px 0; font-size:14px;" th:text="${email}">a@example.com</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:0 16px 12px; font-size:13px; color:#666;">Điện thoại:</td>
+                                <td style="padding:0 16px 12px 0; font-size:14px;" th:text="${phone}">0900000000</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:0 16px 12px; font-size:13px; color:#666;">Thời gian gửi:</td>
+                                <td style="padding:0 16px 12px 0; font-size:14px;" th:text="${submittedAt}">00:00 01/01/2026</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                    <td style="padding:12px 32px 24px;">
+                        <h3 style="margin:0 0 8px; font-size:14px; color:#7a5230;">Nội dung</h3>
+                        <p style="margin:0; padding:12px 16px; font-size:13px; line-height:1.7; color:#333; background-color:#faf7f2; border:1px solid #ece4d7; border-radius:6px; white-space:pre-line;"
+                           th:text="${content}">Nội dung liên hệ</p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color:#faf7f2; padding:20px 32px; text-align:center; border-top:1px solid #ece4d7;">
+                        <p style="margin:0 0 4px; font-size:13px; color:#555;">
+                            Vui lòng liên hệ lại với khách hàng trong thời gian sớm nhất.
+                        </p>
+                        <p style="margin:0; font-size:12px; color:#999;">© Gốm Sứ Vũ Gia</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

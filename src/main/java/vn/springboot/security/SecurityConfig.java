@@ -65,7 +65,9 @@ public class SecurityConfig {
             "/api/news/**",
             "/api/news-categories/**",
             "/api/pages/**",
-            "/api/shipping-methods/**"
+            "/api/shipping-methods/**",
+            // Shared path: public GET (storefront poll), SUPERADMIN-only PUT (@PreAuthorize)
+            "/api/site-settings"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
