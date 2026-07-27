@@ -151,7 +151,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = AppException.class)
     public AuthResponse refresh(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
@@ -161,15 +161,29 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         if (stored.isRevoked()) {
+            // Reuse/replay of an already-revoked token: the whole token family may be
+            // compromised (e.g. stolen and both attacker + legitimate user are racing to
+            // use it) — revoke every other active token for this user, forcing re-login.
+            // noRollbackFor above is required: without it, Spring's default rollback-on-
+            // RuntimeException would undo this very revocation when the exception below
+            // is thrown in the same transaction.
+            refreshTokenRepository.revokeAllByUser(stored.getUser());
             throw new AppException(ErrorCode.REFRESH_TOKEN_REVOKED);
         }
         if (stored.isExpired()) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
-        // Rotate: revoke the presented token before issuing a fresh pair.
-        stored.setRevoked(true);
-        refreshTokenRepository.save(stored);
+        // Rotate atomically (UPDATE ... WHERE revoked = false, checking affected-row count)
+        // instead of read-then-write, so two concurrent requests replaying the same
+        // not-yet-revoked token cannot both pass the revoked check.
+        int rotated = refreshTokenRepository.revokeIfActive(refreshToken);
+        if (rotated == 0) {
+            // Lost the race: another request already rotated this exact token first.
+            // Treat this one as a replay too and revoke the rest of the family.
+            refreshTokenRepository.revokeAllByUser(stored.getUser());
+            throw new AppException(ErrorCode.REFRESH_TOKEN_REVOKED);
+        }
 
         UserEntity user = stored.getUser();
         return issueTokens(user, new CustomUserDetails(user));
@@ -210,6 +224,11 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        // A changed password should log the user out of every other device: any refresh
+        // token issued before this change (e.g. stolen or on a lost device) must not be
+        // usable afterwards.
+        refreshTokenRepository.revokeAllByUser(user);
     }
 
     private UserEntity currentUser() {

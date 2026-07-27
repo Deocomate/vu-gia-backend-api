@@ -2,14 +2,13 @@ package vn.springboot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.common.util.SlugUtils;
 import vn.springboot.dto.request.product.ProductCreateRequest;
 import vn.springboot.dto.request.product.ProductImageRequest;
@@ -30,6 +29,7 @@ import vn.springboot.repository.specification.ProductSpecification;
 import vn.springboot.service.FileStorageService;
 import vn.springboot.service.ProductService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -44,7 +44,7 @@ public class ProductServiceImpl implements ProductService {
     private static final Set<String> SORTABLE_FIELDS =
             Set.of("id", "name", "price", "priority", "soldCount", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "ASC";
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository productCategoryRepository;
@@ -55,11 +55,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> search(ProductSearchRequest request) {
-        // Requests are 1-based (page=1 is first); Spring Data is 0-based.
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<ProductEntity> specification = ProductSpecification.build(request);
 
         Page<ProductEntity> page = productRepository.findAll(specification, pageable);
@@ -69,15 +67,7 @@ public class ProductServiceImpl implements ProductService {
                 .map(productMapper::toResponse)
                 .toList();
 
-        return PageResponse.<ProductResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
@@ -120,27 +110,13 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        ProductEntity entity = ProductEntity.builder()
-                .name(request.getName())
-                .thumb(request.getThumb())
-                .sku(sku)
-                .type(request.getType())
-                .price(request.getPrice())
-                .compareAtPrice(request.getCompareAtPrice())
-                .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
-                .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
-                .description(request.getDescription())
-                .detailSections(request.getDetailSections())
-                .comboProducts(request.getComboProducts())
-                .functions(request.getFunctions())
-                .comboGallery(request.getComboGallery())
-                .slug(slug)
-                .priority(request.getPriority() != null ? request.getPriority() : 0)
-                .productCategory(category)
-                .seoTitle(request.getSeoTitle())
-                .seoDescription(request.getSeoDescription())
-                .seoImage(request.getSeoImage())
-                .build();
+        ProductEntity entity = productMapper.toEntity(request);
+        entity.setSku(sku);
+        entity.setSlug(slug);
+        entity.setFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false);
+        entity.setStatus(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT);
+        entity.setPriority(request.getPriority() != null ? request.getPriority() : 0);
+        entity.setProductCategory(category);
 
         ProductEntity saved = productRepository.save(entity);
         persistImages(saved, request.getImages());
@@ -152,16 +128,20 @@ public class ProductServiceImpl implements ProductService {
         if (images == null || images.isEmpty()) {
             return;
         }
+        List<ProductImageEntity> entities = new ArrayList<>();
         for (int i = 0; i < images.size(); i++) {
             ProductImageRequest img = images.get(i);
             if (img == null || img.getUrl() == null || img.getUrl().isBlank()) {
                 continue;
             }
-            productImageRepository.save(ProductImageEntity.builder()
+            entities.add(ProductImageEntity.builder()
                     .url(img.getUrl().trim())
                     .priority(img.getPriority() != null ? img.getPriority() : i)
                     .product(product)
                     .build());
+        }
+        if (!entities.isEmpty()) {
+            productImageRepository.saveAll(entities);
         }
     }
 
@@ -199,54 +179,7 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        if (request.getName() != null) {
-            entity.setName(request.getName());
-        }
-        if (request.getThumb() != null) {
-            entity.setThumb(request.getThumb());
-        }
-        if (request.getType() != null) {
-            entity.setType(request.getType());
-        }
-        if (request.getPrice() != null) {
-            entity.setPrice(request.getPrice());
-        }
-        if (request.getCompareAtPrice() != null) {
-            entity.setCompareAtPrice(request.getCompareAtPrice());
-        }
-        if (request.getIsFeatured() != null) {
-            entity.setFeatured(request.getIsFeatured());
-        }
-        if (request.getStatus() != null) {
-            entity.setStatus(request.getStatus());
-        }
-        if (request.getDescription() != null) {
-            entity.setDescription(request.getDescription());
-        }
-        if (request.getDetailSections() != null) {
-            entity.setDetailSections(request.getDetailSections());
-        }
-        if (request.getComboProducts() != null) {
-            entity.setComboProducts(request.getComboProducts());
-        }
-        if (request.getFunctions() != null) {
-            entity.setFunctions(request.getFunctions());
-        }
-        if (request.getComboGallery() != null) {
-            entity.setComboGallery(request.getComboGallery());
-        }
-        if (request.getPriority() != null) {
-            entity.setPriority(request.getPriority());
-        }
-        if (request.getSeoTitle() != null) {
-            entity.setSeoTitle(request.getSeoTitle());
-        }
-        if (request.getSeoDescription() != null) {
-            entity.setSeoDescription(request.getSeoDescription());
-        }
-        if (request.getSeoImage() != null) {
-            entity.setSeoImage(request.getSeoImage());
-        }
+        productMapper.updateEntityFromRequest(request, entity);
 
         return toDetailResponse(productRepository.save(entity));
     }
@@ -302,13 +235,5 @@ public class ProductServiceImpl implements ProductService {
             suffix++;
         }
         return candidate;
-    }
-
-    private Sort resolveSort(ProductSearchRequest request) {
-        String field = SORTABLE_FIELDS.contains(request.getSortBy()) ? request.getSortBy() : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(request.getSortDirection())
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

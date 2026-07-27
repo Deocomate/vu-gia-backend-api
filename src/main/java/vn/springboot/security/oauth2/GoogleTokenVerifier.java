@@ -33,14 +33,24 @@ public class GoogleTokenVerifier {
     }
 
     public GoogleUserInfo verify(String idToken) {
+        // Fail-closed (unconditionally, no dev/prod branching — mirrors SepaySignatureVerifier):
+        // a blank client id must never silently skip the audience check, or a Google ID token
+        // minted for ANY client could log in as this app's users. Checked before the network
+        // call so a misconfigured deployment fails immediately, not on Google's response.
+        String expectedAud = properties.getClientId();
+        if (expectedAud == null || expectedAud.isBlank()) {
+            log.error("Google OAuth client id not configured (app.oauth2.google.client-id / "
+                    + "GOOGLE_CLIENT_ID) — rejecting Google login. Set the client id to enable it.");
+            throw new AppException(ErrorCode.INVALID_GOOGLE_TOKEN);
+        }
+
         TokenInfo info = fetch(idToken);
         if (info == null || info.sub == null || info.email == null) {
             throw new AppException(ErrorCode.INVALID_GOOGLE_TOKEN);
         }
 
         // Reject tokens minted for a different app.
-        String expectedAud = properties.getClientId();
-        if (expectedAud != null && !expectedAud.isBlank() && !expectedAud.equals(info.aud)) {
+        if (!expectedAud.equals(info.aud)) {
             log.warn("Google token audience mismatch: expected={}, actual={}", expectedAud, info.aud);
             throw new AppException(ErrorCode.INVALID_GOOGLE_TOKEN);
         }

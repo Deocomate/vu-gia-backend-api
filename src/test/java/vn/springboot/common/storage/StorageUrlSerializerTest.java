@@ -8,7 +8,6 @@ import vn.springboot.config.StorageProperties;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,15 +18,12 @@ class StorageUrlSerializerTest {
     private JsonFactory jsonFactory;
 
     @BeforeEach
-    void setUp() throws ReflectiveOperationException {
+    void setUp() {
         StorageProperties props = new StorageProperties();
         props.setPublicUrl("http://localhost:8080");
         props.setUrlPrefix("/files");
 
-        serializer = new StorageUrlSerializer();
-        Field field = StorageUrlSerializer.class.getDeclaredField("properties");
-        field.setAccessible(true);
-        field.set(serializer, props);
+        serializer = new StorageUrlSerializer(props);
 
         jsonFactory = new JsonFactory();
     }

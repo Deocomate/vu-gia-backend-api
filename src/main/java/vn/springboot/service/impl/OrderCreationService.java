@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.CouponDiscountCalculator;
 import vn.springboot.dto.request.order.OrderItemRequest;
 import vn.springboot.dto.request.order.OrderPlaceRequest;
+import vn.springboot.entity.cart.CartItemEntity;
 import vn.springboot.entity.coupon.CouponEntity;
 import vn.springboot.entity.enums.DiscountType;
 import vn.springboot.entity.enums.OrderStatus;
@@ -30,6 +32,7 @@ import vn.springboot.repository.ShippingMethodRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -204,7 +207,7 @@ public class OrderCreationService {
             }
         }
 
-        long discount = computeDiscount(coupon, orderAmount);
+        long discount = CouponDiscountCalculator.computeDiscount(coupon, orderAmount);
 
         // Atomic claim: increments only while under the global limit; 0 rows = just ran out.
         if (couponRepository.incrementUsedCount(coupon.getId()) == 0) {
@@ -217,32 +220,28 @@ public class OrderCreationService {
         return discount;
     }
 
-    /** Discount (VND) applied to the order subtotal, clamped to [0, orderAmount]. */
-    private long computeDiscount(CouponEntity coupon, long orderAmount) {
-        long discount = switch (coupon.getDiscountType()) {
-            case PERCENT -> {
-                long raw = orderAmount * coupon.getDiscountValue() / 100;
-                yield coupon.getMaxDiscountAmount() != null
-                        ? Math.min(raw, coupon.getMaxDiscountAmount())
-                        : raw;
-            }
-            case FIXED -> coupon.getDiscountValue();
-            case FREE_SHIP -> 0L; // no line-item discount; waives shipping fee instead (see create())
-        };
-        return Math.clamp(discount, 0L, orderAmount);
-    }
-
+    /**
+     * Reflects what was bought back into the cart. Batch-fetches all matching
+     * cart lines in a single query (instead of one query per line item) and
+     * matches them in-memory by product id.
+     */
     private void deductFromCart(Long userId, List<OrderItemRequest> lines) {
+        Set<Long> productIds = lines.stream().map(OrderItemRequest::getProductId).collect(Collectors.toSet());
+        Map<Long, CartItemEntity> cartItemsByProductId = cartItemRepository
+                .findByUser_IdAndProduct_IdIn(userId, productIds).stream()
+                .collect(Collectors.toMap(item -> item.getProduct().getId(), Function.identity()));
+
         for (OrderItemRequest line : lines) {
-            cartItemRepository.findByUser_IdAndProduct_Id(userId, line.getProductId())
-                    .ifPresent(cartItem -> {
-                        if (cartItem.getQuantity() <= line.getQuantity()) {
-                            cartItemRepository.delete(cartItem);
-                        } else {
-                            cartItem.setQuantity(cartItem.getQuantity() - line.getQuantity());
-                            cartItemRepository.save(cartItem);
-                        }
-                    });
+            CartItemEntity cartItem = cartItemsByProductId.get(line.getProductId());
+            if (cartItem == null) {
+                continue;
+            }
+            if (cartItem.getQuantity() <= line.getQuantity()) {
+                cartItemRepository.delete(cartItem);
+            } else {
+                cartItem.setQuantity(cartItem.getQuantity() - line.getQuantity());
+                cartItemRepository.save(cartItem);
+            }
         }
     }
 

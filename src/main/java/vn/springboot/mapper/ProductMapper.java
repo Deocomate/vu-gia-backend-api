@@ -1,7 +1,12 @@
 package vn.springboot.mapper;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import vn.springboot.dto.request.product.ProductCreateRequest;
+import vn.springboot.dto.request.product.ProductUpdateRequest;
 import vn.springboot.dto.response.product.ProductCategoryBriefResponse;
 import vn.springboot.dto.response.product.ProductImageResponse;
 import vn.springboot.dto.response.product.ProductResponse;
@@ -25,4 +30,31 @@ public interface ProductMapper {
     ProductCategoryBriefResponse toBrief(ProductCategoryEntity entity);
 
     ProductImageResponse toImageResponse(ProductImageEntity entity);
+
+    /**
+     * Straight-copy fields only. The service still resolves derived fields
+     * after calling this: {@code sku}/{@code slug} uniqueness, {@code
+     * productCategory} lookup, and the {@code featured}/{@code status}/{@code
+     * priority} create-time defaults.
+     */
+    @Mapping(target = "sku", ignore = true)
+    @Mapping(target = "slug", ignore = true)
+    @Mapping(target = "priority", ignore = true)
+    @Mapping(target = "isFeatured", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "productCategory", ignore = true)
+    ProductEntity toEntity(ProductCreateRequest request);
+
+    /**
+     * Straight-copy, null-safe patch of an existing entity (null request
+     * fields keep their current value). The service still resolves {@code
+     * sku}/{@code slug} uniqueness checks and {@code productCategory} lookup
+     * separately, since those require repository calls.
+     */
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "featured", source = "isFeatured")
+    @Mapping(target = "sku", ignore = true)
+    @Mapping(target = "slug", ignore = true)
+    @Mapping(target = "productCategory", ignore = true)
+    void updateEntityFromRequest(ProductUpdateRequest request, @MappingTarget ProductEntity entity);
 }

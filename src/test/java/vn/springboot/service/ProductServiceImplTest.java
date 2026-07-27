@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,6 +73,53 @@ class ProductServiceImplTest {
 
     private ProductResponse response(Long id, String name, String slug) {
         return ProductResponse.builder().id(id).name(name).slug(slug).build();
+    }
+
+    /** Mirrors the real MapStruct-generated {@code toEntity} straight-copy behavior. */
+    private void stubMapperToEntity() {
+        when(productMapper.toEntity(any(ProductCreateRequest.class))).thenAnswer(inv -> {
+            ProductCreateRequest r = inv.getArgument(0);
+            return ProductEntity.builder()
+                    .name(r.getName())
+                    .thumb(r.getThumb())
+                    .type(r.getType())
+                    .price(r.getPrice())
+                    .compareAtPrice(r.getCompareAtPrice())
+                    .description(r.getDescription())
+                    .detailSections(r.getDetailSections())
+                    .comboProducts(r.getComboProducts())
+                    .functions(r.getFunctions())
+                    .comboGallery(r.getComboGallery())
+                    .seoTitle(r.getSeoTitle())
+                    .seoDescription(r.getSeoDescription())
+                    .seoImage(r.getSeoImage())
+                    .build();
+        });
+    }
+
+    /** Mirrors the real MapStruct-generated {@code updateEntityFromRequest} straight-copy behavior. */
+    private void stubMapperUpdateEntityFromRequest() {
+        doAnswer(inv -> {
+            ProductUpdateRequest r = inv.getArgument(0);
+            ProductEntity ent = inv.getArgument(1);
+            if (r.getName() != null) ent.setName(r.getName());
+            if (r.getThumb() != null) ent.setThumb(r.getThumb());
+            if (r.getType() != null) ent.setType(r.getType());
+            if (r.getPrice() != null) ent.setPrice(r.getPrice());
+            if (r.getCompareAtPrice() != null) ent.setCompareAtPrice(r.getCompareAtPrice());
+            if (r.getIsFeatured() != null) ent.setFeatured(r.getIsFeatured());
+            if (r.getStatus() != null) ent.setStatus(r.getStatus());
+            if (r.getDescription() != null) ent.setDescription(r.getDescription());
+            if (r.getDetailSections() != null) ent.setDetailSections(r.getDetailSections());
+            if (r.getComboProducts() != null) ent.setComboProducts(r.getComboProducts());
+            if (r.getFunctions() != null) ent.setFunctions(r.getFunctions());
+            if (r.getComboGallery() != null) ent.setComboGallery(r.getComboGallery());
+            if (r.getPriority() != null) ent.setPriority(r.getPriority());
+            if (r.getSeoTitle() != null) ent.setSeoTitle(r.getSeoTitle());
+            if (r.getSeoDescription() != null) ent.setSeoDescription(r.getSeoDescription());
+            if (r.getSeoImage() != null) ent.setSeoImage(r.getSeoImage());
+            return null;
+        }).when(productMapper).updateEntityFromRequest(any(ProductUpdateRequest.class), any(ProductEntity.class));
     }
 
     private ProductCreateRequest.ProductCreateRequestBuilder validCreate() {
@@ -170,6 +218,7 @@ class ProductServiceImplTest {
 
     @Test
     void create_persistsInlineGalleryImages() {
+        stubMapperToEntity();
         when(productCategoryRepository.findById(5L))
                 .thenReturn(Optional.of(new ProductCategoryEntity()));
         when(productRepository.existsBySlug(anyString())).thenReturn(false);
@@ -185,17 +234,19 @@ class ProductServiceImplTest {
 
         service.create(request);
 
-        ArgumentCaptor<vn.springboot.entity.product.ProductImageEntity> captor =
-                ArgumentCaptor.forClass(vn.springboot.entity.product.ProductImageEntity.class);
-        verify(productImageRepository, org.mockito.Mockito.times(2)).save(captor.capture());
-        assertThat(captor.getAllValues()).extracting("url")
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<vn.springboot.entity.product.ProductImageEntity>> captor =
+                ArgumentCaptor.forClass(List.class);
+        verify(productImageRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting("url")
                 .containsExactly("http://img/1.jpg", "http://img/2.jpg");
         // priority: first defaults to its index (0), second keeps the supplied 5
-        assertThat(captor.getAllValues()).extracting("priority").containsExactly(0, 5);
+        assertThat(captor.getValue()).extracting("priority").containsExactly(0, 5);
     }
 
     @Test
     void create_persistsDetailSectionsFunctionsAndComboGallery() {
+        stubMapperToEntity();
         when(productCategoryRepository.findById(5L))
                 .thenReturn(Optional.of(new ProductCategoryEntity()));
         when(productRepository.existsBySlug(anyString())).thenReturn(false);
@@ -223,6 +274,7 @@ class ProductServiceImplTest {
 
     @Test
     void update_setsNewJsonFields_whenProvided() {
+        stubMapperUpdateEntityFromRequest();
         ProductEntity e = productEntity("Phone X", "phone-x");
         when(productRepository.findById(1L)).thenReturn(Optional.of(e));
         when(productRepository.save(any(ProductEntity.class))).thenAnswer(inv -> inv.getArgument(0));

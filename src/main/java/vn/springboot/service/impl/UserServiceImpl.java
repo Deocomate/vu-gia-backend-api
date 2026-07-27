@@ -2,9 +2,7 @@ package vn.springboot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.dto.request.user.ResetPasswordRequest;
 import vn.springboot.dto.request.user.UserCreateRequest;
 import vn.springboot.dto.request.user.UserRoleUpdateRequest;
@@ -40,7 +39,7 @@ public class UserServiceImpl implements UserService {
      */
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "username", "email", "name", "role", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "ASC";
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -49,11 +48,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> search(UserSearchRequest request) {
-        // Requests are 1-based (page=1 is first); Spring Data is 0-based.
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<UserEntity> specification = UserSpecification.build(request);
 
         Page<UserEntity> userPage = userRepository.findAll(specification, pageable);
@@ -62,15 +59,7 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::toResponse)
                 .toList();
 
-        return PageResponse.<UserResponse>builder()
-                .content(content)
-                .pageNumber(userPage.getNumber() + 1)
-                .pageSize(userPage.getSize())
-                .totalElements(userPage.getTotalElements())
-                .totalPages(userPage.getTotalPages())
-                .first(userPage.isFirst())
-                .last(userPage.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(userPage, content);
     }
 
     @Override
@@ -136,13 +125,5 @@ public class UserServiceImpl implements UserService {
     private UserEntity findOrThrow(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-    }
-
-    private Sort resolveSort(UserSearchRequest request) {
-        String field = SORTABLE_FIELDS.contains(request.getSortBy()) ? request.getSortBy() : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(request.getSortDirection())
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

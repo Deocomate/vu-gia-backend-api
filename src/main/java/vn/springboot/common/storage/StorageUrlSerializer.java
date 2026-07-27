@@ -3,7 +3,6 @@ package vn.springboot.common.storage;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import org.springframework.beans.factory.annotation.Autowired;
 import vn.springboot.config.StorageProperties;
 
 import java.io.IOException;
@@ -12,14 +11,28 @@ import java.io.IOException;
  * Prepends {@code app.storage.public-url} to relative {@code url-prefix} paths on
  * the way out. Values that don't start with {@code url-prefix} (external URLs,
  * seed {@code assets/...} paths) are written unchanged.
+ *
+ * <p>Registered via {@code @JsonSerialize(using = ...)} on {@link StorageUrl}, so
+ * Jackson (not the regular Spring MVC container) instantiates this class. Spring
+ * Boot's auto-configured {@code Jackson2ObjectMapperBuilder} wires its
+ * {@code ApplicationContext} into the {@code ObjectMapper}'s
+ * {@code HandlerInstantiator} ({@code SpringHandlerInstantiator}), which creates
+ * every Jackson-instantiated (de)serializer via
+ * {@code AutowireCapableBeanFactory#createBean(Class)}. That factory method
+ * autowires the single constructor of a class even without an explicit
+ * {@code @Autowired} annotation (Spring's implicit single-constructor
+ * autowiring), so constructor injection here is fully within Spring's DI reach —
+ * unlike field {@code @Autowired}, which required Spring's AspectJ
+ * {@code @Configurable} weaving (not enabled in this project) to work reliably
+ * outside container-managed beans.
  */
 public class StorageUrlSerializer extends StdSerializer<String> {
 
-    @Autowired
-    private StorageProperties properties;
+    private final StorageProperties properties;
 
-    public StorageUrlSerializer() {
+    public StorageUrlSerializer(StorageProperties properties) {
         super(String.class);
+        this.properties = properties;
     }
 
     @Override

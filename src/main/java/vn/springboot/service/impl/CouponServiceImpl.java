@@ -2,14 +2,14 @@ package vn.springboot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.CouponDiscountCalculator;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.dto.request.coupon.CouponCreateRequest;
 import vn.springboot.dto.request.coupon.CouponSearchRequest;
 import vn.springboot.dto.request.coupon.CouponUpdateRequest;
@@ -36,7 +36,7 @@ public class CouponServiceImpl implements CouponService {
     private static final Set<String> SORTABLE_FIELDS =
             Set.of("id", "code", "discountValue", "usedCount", "startsAt", "endsAt", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "ASC";
 
     private final CouponRepository couponRepository;
     private final CouponMapper couponMapper;
@@ -44,10 +44,9 @@ public class CouponServiceImpl implements CouponService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CouponResponse> search(CouponSearchRequest request) {
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<CouponEntity> specification = CouponSpecification.build(request);
 
         Page<CouponEntity> page = couponRepository.findAll(specification, pageable);
@@ -56,15 +55,7 @@ public class CouponServiceImpl implements CouponService {
                 .map(couponMapper::toResponse)
                 .toList();
 
-        return PageResponse.<CouponResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
@@ -179,7 +170,7 @@ public class CouponServiceImpl implements CouponService {
             return invalid(code, "Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã");
         }
 
-        long discount = computeDiscount(coupon, orderAmount);
+        long discount = CouponDiscountCalculator.computeDiscount(coupon, orderAmount);
         boolean freeShipping = coupon.getDiscountType() == DiscountType.FREE_SHIP;
 
         return CouponValidationResponse.builder()
@@ -190,21 +181,6 @@ public class CouponServiceImpl implements CouponService {
                 .freeShipping(freeShipping)
                 .message("Áp dụng mã giảm giá thành công")
                 .build();
-    }
-
-    /** Discount (VND) applied to the order subtotal, clamped to [0, orderAmount]. */
-    private long computeDiscount(CouponEntity coupon, long orderAmount) {
-        long discount = switch (coupon.getDiscountType()) {
-            case PERCENT -> {
-                long raw = orderAmount * coupon.getDiscountValue() / 100;
-                yield coupon.getMaxDiscountAmount() != null
-                        ? Math.min(raw, coupon.getMaxDiscountAmount())
-                        : raw;
-            }
-            case FIXED -> coupon.getDiscountValue();
-            case FREE_SHIP -> 0L; // shipping fee is handled by the order/shipping layer
-        };
-        return Math.clamp(discount, 0L, orderAmount);
     }
 
     private CouponValidationResponse invalid(String code, String message) {
@@ -224,13 +200,5 @@ public class CouponServiceImpl implements CouponService {
 
     private String normalizeCode(String code) {
         return code == null ? null : code.trim().toUpperCase();
-    }
-
-    private Sort resolveSort(CouponSearchRequest request) {
-        String field = SORTABLE_FIELDS.contains(request.getSortBy()) ? request.getSortBy() : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(request.getSortDirection())
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

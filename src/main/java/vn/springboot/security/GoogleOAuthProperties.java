@@ -14,6 +14,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app.oauth2.google")
 public class GoogleOAuthProperties {
 
-    /** Google OAuth Web client ID; empty disables the audience check (dev only). */
+    /**
+     * Google OAuth Web client ID. Empty/blank fails closed unconditionally — see
+     * {@link vn.springboot.security.oauth2.GoogleTokenVerifier#verify} — every Google
+     * login attempt is rejected until this is set, in every profile.
+     */
     private String clientId = "";
 }

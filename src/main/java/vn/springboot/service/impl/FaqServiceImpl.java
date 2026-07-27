@@ -2,14 +2,13 @@ package vn.springboot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.dto.request.faq.FaqCreateRequest;
 import vn.springboot.dto.request.faq.FaqSearchRequest;
 import vn.springboot.dto.request.faq.FaqUpdateRequest;
@@ -34,7 +33,7 @@ public class FaqServiceImpl implements FaqService {
      */
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "sortOrder", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "ASC";
 
     private final FaqRepository faqRepository;
     private final FaqMapper faqMapper;
@@ -42,11 +41,9 @@ public class FaqServiceImpl implements FaqService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<FaqResponse> search(FaqSearchRequest request) {
-        // Requests are 1-based (page=1 is first); Spring Data is 0-based.
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<FaqEntity> specification = FaqSpecification.build(request);
 
         Page<FaqEntity> page = faqRepository.findAll(specification, pageable);
@@ -55,15 +52,7 @@ public class FaqServiceImpl implements FaqService {
                 .map(faqMapper::toResponse)
                 .toList();
 
-        return PageResponse.<FaqResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
@@ -120,13 +109,5 @@ public class FaqServiceImpl implements FaqService {
                 .orElseThrow(() -> new AppException(ErrorCode.FAQ_NOT_FOUND));
 
         faqRepository.delete(entity);
-    }
-
-    private Sort resolveSort(FaqSearchRequest request) {
-        String field = SORTABLE_FIELDS.contains(request.getSortBy()) ? request.getSortBy() : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(request.getSortDirection())
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

@@ -2,14 +2,13 @@ package vn.springboot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.dto.request.redirect.RedirectCreateRequest;
 import vn.springboot.dto.request.redirect.RedirectSearchRequest;
 import vn.springboot.dto.request.redirect.RedirectUpdateRequest;
@@ -34,7 +33,7 @@ public class RedirectServiceImpl implements RedirectService {
      */
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "ASC";
     private static final int DEFAULT_STATUS_CODE = 301;
 
     private final RedirectRepository redirectRepository;
@@ -43,11 +42,9 @@ public class RedirectServiceImpl implements RedirectService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<RedirectResponse> search(RedirectSearchRequest request) {
-        // Requests are 1-based (page=1 is first); Spring Data is 0-based.
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<RedirectEntity> specification = RedirectSpecification.build(request);
 
         Page<RedirectEntity> page = redirectRepository.findAll(specification, pageable);
@@ -56,15 +53,7 @@ public class RedirectServiceImpl implements RedirectService {
                 .map(redirectMapper::toResponse)
                 .toList();
 
-        return PageResponse.<RedirectResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
@@ -130,13 +119,5 @@ public class RedirectServiceImpl implements RedirectService {
                 .orElseThrow(() -> new AppException(ErrorCode.REDIRECT_NOT_FOUND));
 
         redirectRepository.delete(entity);
-    }
-
-    private Sort resolveSort(RedirectSearchRequest request) {
-        String field = SORTABLE_FIELDS.contains(request.getSortBy()) ? request.getSortBy() : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(request.getSortDirection())
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

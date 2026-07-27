@@ -3,9 +3,7 @@ package vn.springboot.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.dto.request.order.OrderAdminSearchRequest;
 import vn.springboot.dto.request.order.OrderPlaceRequest;
 import vn.springboot.dto.request.order.OrderSearchRequest;
@@ -49,10 +48,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    private static final Set<String> SORTABLE_FIELDS =
+    /**
+     * Kept as two distinct whitelists (customer-scoped vs admin-scoped), even
+     * though they currently contain the same fields: this is an
+     * authorization-adjacent boundary, and merging them into one shared
+     * constant would risk a field becoming sortable in one view because it
+     * was added to the other.
+     */
+    private static final Set<String> MY_ORDERS_SORTABLE_FIELDS =
+            Set.of("id", "orderCode", "totalAmount", "status", "createdAt");
+    private static final Set<String> ADMIN_ORDERS_SORTABLE_FIELDS =
             Set.of("id", "orderCode", "totalAmount", "status", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "DESC";
     private static final Set<OrderStatus> CANCELLABLE_STATUSES =
             Set.of(OrderStatus.PENDING_PAYMENT, OrderStatus.PROCESSING);
 
@@ -98,10 +106,9 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public PageResponse<OrderResponse> getMyOrders(OrderSearchRequest request) {
         UserEntity user = currentUser();
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request.getSortBy(), request.getSortDirection()));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                MY_ORDERS_SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<OrderEntity> specification =
                 OrderSpecification.build(request).and(OrderSpecification.ownedBy(user.getId()));
 
@@ -109,38 +116,21 @@ public class OrderServiceImpl implements OrderService {
 
         List<OrderResponse> content = buildResponseList(page.getContent());
 
-        return PageResponse.<OrderResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderResponse> searchOrders(OrderAdminSearchRequest request) {
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request.getSortBy(), request.getSortDirection()));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                ADMIN_ORDERS_SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
 
         Page<OrderEntity> page = orderRepository.findAll(OrderSpecification.buildAdmin(request), pageable);
 
         List<OrderResponse> content = buildResponseList(page.getContent());
 
-        return PageResponse.<OrderResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
@@ -293,13 +283,5 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
         return principal.getUser();
-    }
-
-    private Sort resolveSort(String sortBy, String sortDirection) {
-        String field = SORTABLE_FIELDS.contains(sortBy) ? sortBy : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(sortDirection)
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

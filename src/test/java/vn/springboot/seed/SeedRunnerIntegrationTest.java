@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import vn.springboot.repository.BannerRepository;
 import vn.springboot.repository.CouponRepository;
 import vn.springboot.repository.FaqRepository;
@@ -35,6 +36,12 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("development")
+// app.jwt.secret / app.security.cors.allowed-origins have no default in application.yaml
+// (Phase 1 security hardening — fail-closed, required env vars in real deployments).
+@TestPropertySource(properties = {
+        "app.jwt.secret=YcgS5HZmw4ViK7gfWyIpDHORS5Mytm96TnSWhtH7zGh5efncqiVoqOXgFLybSnbH+mDUMGtZYF8FIHMkmA4L+g==",
+        "app.security.cors.allowed-origins=http://localhost:5173"
+})
 class SeedRunnerIntegrationTest {
 
     @Autowired

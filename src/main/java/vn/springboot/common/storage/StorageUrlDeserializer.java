@@ -3,7 +3,6 @@ package vn.springboot.common.storage;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import org.springframework.beans.factory.annotation.Autowired;
 import vn.springboot.config.StorageProperties;
 
 import java.io.IOException;
@@ -14,14 +13,21 @@ import java.io.IOException;
  * when the value actually starts with our own base+prefix (or bare prefix) —
  * external URLs (CDN, OAuth avatar…) and seed {@code assets/...} paths are left
  * untouched.
+ *
+ * <p>See {@link StorageUrlSerializer} for why constructor injection (rather than
+ * field {@code @Autowired}) is the correct fix here: Jackson instantiates this
+ * class via Spring Boot's {@code SpringHandlerInstantiator}, which creates it
+ * through {@code AutowireCapableBeanFactory#createBean(Class)} — that factory
+ * method autowires a class's single constructor even without an explicit
+ * {@code @Autowired} annotation.
  */
 public class StorageUrlDeserializer extends StdDeserializer<String> {
 
-    @Autowired
-    private StorageProperties properties;
+    private final StorageProperties properties;
 
-    public StorageUrlDeserializer() {
+    public StorageUrlDeserializer(StorageProperties properties) {
         super(String.class);
+        this.properties = properties;
     }
 
     @Override

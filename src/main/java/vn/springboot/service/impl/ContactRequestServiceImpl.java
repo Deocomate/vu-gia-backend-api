@@ -3,9 +3,7 @@ package vn.springboot.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
+import vn.springboot.common.util.PaginationUtils;
 import vn.springboot.dto.request.contact.ContactRequestCreateRequest;
 import vn.springboot.dto.request.contact.ContactRequestSearchRequest;
 import vn.springboot.dto.request.contact.ContactRequestUpdateRequest;
@@ -41,7 +40,7 @@ public class ContactRequestServiceImpl implements ContactRequestService {
      */
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "name", "status", "createdAt");
     private static final String DEFAULT_SORT_FIELD = "id";
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final String DEFAULT_SORT_DIRECTION = "ASC";
 
     private final ContactRequestRepository contactRequestRepository;
     private final ContactRequestMapper contactRequestMapper;
@@ -51,11 +50,9 @@ public class ContactRequestServiceImpl implements ContactRequestService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ContactRequestResponse> search(ContactRequestSearchRequest request) {
-        // Requests are 1-based (page=1 is first); Spring Data is 0-based.
-        Pageable pageable = PageRequest.of(
-                Math.max(0, request.getPage() - 1),
-                Math.clamp(request.getSize(), 1, MAX_PAGE_SIZE),
-                resolveSort(request));
+        Pageable pageable = PaginationUtils.buildPageable(
+                request.getPage(), request.getSize(), request.getSortBy(), request.getSortDirection(),
+                SORTABLE_FIELDS, DEFAULT_SORT_FIELD, DEFAULT_SORT_DIRECTION);
         Specification<ContactRequestEntity> specification =
                 ContactRequestSpecification.build(request);
 
@@ -65,15 +62,7 @@ public class ContactRequestServiceImpl implements ContactRequestService {
                 .map(contactRequestMapper::toResponse)
                 .toList();
 
-        return PageResponse.<ContactRequestResponse>builder()
-                .content(content)
-                .pageNumber(page.getNumber() + 1)
-                .pageSize(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
-                .build();
+        return PaginationUtils.toPageResponse(page, content);
     }
 
     @Override
@@ -136,13 +125,5 @@ public class ContactRequestServiceImpl implements ContactRequestService {
             return java.util.Optional.empty();
         }
         return java.util.Optional.ofNullable(authentication.getName());
-    }
-
-    private Sort resolveSort(ContactRequestSearchRequest request) {
-        String field = SORTABLE_FIELDS.contains(request.getSortBy()) ? request.getSortBy() : DEFAULT_SORT_FIELD;
-        Sort.Direction direction = "DESC".equalsIgnoreCase(request.getSortDirection())
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return Sort.by(direction, field);
     }
 }

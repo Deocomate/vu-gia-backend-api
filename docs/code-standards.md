@@ -39,7 +39,7 @@ HTTP Request ──▶ Controller ──▶ Service (Interface) ──▶ Servic
    - **KHÔNG** sử dụng `@Autowired` trên field.
 
 2. **Cơ sở dữ liệu & Entity**:
-   - Tất cả Entity **phải kế thừa** `BaseEntity` (đã có sẵn `id`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`).
+   - Tất cả Entity **phải kế thừa** `BaseEntity` (đã có sẵn `id`, `createdAt`, `updatedAt`). `createdBy`/`updatedBy` **chưa được triển khai** — không entity nào ghi nhận người tạo/sửa; nếu cần, phải bổ sung field + migration riêng khi có yêu cầu thực tế (YAGNI).
    - Sử dụng `@Table(name = "name_in_snake_case")` và `@Column(name = "column_name")` tường minh.
    - Quan hệ FK dùng `@ManyToOne(fetch = FetchType.LAZY)`. Tránh dùng `FetchType.EAGER`.
 
@@ -66,6 +66,7 @@ HTTP Request ──▶ Controller ──▶ Service (Interface) ──▶ Servic
      }
      ```
    - Trả trực tiếp `ApiResponse<T>`, **KHÔNG** bọc trong `ResponseEntity<ApiResponse<T>>` ở nhánh thành công.
+   - **Ngoại lệ đã chấp nhận**: `PaymentWebhookController` (SePay webhook) trả về **raw body** (`ResponseEntity<Map<String, Object>>`), không dùng `ApiResponse<T>`. Đây là chủ đích: hình dạng response do hợp đồng webhook của SePay quy định (bên thứ ba đọc `{"success": true/false}`, không đọc envelope `ApiResponse`), không phải lỗi cần sửa.
 
 2. **Ném Lỗi Ngoại lệ (Exceptions)**:
    - Khi gặp lỗi nghiệp vụ, ném `AppException(ErrorCode.XXX)` từ Service.
@@ -88,12 +89,12 @@ HTTP Request ──▶ Controller ──▶ Service (Interface) ──▶ Servic
 Mọi API danh sách phải hỗ trợ phân trang an toàn theo chuẩn:
 
 1. **Search Request DTO**:
-   - Chứa `page = 0`, `size = 10`, `sortBy = "id"`, `sortDirection = "ASC"`.
+   - Chứa `page = 1` (1-based, client-facing), `size = 10`, `sortBy`/`sortDirection` mặc định theo từng domain (đa số `"id"`/`"ASC"`, một số domain khác — ví dụ `OrderSearchRequest`/`OrderAdminSearchRequest` dùng `"DESC"`, `ShippingMethodSearchRequest` dùng `sortBy = "sortOrder"`).
 
-2. **Xử lý An toàn tại Service**:
-   - Index trang: 0-based.
+2. **Xử lý An toàn tại Service** (qua `common/util/PaginationUtils`, dùng chung cho mọi `*ServiceImpl`):
+   - Chuyển `page` 1-based (client) sang 0-based (`Pageable`): `Math.max(0, page - 1)`.
    - Clamp kích thước trang: `Math.clamp(size, 1, MAX_PAGE_SIZE /*=100*/)`.
-   - **Sort Whitelist**: Bắt buộc kiểm tra danh sách các trường được phép sắp xếp (`SORTABLE_FIELDS`) để tránh lỗi `PropertyReferenceException` hoặc SQL Injection.
+   - **Sort Whitelist**: mỗi service tự khai báo `SORTABLE_FIELDS`/`DEFAULT_SORT_FIELD`/`DEFAULT_SORT_DIRECTION` riêng (không dùng chung whitelist giữa các domain có ranh giới phân quyền khác nhau, ví dụ đơn hàng khách hàng vs. đơn hàng admin), truyền vào `PaginationUtils.buildPageable(...)` để tránh lỗi `PropertyReferenceException` hoặc SQL Injection.
 
 3. **Trả về `PageResponse<T>`**:
    - Bọc kết quả phân trang trong `PageResponse<T>` chứa `content`, `pageNumber`, `pageSize`, `totalElements`, `totalPages`, `first`, `last`.

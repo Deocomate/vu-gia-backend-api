@@ -36,12 +36,26 @@ public class JwtService {
     private static final String CLAIM_EMAIL = "email";
     private static final String CLAIM_NAME = "name";
 
+    /** HS512 (the algorithm this service signs with) requires a >= 512-bit (64-byte) key. */
+    private static final int MIN_HS512_KEY_BYTES = 64;
+
     private final JwtProperties properties;
     private final SecretKey signingKey;
 
     public JwtService(JwtProperties properties) {
         this.properties = properties;
-        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.getSecret()));
+        if (properties.getSecret() == null || properties.getSecret().isBlank()) {
+            throw new IllegalStateException(
+                    "app.jwt.secret (APP_JWT_SECRET) is not configured — refusing to start.");
+        }
+        byte[] keyBytes = Decoders.BASE64.decode(properties.getSecret());
+        if (keyBytes.length < MIN_HS512_KEY_BYTES) {
+            throw new IllegalStateException(
+                    "app.jwt.secret (APP_JWT_SECRET) decodes to " + keyBytes.length
+                            + " bytes, but HS512 requires at least " + MIN_HS512_KEY_BYTES
+                            + " bytes (512 bits) — refusing to start. Generate one with e.g. `openssl rand -base64 64`.");
+        }
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateAccessToken(UserDetails userDetails) {

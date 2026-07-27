@@ -272,6 +272,9 @@ class AuthServiceImplTest {
         RefreshTokenEntity token = RefreshTokenEntity.builder()
                 .token("old").user(user).revoked(false).expiresAt(Instant.now().plusSeconds(3600)).build();
         when(refreshTokenRepository.findByToken("old")).thenReturn(Optional.of(token));
+        // Atomic conditional update (UPDATE ... WHERE revoked = false) — 1 row affected means
+        // this request won the rotation race.
+        when(refreshTokenRepository.revokeIfActive("old")).thenReturn(1);
         when(jwtService.generateAccessToken(any())).thenReturn("access-token");
         when(jwtProperties.getAccessTokenExpiration()).thenReturn(3_600_000L);
         when(jwtProperties.getRefreshTokenExpiration()).thenReturn(604_800_000L);
@@ -280,9 +283,43 @@ class AuthServiceImplTest {
 
         AuthResponse res = authService.refresh("old");
 
-        assertThat(token.isRevoked()).isTrue(); // old token rotated out
+        verify(refreshTokenRepository).revokeIfActive("old");
+        verify(refreshTokenRepository, never()).revokeAllByUser(any()); // no reuse detected, not a replay
         assertThat(res.getAccessToken()).isEqualTo("access-token");
         assertThat(res.getRefreshToken()).isNotBlank(); // new token, present on the Java object (JSON-hidden)
+    }
+
+    @Test
+    void refresh_replayOfRevokedToken_revokesRestOfTokenFamily() {
+        UserEntity user = user();
+        RefreshTokenEntity token = RefreshTokenEntity.builder()
+                .token("stolen").user(user).revoked(true).expiresAt(Instant.now().plusSeconds(3600)).build();
+        when(refreshTokenRepository.findByToken("stolen")).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> authService.refresh("stolen"))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_REVOKED);
+
+        verify(refreshTokenRepository).revokeAllByUser(user);
+        verify(refreshTokenRepository, never()).revokeIfActive(any());
+    }
+
+    @Test
+    void refresh_concurrentRotationRace_secondRequestIsTreatedAsReplay() {
+        // Two concurrent requests both read the token while it is still active; only the
+        // atomic UPDATE ... WHERE revoked = false can flip it, so the second request must
+        // see 0 affected rows and be rejected as a replay instead of silently succeeding.
+        UserEntity user = user();
+        RefreshTokenEntity token = RefreshTokenEntity.builder()
+                .token("raced").user(user).revoked(false).expiresAt(Instant.now().plusSeconds(3600)).build();
+        when(refreshTokenRepository.findByToken("raced")).thenReturn(Optional.of(token));
+        when(refreshTokenRepository.revokeIfActive("raced")).thenReturn(0);
+
+        assertThatThrownBy(() -> authService.refresh("raced"))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.REFRESH_TOKEN_REVOKED);
+
+        verify(refreshTokenRepository).revokeAllByUser(user);
     }
 
     // ---------- change password (self) ----------
@@ -309,6 +346,10 @@ class AuthServiceImplTest {
         authService.changePassword(new ChangePasswordRequest("old", "newpass"));
 
         assertThat(user.getPassword()).isEqualTo("new-hashed");
+        // A password change must log the user out of every other device (all refresh
+        // tokens revoked), closing the gap where a stolen refresh token would otherwise
+        // survive a password change for up to its full lifetime.
+        verify(refreshTokenRepository).revokeAllByUser(user);
     }
 
     @Test

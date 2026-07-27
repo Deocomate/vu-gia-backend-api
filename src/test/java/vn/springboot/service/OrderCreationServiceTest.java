@@ -33,6 +33,7 @@ import vn.springboot.service.impl.OrderCreationService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -91,7 +92,7 @@ class OrderCreationServiceTest {
         when(productRepository.findAllById(any()))
                 .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of());
 
         OrderEntity order = service.create(u, request(null, line(10L, 3)));
 
@@ -122,7 +123,7 @@ class OrderCreationServiceTest {
         when(orderRepository.countByUser_IdAndCoupon_Id(1L, 7L)).thenReturn(0L);
         when(couponRepository.incrementUsedCount(7L)).thenReturn(1);
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of());
 
         OrderEntity order = service.create(u, request("sale10", line(10L, 2))); // 2000 - 10%
 
@@ -185,7 +186,7 @@ class OrderCreationServiceTest {
         when(productRepository.findAllById(any()))
                 .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of());
 
         OrderPlaceRequest req = OrderPlaceRequest.builder()
                 .idempotencyKey("key-1").items(List.of(line(10L, 1)))
@@ -204,8 +205,9 @@ class OrderCreationServiceTest {
         when(productRepository.findAllById(any()))
                 .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        CartItemEntity cartItem = CartItemEntity.builder().id(3L).user(u).quantity(5).build();
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.of(cartItem));
+        CartItemEntity cartItem = CartItemEntity.builder()
+                .id(3L).user(u).product(product(10L, 100, ProductType.SINGLE)).quantity(5).build();
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of(cartItem));
 
         service.create(u, request(null, line(10L, 2)));
 
@@ -228,7 +230,7 @@ class OrderCreationServiceTest {
                 .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
         when(shippingMethodRepository.findById(5L)).thenReturn(Optional.of(shippingMethod(5L, 30_000, true)));
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of());
 
         OrderPlaceRequest req = OrderPlaceRequest.builder()
                 .idempotencyKey("key-1").items(List.of(line(10L, 3)))
@@ -283,7 +285,7 @@ class OrderCreationServiceTest {
         when(productRepository.findAllById(any()))
                 .thenReturn(List.of(product(10L, 100, ProductType.SINGLE)));
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of());
 
         OrderEntity order = service.create(u, request(null, line(10L, 3)));
 
@@ -305,7 +307,7 @@ class OrderCreationServiceTest {
         when(couponRepository.findByCode("FREESHIP")).thenReturn(Optional.of(coupon));
         when(couponRepository.incrementUsedCount(7L)).thenReturn(1);
         when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(cartItemRepository.findByUser_IdAndProduct_Id(1L, 10L)).thenReturn(Optional.empty());
+        when(cartItemRepository.findByUser_IdAndProduct_IdIn(1L, Set.of(10L))).thenReturn(List.of());
 
         OrderPlaceRequest req = OrderPlaceRequest.builder()
                 .idempotencyKey("key-1").items(List.of(line(10L, 2)))

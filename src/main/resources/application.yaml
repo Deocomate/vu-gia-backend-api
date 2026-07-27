@@ -62,12 +62,21 @@ app:
     public-url: ${APP_STORAGE_PUBLIC_URL:http://localhost:8080}
     url-prefix: /files
   jwt:
-    # Base64-encoded 512-bit secret. Override via APP_JWT_SECRET in production.
-    secret: ${APP_JWT_SECRET:fJV2+5QqrlNHmoqnaO4FliZ6rdwxbyi4ohpjMeKCKI+OXbe4y6eup8Vj0TaJem/aj8reEfbkK9aWenBdS7xlIg==}
+    # Base64-encoded signing secret, MUST decode to >= 64 bytes (512 bits) for the
+    # HS512 signing algorithm this app uses (see JwtService). BẮT BUỘC: no default
+    # here — app refuses to start without APP_JWT_SECRET set (fail-closed, same
+    # pattern as SEPAY_WEBHOOK_SECRET below). Generate one with e.g.
+    # `openssl rand -base64 64`.
+    secret: ${APP_JWT_SECRET}
     issuer: vu-gia
     access-token-expiration: 3600000        # 1 hour (ms)
     refresh-token-expiration: 604800000     # 7 days (ms)
   security:
+    cors:
+      # Comma-separated exact-match allow-list of origins permitted to make
+      # credentialed cross-origin requests (see SecurityConfig#corsConfigurationSource).
+      # BẮT BUỘC: no default — app refuses to start without APP_CORS_ALLOWED_ORIGINS set.
+      allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
     cookie:
       # httpOnly cookie carrying the opaque refresh token (see docs/AUTH_USER_API.md).
       refresh-token-name: refresh_token
@@ -91,7 +100,8 @@ app:
   oauth2:
     google:
       # Google OAuth Web client ID (the "aud" every ID token must match).
-      # Set GOOGLE_CLIENT_ID in the environment; empty disables the audience check (dev only).
+      # BẮT BUỘC to log in via Google: rỗng = CHẶN mọi Google login (fail-closed,
+      # same pattern as SEPAY_WEBHOOK_SECRET). Set GOOGLE_CLIENT_ID to enable it.
       client-id: ${GOOGLE_CLIENT_ID:}
   mail:
     # "From" address for outgoing mail (EmailService)

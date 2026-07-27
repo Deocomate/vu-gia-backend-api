@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import vn.springboot.config.StorageProperties;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,15 +18,12 @@ class StorageUrlDeserializerTest {
     private JsonFactory jsonFactory;
 
     @BeforeEach
-    void setUp() throws ReflectiveOperationException {
+    void setUp() {
         StorageProperties props = new StorageProperties();
         props.setPublicUrl("http://localhost:8080");
         props.setUrlPrefix("/files");
 
-        deserializer = new StorageUrlDeserializer();
-        Field field = StorageUrlDeserializer.class.getDeclaredField("properties");
-        field.setAccessible(true);
-        field.set(deserializer, props);
+        deserializer = new StorageUrlDeserializer(props);
 
         jsonFactory = new JsonFactory();
     }
