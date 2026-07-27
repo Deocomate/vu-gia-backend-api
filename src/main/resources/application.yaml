@@ -100,9 +100,14 @@ app:
     # (ContactRequestEmailListener logs-and-skips instead of mailing a blank address).
     contact-notify-to: ${CONTACT_NOTIFY_EMAIL:}
   init:
-    # Seed default admin account on startup (UserSeeder); canonical identity below
-    # matches the real V2__seed_db.sql data
+    # Seed default staff accounts on startup (UserSeeder). "admin" canonical identity
+    # below matches the real V2__seed_db.sql data; "superadmin" is new (no SQL
+    # equivalent) and is the only role allowed to create staff accounts, change roles,
+    # or edit site-wide settings.
     enabled: true
+    superadmin-username: superadmin
+    superadmin-email: superadmin@gomvugia.vn
+    superadmin-password: Superadmin@123
     admin-username: admin
     admin-email: admin@gomvugia.vn
     admin-password: admin123

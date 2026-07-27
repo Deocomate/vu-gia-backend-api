@@ -70,7 +70,7 @@ class SeedRunnerIntegrationTest {
     @Test
     void seedsEveryDomainWithRowCountsMatchingTheSourceSeedFile() {
         assertThat(shippingMethodRepository.count()).isEqualTo(2);
-        assertThat(userRepository.count()).isEqualTo(1);
+        assertThat(userRepository.count()).isEqualTo(2);
         assertThat(productCategoryRepository.count()).isEqualTo(6);
         assertThat(productRepository.count()).isEqualTo(12);
         assertThat(productImageRepository.count()).isEqualTo(15);
@@ -89,6 +89,13 @@ class SeedRunnerIntegrationTest {
         var admin = userRepository.findByUsername("admin").orElseThrow();
         assertThat(admin.getEmail()).isEqualTo("admin@gomvugia.vn");
         assertThat(admin.getRole().name()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void seededSuperadminHasCanonicalIdentity() {
+        var superadmin = userRepository.findByUsername("superadmin").orElseThrow();
+        assertThat(superadmin.getEmail()).isEqualTo("superadmin@gomvugia.vn");
+        assertThat(superadmin.getRole().name()).isEqualTo("SUPERADMIN");
     }
 
     @Test

@@ -152,11 +152,21 @@ Hệ thống sẽ dựng 2 dịch vụ:
 
 ## 🔑 6. Tài khoản Mặc định & Phân quyền Initial
 
-Khi khởi tạo thành công, hệ thống tự động tạo tài khoản Admin ban đầu (`UserSeeder`, ghi đè được qua `app.init.*`):
+Khi khởi tạo thành công, hệ thống tự động tạo 2 tài khoản nhân sự ban đầu (`UserSeeder`, ghi đè được qua `app.init.*`):
+
+**Superadmin** (quyền cao nhất — duy nhất có thể tạo tài khoản mới, đổi vai trò người dùng, và sửa Site Settings):
+- **Username**: `superadmin`
+- **Email**: `superadmin@gomvugia.vn`
+- **Mật khẩu**: `Superadmin@123`
+- **Vai trò**: `SUPERADMIN`
+
+**Admin** (vận hành hàng ngày — sản phẩm, đơn hàng, tin tức, CMS...):
 - **Username**: `admin`
 - **Email**: `admin@gomvugia.vn`
 - **Mật khẩu**: `admin123`
-- **Vai trò**: `ADMIN` (hệ thống có 3 vai trò: `SUPERADMIN`, `ADMIN`, `CUSTOMER` — tài khoản seed mặc định chỉ có `ADMIN`)
+- **Vai trò**: `ADMIN`
+
+Hệ thống có 3 vai trò: `SUPERADMIN`, `ADMIN`, `CUSTOMER`.
 
 ---
 

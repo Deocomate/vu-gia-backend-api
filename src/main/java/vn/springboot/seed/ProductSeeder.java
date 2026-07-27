@@ -152,10 +152,45 @@ public class ProductSeeder implements DomainSeeder {
                 .isFeatured(isFeatured)
                 .status(ProductStatus.PUBLISHED)
                 .description(simpleDescription(descriptionText))
+                .detailSections(singleDetailSections(name))
                 .slug(slug)
                 .priority(priority)
                 .productCategory(categoryPlaceholder(categoryType))
+                .seoTitle(name)
+                .seoDescription(descriptionText)
+                .seoImage(thumb)
                 .build();
+    }
+
+    /**
+     * {@code [{title, description, image}]} rendered by {@code ProductDetail} (type=SINGLE
+     * only) — every seeded single previously left this {@code null}, so the storefront
+     * silently fell back to its hardcoded {@code DEFAULT_SECTIONS}, the same 3 generic
+     * blurbs on every product page regardless of which item it was. Glaze copy is picked
+     * from the product name (men rạn vs men lam) so the 2nd section still matches the
+     * real product instead of repeating one canned paragraph everywhere.
+     */
+    private String singleDetailSections(String productName) {
+        boolean isMenRan = productName.contains("Men rạn") || productName.contains("men rạn");
+        String glazeTitle = isMenRan ? "Chất Men Rạn Cổ Kính" : "Chất Men Lam Truyền Thống";
+        String glazeText = isMenRan
+                ? "Men rạn được tạo nên nhờ sự chênh lệch độ co giãn giữa men và xương gốm khi nung, hình thành các đường rạn chân chim tự nhiên - không sản phẩm nào giống sản phẩm nào, mang vẻ đẹp hoài cổ, trầm mặc riêng có."
+                : "Men lam sử dụng oxit coban vẽ họa tiết xanh lam trên nền men trắng, nét vẽ tinh tế, màu sắc trong trẻo. Sản phẩm được nung ở nhiệt độ trên 1.200 độ C giúp màu men bám chắc, bền đẹp theo thời gian.";
+
+        ArrayNode sections = objectMapper.createArrayNode();
+        sections.addObject()
+                .put("title", "Nghệ Thuật Chế Tác Thủ Công")
+                .put("description", productName + " được nghệ nhân làng gốm Bát Tràng tạo hình và chạm khắc hoàn toàn thủ công, từng đường nét hoa văn đều mang dấu ấn bàn tay tài hoa, không hai sản phẩm nào hoàn toàn giống nhau.")
+                .put("image", "assets/images/product-detail/chi-tiet-sp-thumb-1.png");
+        sections.addObject()
+                .put("title", glazeTitle)
+                .put("description", glazeText)
+                .put("image", "assets/images/product-detail/chi-tiet-sp-thumb-2.png");
+        sections.addObject()
+                .put("title", "Giá Trị Phong Thủy & Tâm Linh")
+                .put("description", "Mỗi họa tiết trên sản phẩm đều chứa đựng những ý nghĩa phong thủy tốt lành, giúp gia chủ tụ khí, đón tài lộc và thể hiện lòng thành kính hướng về nguồn cội gia tiên.")
+                .put("image", "assets/images/product-detail/chi-tiet-sp-thumb-3.png");
+        return writeJson(sections);
     }
 
     private ProductEntity comboProduct() {
@@ -170,12 +205,53 @@ public class ProductSeeder implements DomainSeeder {
                 .isFeatured(true)
                 .status(ProductStatus.PUBLISHED)
                 .description(comboDescription())
+                .functions(comboFunctions())
+                .comboGallery(comboGalleryImages())
                 .slug("bo-do-tho-phat-ve-hoa-sen-men-ran-co-dt026")
                 .priority(10)
                 .productCategory(categoryPlaceholder(CategoryType.BINH_PHONG_THUY))
                 .seoTitle("Bộ đồ thờ Phật vẽ hoa sen men rạn cổ DT026")
                 .seoDescription("Bộ đồ thờ Phật men rạn cổ vẽ hoa sen Bát Tràng, chế tác thủ công, bảo hành men trọn đời.")
+                .seoImage("assets/images/products/product-image-thumb.png")
                 .build();
+    }
+
+    /**
+     * {@code [{name, quantity, unit, usage}]} rendered by {@code ProductSpecifications}
+     * (type=COMBO only). Same 12 line items as {@link #comboDescription()}'s embedded
+     * "specifications" array (kept for backward display compatibility), minus the "stt"
+     * key — the table component derives row numbers from array index instead.
+     */
+    private String comboFunctions() {
+        ArrayNode rows = objectMapper.createArrayNode();
+        addFunctionRow(rows, "Bát hương", "3", "Chiếc", "Dùng cắm hương, thờ Thần linh - Gia tiên");
+        addFunctionRow(rows, "Bát thờ", "10", "Chiếc", "Dùng dâng cơm trắng và lễ vật");
+        addFunctionRow(rows, "Chóe thờ", "3", "Chiếc", "Dùng đựng gạo, muối và nước");
+        addFunctionRow(rows, "Bát sâm", "1 - 2", "Chiếc", "Dùng dâng nước, trà hoặc sâm");
+        addFunctionRow(rows, "Bộ kỷ chén", "3 hoặc 5", "Chén", "Dùng đựng nước sạch hoặc rượu");
+        addFunctionRow(rows, "Nậm rượu", "1 - 2", "Chiếc", "Dùng đựng và dâng rượu cúng");
+        addFunctionRow(rows, "Bộ ấm chén thờ (1 ấm - 5 chén)", "1 - 2", "Bộ", "Dùng pha và dâng trà lên bàn thờ");
+        addFunctionRow(rows, "Ống cắm hương", "1", "Chiếc", "Dùng cắm nhang chưa sử dụng");
+        addFunctionRow(rows, "Mâm bồng", "3", "Chiếc", "Dùng bày hoa quả và lễ vật");
+        addFunctionRow(rows, "Lọ hoa", "2", "Chiếc", "Dùng cắm hoa trang trí bàn thờ");
+        addFunctionRow(rows, "Đèn thờ", "2", "Chiếc", "Dùng thắp sáng và tạo sự trang nghiêm");
+        addFunctionRow(rows, "Chân nến", "2", "Chiếc", "Dùng thắp sáng và tạo sự trang nghiêm");
+        return writeJson(rows);
+    }
+
+    private void addFunctionRow(ArrayNode rows, String name, String quantity, String unit, String usage) {
+        rows.addObject().put("name", name).put("quantity", quantity).put("unit", unit).put("usage", usage);
+    }
+
+    /** {@code [{url}]} full-width slider rendered by {@code ProductSpecifications} (type=COMBO only). */
+    private String comboGalleryImages() {
+        ArrayNode images = objectMapper.createArrayNode();
+        images.addObject().put("url", "assets/images/product-detail/product-detail-big-thumb.png");
+        images.addObject().put("url", "assets/images/nha-xuong/slider-image-1.png");
+        images.addObject().put("url", "assets/images/nha-xuong/slider-image-2.png");
+        images.addObject().put("url", "assets/images/nha-xuong/slider-image-3.png");
+        images.addObject().put("url", "assets/images/nha-xuong/slider-image-4.png");
+        return writeJson(images);
     }
 
     private String simpleDescription(String text) {
