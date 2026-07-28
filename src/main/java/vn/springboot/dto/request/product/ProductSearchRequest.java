@@ -25,6 +25,12 @@ public class ProductSearchRequest {
 
     private Boolean isFeatured;
 
+    /** Altar-customizer filter; optional, {@code null} = no filter. */
+    private Long altarItemGroupId;
+
+    /** Altar-customizer filter; optional, {@code null} = no filter. */
+    private Long altarStyleId;
+
     private Long minPrice;
 
     private Long maxPrice;

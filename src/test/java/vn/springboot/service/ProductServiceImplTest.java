@@ -18,11 +18,19 @@ import vn.springboot.dto.request.product.ProductSearchRequest;
 import vn.springboot.dto.request.product.ProductUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.product.ProductResponse;
+import vn.springboot.entity.altar.AltarItemGroupEntity;
+import vn.springboot.entity.altar.AltarPlacementEntity;
+import vn.springboot.entity.altar.AltarStyleEntity;
 import vn.springboot.entity.enums.ProductStatus;
 import vn.springboot.entity.enums.ProductType;
 import vn.springboot.entity.product.ProductCategoryEntity;
 import vn.springboot.entity.product.ProductEntity;
+import vn.springboot.entity.product.ProductImageEntity;
 import vn.springboot.mapper.ProductMapper;
+import vn.springboot.repository.AltarItemGroupRepository;
+import vn.springboot.repository.AltarPlacementRepository;
+import vn.springboot.repository.AltarPresetItemRepository;
+import vn.springboot.repository.AltarStyleRepository;
 import vn.springboot.repository.ProductCategoryRepository;
 import vn.springboot.repository.ProductImageRepository;
 import vn.springboot.repository.ProductRepository;
@@ -51,6 +59,18 @@ class ProductServiceImplTest {
 
     @Mock
     private ProductImageRepository productImageRepository;
+
+    @Mock
+    private AltarItemGroupRepository altarItemGroupRepository;
+
+    @Mock
+    private AltarStyleRepository altarStyleRepository;
+
+    @Mock
+    private AltarPresetItemRepository altarPresetItemRepository;
+
+    @Mock
+    private AltarPlacementRepository altarPlacementRepository;
 
     @Mock
     private ProductMapper productMapper;
@@ -309,6 +329,69 @@ class ProductServiceImplTest {
     }
 
     @Test
+    void create_resolvesOptionalAltarFks_whenProvided() {
+        stubMapperToEntity();
+        when(productCategoryRepository.findById(5L))
+                .thenReturn(Optional.of(new ProductCategoryEntity()));
+        when(productRepository.existsBySlug(anyString())).thenReturn(false);
+        when(productRepository.save(any(ProductEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(any())).thenReturn(List.of());
+        when(productMapper.toResponse(any(ProductEntity.class))).thenReturn(response(1L, "Phone X", "phone-x"));
+        AltarItemGroupEntity group = new AltarItemGroupEntity();
+        group.setId(7L);
+        AltarStyleEntity style = new AltarStyleEntity();
+        style.setId(9L);
+        when(altarItemGroupRepository.findById(7L)).thenReturn(Optional.of(group));
+        when(altarStyleRepository.findById(9L)).thenReturn(Optional.of(style));
+
+        ProductCreateRequest request = validCreate().altarItemGroupId(7L).altarStyleId(9L).build();
+
+        service.create(request);
+
+        ArgumentCaptor<ProductEntity> captor = ArgumentCaptor.forClass(ProductEntity.class);
+        verify(productRepository).save(captor.capture());
+        assertThat(captor.getValue().getAltarItemGroup()).isEqualTo(group);
+        assertThat(captor.getValue().getAltarStyle()).isEqualTo(style);
+    }
+
+    @Test
+    void create_altarItemGroupNotFound_throws() {
+        when(productCategoryRepository.findById(5L))
+                .thenReturn(Optional.of(new ProductCategoryEntity()));
+        when(productRepository.existsBySlug(anyString())).thenReturn(false);
+        when(altarItemGroupRepository.findById(404L)).thenReturn(Optional.empty());
+        stubMapperToEntity();
+
+        ProductCreateRequest request = validCreate().altarItemGroupId(404L).build();
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ALTAR_ITEM_GROUP_NOT_FOUND);
+
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void create_withoutAltarFks_leavesThemNull() {
+        stubMapperToEntity();
+        when(productCategoryRepository.findById(5L))
+                .thenReturn(Optional.of(new ProductCategoryEntity()));
+        when(productRepository.existsBySlug(anyString())).thenReturn(false);
+        when(productRepository.save(any(ProductEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(any())).thenReturn(List.of());
+        when(productMapper.toResponse(any(ProductEntity.class))).thenReturn(response(1L, "Phone X", "phone-x"));
+
+        service.create(validCreate().build());
+
+        ArgumentCaptor<ProductEntity> captor = ArgumentCaptor.forClass(ProductEntity.class);
+        verify(productRepository).save(captor.capture());
+        assertThat(captor.getValue().getAltarItemGroup()).isNull();
+        assertThat(captor.getValue().getAltarStyle()).isNull();
+        verify(altarItemGroupRepository, never()).findById(any());
+        verify(altarStyleRepository, never()).findById(any());
+    }
+
+    @Test
     void updateStatus_changesStatus() {
         ProductEntity e = productEntity("Phone X", "phone-x");
         e.setStatus(ProductStatus.DRAFT);
@@ -322,5 +405,66 @@ class ProductServiceImplTest {
 
         assertThat(e.getStatus()).isEqualTo(ProductStatus.PUBLISHED);
         verify(productRepository).save(e);
+    }
+
+    @Test
+    void delete_referencedByAltarPreset_throws409_namingPreset() {
+        ProductEntity e = productEntity("Phone X", "phone-x");
+        e.setId(1L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(altarPresetItemRepository.existsByProductId(1L)).thenReturn(true);
+        when(altarPresetItemRepository.findDistinctPresetNamesByProductId(1L))
+                .thenReturn(List.of("Bộ gợi ý A"));
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ALTAR_PRESET_ITEM_REFERENCED);
+        assertThatThrownBy(() -> service.delete(1L)).hasMessageContaining("Bộ gợi ý A");
+
+        verify(productRepository, never()).delete(any(ProductEntity.class));
+        verify(productImageRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    void delete_notReferenced_deletesImagesThenProduct() {
+        ProductEntity e = productEntity("Phone X", "phone-x");
+        e.setId(1L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(altarPresetItemRepository.existsByProductId(1L)).thenReturn(false);
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(1L)).thenReturn(List.of());
+
+        service.delete(1L);
+
+        verify(productRepository).delete(e);
+    }
+
+    /**
+     * A product image can carry an altar placement without being pinned by any preset — that
+     * combination must still have its placement row and overlay file cleaned up, and that cleanup
+     * must happen before the image file itself is deleted (file deletion isn't part of the
+     * {@code @Transactional} rollback, so ordering here is a correctness property, not style).
+     */
+    @Test
+    void delete_imageHasPlacement_cleansUpPlacementAndOverlayBeforeImageFile() {
+        ProductEntity e = productEntity("Phone X", "phone-x");
+        e.setId(1L);
+        ProductImageEntity image = ProductImageEntity.builder().url("/files/img.jpg").product(e).build();
+        image.setId(20L);
+        AltarPlacementEntity placement = AltarPlacementEntity.builder()
+                .productImage(image).overlayImage("/files/overlay.png")
+                .defaultX(0.5).defaultY(0.8).widthCm(20).build();
+        placement.setId(30L);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(altarPresetItemRepository.existsByProductId(1L)).thenReturn(false);
+        when(productImageRepository.findByProductIdOrderByPriorityAscIdAsc(1L)).thenReturn(List.of(image));
+        when(altarPlacementRepository.findByProductImageId(20L)).thenReturn(Optional.of(placement));
+
+        service.delete(1L);
+
+        verify(altarPlacementRepository).delete(placement);
+        verify(fileStorageService).delete("/files/overlay.png");
+        verify(fileStorageService).delete("/files/img.jpg");
+        verify(productRepository).delete(e);
     }
 }

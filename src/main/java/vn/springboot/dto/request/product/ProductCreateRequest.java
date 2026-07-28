@@ -74,6 +74,12 @@ public class ProductCreateRequest {
     @NotNull
     private Long productCategoryId;
 
+    /** Optional altar-customizer picker; only meaningful for {@code BO_DO_THO} products. */
+    private Long altarItemGroupId;
+
+    /** Optional altar-customizer picker; only meaningful for {@code BO_DO_THO} products. */
+    private Long altarStyleId;
+
     @Size(max = 255)
     private String seoTitle;
 

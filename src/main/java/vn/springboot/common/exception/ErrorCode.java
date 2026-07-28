@@ -57,6 +57,13 @@ public enum ErrorCode {
     CART_ITEM_NOT_FOUND(4058, "Cart item not found", HttpStatus.NOT_FOUND),
     ORDER_NOT_FOUND(4059, "Order not found", HttpStatus.NOT_FOUND),
     SHIPPING_METHOD_NOT_FOUND(4060, "Shipping method not found", HttpStatus.NOT_FOUND),
+    ALTAR_ITEM_GROUP_NOT_FOUND(4061, "Altar item group not found", HttpStatus.NOT_FOUND),
+    ALTAR_STYLE_NOT_FOUND(4062, "Altar style not found", HttpStatus.NOT_FOUND),
+    ALTAR_MODEL_NOT_FOUND(4063, "Altar model not found", HttpStatus.NOT_FOUND),
+    ALTAR_MODEL_SIZE_NOT_FOUND(4064, "Altar model size not found", HttpStatus.NOT_FOUND),
+    ALTAR_PLACEMENT_NOT_FOUND(4065, "Altar placement not found", HttpStatus.NOT_FOUND),
+    ALTAR_PRESET_NOT_FOUND(4066, "Altar preset not found", HttpStatus.NOT_FOUND),
+    ALTAR_DESIGN_NOT_FOUND(4067, "Altar design not found", HttpStatus.NOT_FOUND),
 
     // 409x - conflict
     USERNAME_EXISTED(4090, "Username already exists", HttpStatus.CONFLICT),
@@ -78,7 +85,15 @@ public enum ErrorCode {
     COUPON_NOT_APPLICABLE(4105, "Coupon is not applicable", HttpStatus.CONFLICT),
     ORDER_EMPTY(4106, "Order must contain at least one item", HttpStatus.BAD_REQUEST),
     ORDER_NOT_CANCELLABLE(4107, "Order cannot be cancelled in its current status", HttpStatus.CONFLICT),
-    SHIPPING_METHOD_CODE_EXISTED(4108, "Shipping method code already exists", HttpStatus.CONFLICT);
+    SHIPPING_METHOD_CODE_EXISTED(4108, "Shipping method code already exists", HttpStatus.CONFLICT),
+    ALTAR_ITEM_GROUP_SLUG_EXISTED(4109, "Altar item group slug already exists", HttpStatus.CONFLICT),
+    ALTAR_STYLE_SLUG_EXISTED(4110, "Altar style slug already exists", HttpStatus.CONFLICT),
+    ALTAR_MODEL_SLUG_EXISTED(4111, "Altar model slug already exists", HttpStatus.CONFLICT),
+    ALTAR_PRESET_SLUG_EXISTED(4112, "Altar preset slug already exists", HttpStatus.CONFLICT),
+    ALTAR_PRESET_ITEM_REFERENCED(4113, "Product or image is referenced by an altar preset", HttpStatus.CONFLICT),
+    ALTAR_DESIGN_LIMIT_REACHED(4114, "Saved design limit reached (20 max) — delete one before saving another", HttpStatus.CONFLICT),
+    ALTAR_MODEL_SIZE_REFERENCED(4115, "Altar model size is referenced by a preset or saved design", HttpStatus.CONFLICT),
+    ALTAR_STYLE_REFERENCED(4116, "Altar style is referenced by a preset or saved design", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

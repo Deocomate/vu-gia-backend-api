@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -48,7 +49,12 @@ public class JwtService {
             throw new IllegalStateException(
                     "app.jwt.secret (APP_JWT_SECRET) is not configured — refusing to start.");
         }
-        byte[] keyBytes = Decoders.BASE64.decode(properties.getSecret());
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(properties.getSecret());
+        } catch (IllegalArgumentException | DecodingException ex) {
+            keyBytes = Decoders.BASE64URL.decode(properties.getSecret());
+        }
         if (keyBytes.length < MIN_HS512_KEY_BYTES) {
             throw new IllegalStateException(
                     "app.jwt.secret (APP_JWT_SECRET) decodes to " + keyBytes.length

@@ -15,6 +15,8 @@ public class ProductSpecification {
                 hasType(request.getType()),
                 hasStatus(request.getStatus()),
                 hasCategory(request.getProductCategoryId()),
+                hasAltarItemGroup(request.getAltarItemGroupId()),
+                hasAltarStyle(request.getAltarStyleId()),
                 isFeatured(request.getIsFeatured()),
                 priceGte(request.getMinPrice()),
                 priceLte(request.getMaxPrice()));
@@ -54,6 +56,24 @@ public class ProductSpecification {
                 return cb.conjunction();
             }
             return cb.equal(root.get("productCategory").get("id"), productCategoryId);
+        };
+    }
+
+    private static Specification<ProductEntity> hasAltarItemGroup(Long altarItemGroupId) {
+        return (root, query, cb) -> {
+            if (altarItemGroupId == null) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("altarItemGroup").get("id"), altarItemGroupId);
+        };
+    }
+
+    private static Specification<ProductEntity> hasAltarStyle(Long altarStyleId) {
+        return (root, query, cb) -> {
+            if (altarStyleId == null) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("altarStyle").get("id"), altarStyleId);
         };
     }
 

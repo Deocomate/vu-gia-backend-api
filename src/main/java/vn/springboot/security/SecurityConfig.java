@@ -68,6 +68,16 @@ public class SecurityConfig {
             "/api/news-categories/**",
             "/api/pages/**",
             "/api/shipping-methods/**",
+            // Altar customizer catalog (item groups, glaze styles, models + nested sizes)
+            "/api/altar-item-groups/**",
+            "/api/altar-styles/**",
+            "/api/altar-models/**",
+            // Storefront customizer feed (per-image placement GET is already covered by
+            // /api/products/** above — the placement route is nested under it)
+            "/api/altar-customizer/**",
+            // Suggested presets ("bộ gợi ý") — public GET (storefront + admin builder list),
+            // POST/PUT/DELETE stay ADMIN-only (@PreAuthorize)
+            "/api/altar-presets/**",
             // Shared path: public GET (storefront poll), SUPERADMIN-only PUT (@PreAuthorize)
             "/api/site-settings"
     };

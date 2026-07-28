@@ -66,6 +66,12 @@ public class ProductResponse {
 
     private ProductCategoryBriefResponse category;
 
+    /** Optional altar-customizer picker; {@code null} for non-altar products. */
+    private AltarItemGroupBriefResponse altarItemGroup;
+
+    /** Optional altar-customizer picker; {@code null} for non-altar products. */
+    private AltarStyleBriefResponse altarStyle;
+
     /** Only populated on detail views; {@code null} in list responses. */
     private List<ProductImageResponse> images;
 

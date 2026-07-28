@@ -76,4 +76,17 @@ class JwtServiceTest {
         assertThat(jwtService.extractUsername(token)).isEqualTo("john");
         assertThat(jwtService.isTokenValid(token, userDetails)).isTrue();
     }
+
+    @Test
+    void constructor_succeeds_whenSecretIsBase64UrlWithUnderscoresAndHyphens() {
+        String base64UrlSecret = Base64.getUrlEncoder().withoutPadding().encodeToString(new byte[HS512_MIN_BYTES]);
+        JwtProperties properties = propertiesWithSecret(base64UrlSecret);
+        JwtService jwtService = new JwtService(properties);
+
+        UserDetails userDetails = new User("jane", "n/a", List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        String token = jwtService.generateAccessToken(userDetails);
+
+        assertThat(token).isNotBlank();
+        assertThat(jwtService.extractUsername(token)).isEqualTo("jane");
+    }
 }

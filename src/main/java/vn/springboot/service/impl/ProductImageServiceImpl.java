@@ -10,6 +10,8 @@ import vn.springboot.dto.response.product.ProductImageResponse;
 import vn.springboot.entity.product.ProductEntity;
 import vn.springboot.entity.product.ProductImageEntity;
 import vn.springboot.mapper.ProductMapper;
+import vn.springboot.repository.AltarPlacementRepository;
+import vn.springboot.repository.AltarPresetItemRepository;
 import vn.springboot.repository.ProductImageRepository;
 import vn.springboot.repository.ProductRepository;
 import vn.springboot.service.FileStorageService;
@@ -25,6 +27,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final AltarPlacementRepository altarPlacementRepository;
+    private final AltarPresetItemRepository altarPresetItemRepository;
     private final ProductMapper productMapper;
     private final FileStorageService fileStorageService;
 
@@ -68,6 +72,24 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Transactional
     public void deleteImage(Long productId, Long imageId) {
         ProductImageEntity image = loadOwnedImage(productId, imageId);
+
+        // Block, don't silently corrupt: a preset item pinned to this image would otherwise be
+        // left pointing at nothing. Checked before the placement/file cleanup below so a 409
+        // leaves everything untouched.
+        if (altarPresetItemRepository.existsByProductImageId(imageId)) {
+            List<String> presetNames = altarPresetItemRepository.findDistinctPresetNamesByProductImageId(imageId);
+            throw new AppException(ErrorCode.ALTAR_PRESET_ITEM_REFERENCED,
+                    "Product image is referenced by altar preset(s): " + String.join(", ", presetNames));
+        }
+
+        // Cascade: an image's altar placement (0..1) isn't a DB-level cascade, so both halves —
+        // the row and its overlay file — must be cleaned up here or every deleted image leaks
+        // an orphaned overlay on disk.
+        altarPlacementRepository.findByProductImageId(imageId).ifPresent(placement -> {
+            fileStorageService.delete(placement.getOverlayImage());
+            altarPlacementRepository.delete(placement);
+        });
+
         fileStorageService.delete(image.getUrl());
         productImageRepository.delete(image);
     }

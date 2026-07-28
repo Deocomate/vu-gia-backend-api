@@ -15,10 +15,10 @@ import java.util.List;
  * depend on for that.
  *
  * <p>{@code APP_ENV=development}: every boot fully wipes (children-first) and re-seeds
- * all 12 catalog domains, plus clears the 6 non-seeded transactional tables via
- * {@link TransactionalDataCleaner} — the dev DB is treated as fully disposable.
- * Any other profile: each domain seeds only if empty (idempotent bootstrap), and the
- * transactional tables are never touched.
+ * all 17 catalog domains (12 original + 5 altar-customizer domains added in Phase 6),
+ * plus clears the 7 non-seeded transactional tables via {@link TransactionalDataCleaner}
+ * — the dev DB is treated as fully disposable. Any other profile: each domain seeds only
+ * if empty (idempotent bootstrap), and the transactional tables are never touched.
  *
  * <p>{@link OrphanReferenceChecker} runs unconditionally afterward, in every profile —
  * see its own javadoc for why that isn't dev-gated.
@@ -33,7 +33,12 @@ public class SeedRunner implements CommandLineRunner {
     private final ShippingMethodSeeder shippingMethodSeeder;
     private final UserSeeder userSeeder;
     private final ProductCategorySeeder productCategorySeeder;
+    private final AltarItemGroupSeeder altarItemGroupSeeder;
+    private final AltarStyleSeeder altarStyleSeeder;
+    private final AltarModelSeeder altarModelSeeder;
     private final ProductSeeder productSeeder;
+    private final AltarPlacementSeeder altarPlacementSeeder;
+    private final AltarPresetSeeder altarPresetSeeder;
     private final NewsCategorySeeder newsCategorySeeder;
     private final NewsSeeder newsSeeder;
     private final BannerSeeder bannerSeeder;
@@ -57,7 +62,10 @@ public class SeedRunner implements CommandLineRunner {
     }
 
     private List<DomainSeeder> seedersInFkSafeOrder() {
-        return List.of(shippingMethodSeeder, userSeeder, productCategorySeeder, productSeeder,
+        return List.of(shippingMethodSeeder, userSeeder, productCategorySeeder,
+                altarItemGroupSeeder, altarStyleSeeder, altarModelSeeder,
+                productSeeder,
+                altarPlacementSeeder, altarPresetSeeder,
                 newsCategorySeeder, newsSeeder, bannerSeeder, showroomSeeder,
                 galleryImageSeeder, faqSeeder, pageSeeder, couponSeeder);
     }

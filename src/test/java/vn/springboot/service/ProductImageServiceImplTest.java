@@ -11,13 +11,17 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.springboot.common.exception.AppException;
 import vn.springboot.common.exception.ErrorCode;
 import vn.springboot.dto.response.product.ProductImageResponse;
+import vn.springboot.entity.altar.AltarPlacementEntity;
 import vn.springboot.entity.product.ProductEntity;
 import vn.springboot.entity.product.ProductImageEntity;
 import vn.springboot.mapper.ProductMapper;
+import vn.springboot.repository.AltarPlacementRepository;
+import vn.springboot.repository.AltarPresetItemRepository;
 import vn.springboot.repository.ProductImageRepository;
 import vn.springboot.repository.ProductRepository;
 import vn.springboot.service.impl.ProductImageServiceImpl;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +40,12 @@ class ProductImageServiceImplTest {
 
     @Mock
     private ProductImageRepository productImageRepository;
+
+    @Mock
+    private AltarPlacementRepository altarPlacementRepository;
+
+    @Mock
+    private AltarPresetItemRepository altarPresetItemRepository;
 
     @Mock
     private ProductMapper productMapper;
@@ -101,6 +111,73 @@ class ProductImageServiceImplTest {
                 .isInstanceOf(AppException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.PRODUCT_IMAGE_NOT_FOUND);
 
+        verify(fileStorageService, never()).delete(any());
+        verify(productImageRepository, never()).delete(any());
+    }
+
+    /**
+     * Cascade-delete: an image with a placement must have both the placement row and its
+     * overlay file removed — otherwise every deleted image leaks an orphaned overlay on disk.
+     */
+    @Test
+    void deleteImage_withPlacement_deletesPlacementRowAndOverlayFile_noOrphans() {
+        ProductImageEntity image = ProductImageEntity.builder()
+                .url("/files/products/pic.png")
+                .product(product(1L))
+                .build();
+        image.setId(10L);
+        AltarPlacementEntity placement = AltarPlacementEntity.builder()
+                .overlayImage("/files/altar-overlays/overlay.png")
+                .build();
+        placement.setId(99L);
+        when(productImageRepository.findById(10L)).thenReturn(Optional.of(image));
+        when(altarPlacementRepository.findByProductImageId(10L)).thenReturn(Optional.of(placement));
+
+        service.deleteImage(1L, 10L);
+
+        verify(fileStorageService).delete("/files/altar-overlays/overlay.png");
+        verify(altarPlacementRepository).delete(placement);
+        verify(fileStorageService).delete("/files/products/pic.png");
+        verify(productImageRepository).delete(image);
+    }
+
+    /** No placement attached — deletion must not touch the placement repository/storage at all. */
+    @Test
+    void deleteImage_withoutPlacement_onlyDeletesImage_noPlacementSideEffects() {
+        ProductImageEntity image = ProductImageEntity.builder()
+                .url("/files/products/pic.png")
+                .product(product(1L))
+                .build();
+        image.setId(10L);
+        when(productImageRepository.findById(10L)).thenReturn(Optional.of(image));
+        when(altarPlacementRepository.findByProductImageId(10L)).thenReturn(Optional.empty());
+
+        service.deleteImage(1L, 10L);
+
+        verify(altarPlacementRepository, never()).delete(any(AltarPlacementEntity.class));
+        verify(fileStorageService).delete("/files/products/pic.png");
+        verify(productImageRepository).delete(image);
+    }
+
+    /** Blocks deletion instead of leaving a preset item pointing at a removed image. */
+    @Test
+    void deleteImage_referencedByAltarPreset_throws409_namingPreset_touchesNothing() {
+        ProductImageEntity image = ProductImageEntity.builder()
+                .url("/files/products/pic.png")
+                .product(product(1L))
+                .build();
+        image.setId(10L);
+        when(productImageRepository.findById(10L)).thenReturn(Optional.of(image));
+        when(altarPresetItemRepository.existsByProductImageId(10L)).thenReturn(true);
+        when(altarPresetItemRepository.findDistinctPresetNamesByProductImageId(10L))
+                .thenReturn(List.of("Bộ gợi ý A"));
+
+        assertThatThrownBy(() -> service.deleteImage(1L, 10L))
+                .isInstanceOf(AppException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.ALTAR_PRESET_ITEM_REFERENCED);
+        assertThatThrownBy(() -> service.deleteImage(1L, 10L)).hasMessageContaining("Bộ gợi ý A");
+
+        verify(altarPlacementRepository, never()).findByProductImageId(any());
         verify(fileStorageService, never()).delete(any());
         verify(productImageRepository, never()).delete(any());
     }

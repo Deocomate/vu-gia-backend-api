@@ -17,11 +17,17 @@ import vn.springboot.dto.request.product.ProductUpdateRequest;
 import vn.springboot.dto.response.PageResponse;
 import vn.springboot.dto.response.product.ProductImageResponse;
 import vn.springboot.dto.response.product.ProductResponse;
+import vn.springboot.entity.altar.AltarItemGroupEntity;
+import vn.springboot.entity.altar.AltarStyleEntity;
 import vn.springboot.entity.enums.ProductStatus;
 import vn.springboot.entity.product.ProductCategoryEntity;
 import vn.springboot.entity.product.ProductEntity;
 import vn.springboot.entity.product.ProductImageEntity;
 import vn.springboot.mapper.ProductMapper;
+import vn.springboot.repository.AltarItemGroupRepository;
+import vn.springboot.repository.AltarPlacementRepository;
+import vn.springboot.repository.AltarPresetItemRepository;
+import vn.springboot.repository.AltarStyleRepository;
 import vn.springboot.repository.ProductCategoryRepository;
 import vn.springboot.repository.ProductImageRepository;
 import vn.springboot.repository.ProductRepository;
@@ -49,6 +55,10 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductImageRepository productImageRepository;
+    private final AltarItemGroupRepository altarItemGroupRepository;
+    private final AltarStyleRepository altarStyleRepository;
+    private final AltarPresetItemRepository altarPresetItemRepository;
+    private final AltarPlacementRepository altarPlacementRepository;
     private final ProductMapper productMapper;
     private final FileStorageService fileStorageService;
 
@@ -117,6 +127,8 @@ public class ProductServiceImpl implements ProductService {
         entity.setStatus(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT);
         entity.setPriority(request.getPriority() != null ? request.getPriority() : 0);
         entity.setProductCategory(category);
+        entity.setAltarItemGroup(resolveAltarItemGroup(request.getAltarItemGroupId()));
+        entity.setAltarStyle(resolveAltarStyle(request.getAltarStyleId()));
 
         ProductEntity saved = productRepository.save(entity);
         persistImages(saved, request.getImages());
@@ -157,6 +169,18 @@ public class ProductServiceImpl implements ProductService {
             ProductCategoryEntity category = productCategoryRepository.findById(request.getProductCategoryId())
                     .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_CATEGORY_NOT_FOUND));
             entity.setProductCategory(category);
+        }
+
+        if (request.getAltarItemGroupId() != null
+                && (entity.getAltarItemGroup() == null
+                        || !entity.getAltarItemGroup().getId().equals(request.getAltarItemGroupId()))) {
+            entity.setAltarItemGroup(resolveAltarItemGroup(request.getAltarItemGroupId()));
+        }
+
+        if (request.getAltarStyleId() != null
+                && (entity.getAltarStyle() == null
+                        || !entity.getAltarStyle().getId().equals(request.getAltarStyleId()))) {
+            entity.setAltarStyle(resolveAltarStyle(request.getAltarStyleId()));
         }
 
         if (request.getSlug() != null && !request.getSlug().isBlank()) {
@@ -208,7 +232,27 @@ public class ProductServiceImpl implements ProductService {
         ProductEntity entity = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
+        // Block, don't silently corrupt: a preset that references this product would otherwise
+        // be left pointing at nothing. Checked before any mutation so a 409 leaves everything
+        // untouched.
+        if (altarPresetItemRepository.existsByProductId(id)) {
+            List<String> presetNames = altarPresetItemRepository.findDistinctPresetNamesByProductId(id);
+            throw new AppException(ErrorCode.ALTAR_PRESET_ITEM_REFERENCED,
+                    "Product is referenced by altar preset(s): " + String.join(", ", presetNames));
+        }
+
         var images = productImageRepository.findByProductIdOrderByPriorityAscIdAsc(id);
+
+        // Each image's altar placement (0..1) isn't a DB-level cascade — clean up both halves
+        // (row + overlay file) *before* any file deletion below, mirroring
+        // ProductImageServiceImpl#deleteImage. Getting this order right matters: file deletion is
+        // not part of the @Transactional rollback, so if it ran first and a later step failed, the
+        // files would be gone even though the DB rolled back.
+        images.forEach(img -> altarPlacementRepository.findByProductImageId(img.getId()).ifPresent(placement -> {
+            fileStorageService.delete(placement.getOverlayImage());
+            altarPlacementRepository.delete(placement);
+        }));
+
         images.forEach(img -> fileStorageService.delete(img.getUrl()));
         productImageRepository.deleteAll(images);
 
@@ -224,6 +268,24 @@ public class ProductServiceImpl implements ProductService {
                         .toList();
         response.setImages(images);
         return response;
+    }
+
+    /** Optional FK; {@code null} id → {@code null} association (non-altar products leave it unset). */
+    private AltarItemGroupEntity resolveAltarItemGroup(Long altarItemGroupId) {
+        if (altarItemGroupId == null) {
+            return null;
+        }
+        return altarItemGroupRepository.findById(altarItemGroupId)
+                .orElseThrow(() -> new AppException(ErrorCode.ALTAR_ITEM_GROUP_NOT_FOUND));
+    }
+
+    /** Optional FK; {@code null} id → {@code null} association (non-altar products leave it unset). */
+    private AltarStyleEntity resolveAltarStyle(Long altarStyleId) {
+        if (altarStyleId == null) {
+            return null;
+        }
+        return altarStyleRepository.findById(altarStyleId)
+                .orElseThrow(() -> new AppException(ErrorCode.ALTAR_STYLE_NOT_FOUND));
     }
 
     /** Ensures slug uniqueness by appending {@code -2, -3, ...} on collision. */

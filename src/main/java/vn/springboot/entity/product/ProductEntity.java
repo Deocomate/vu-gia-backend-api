@@ -19,6 +19,8 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import vn.springboot.common.entity.BaseEntity;
+import vn.springboot.entity.altar.AltarItemGroupEntity;
+import vn.springboot.entity.altar.AltarStyleEntity;
 import vn.springboot.entity.enums.ProductStatus;
 import vn.springboot.entity.enums.ProductType;
 
@@ -36,7 +38,9 @@ import vn.springboot.entity.enums.ProductType;
         @Index(name = "idx_products_product_category_id", columnList = "product_category_id"),
         @Index(name = "idx_products_is_featured", columnList = "is_featured"),
         @Index(name = "idx_products_type_priority", columnList = "type, priority"),
-        @Index(name = "idx_products_status_is_featured", columnList = "status, is_featured")
+        @Index(name = "idx_products_status_is_featured", columnList = "status, is_featured"),
+        @Index(name = "idx_products_altar_item_group_id", columnList = "altar_item_group_id"),
+        @Index(name = "idx_products_altar_style_id", columnList = "altar_style_id")
 })
 public class ProductEntity extends BaseEntity {
 
@@ -115,4 +119,17 @@ public class ProductEntity extends BaseEntity {
 
     @Column(name = "seo_image", length = 255)
     private String seoImage;
+
+    /**
+     * Optional altar-customizer pickers. Nullable because only {@code BO_DO_THO} products
+     * carry them and every other category must keep working untouched (no cross-category
+     * enforcement in this phase).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "altar_item_group_id")
+    private AltarItemGroupEntity altarItemGroup;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "altar_style_id")
+    private AltarStyleEntity altarStyle;
 }
