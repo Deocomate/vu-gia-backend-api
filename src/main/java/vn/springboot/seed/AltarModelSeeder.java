@@ -19,9 +19,17 @@ import java.util.List;
  * decision D1), so every size shares it. Widths (127 / 153 / 175 cm) are real values taken
  * from the client's {@code SIZE_GUIDE_ROWS} table (rows 4-6's "altar" column upper bounds,
  * {@code altar-customizer-data.js}), enough to exercise cross-size re-mapping without
- * fabricating measurements. {@code surfaceLeft/Top/Right/Bottom} pick a sensible tabletop
- * region (roughly the lower-middle band of the background photo) shared by every size since
- * they're all rendered against the same background image.
+ * fabricating measurements. {@code surfaceLeft/Top/Right/Bottom} were re-measured directly
+ * against {@code altar-preview.png} (1448x1086): the tabletop's flat wood face runs from the
+ * back trim edge at y≈645px (0.594) to the front edge at y≈700px (0.645), narrowing in
+ * perspective toward the back. Since the rect is axis-aligned it cannot follow that trapezoid,
+ * so the seeded values are the largest inscribed rectangle that stays on wood at both the back
+ * and front edge: {@code 0.155 / 0.592 / 0.845 / 0.648}, verified by rendering the rect as an
+ * outline on the background image. The resulting band is only ~0.056 of the image height —
+ * narrow depth-drag travel is what this near-eye-level photo supports and was accepted by the
+ * user rather than commissioning a new background asset. The previous
+ * {@code 0.12 / 0.58 / 0.88 / 0.94} rect reached down to the carved apron and the floor, not
+ * the tabletop — every seeded placement rendered ~0.13 image-height below the wood.
  *
  * <p>No optional/nullable columns on either entity — every field is populated on every row.
  */
@@ -71,10 +79,10 @@ public class AltarModelSeeder implements DomainSeeder {
                 .widthCm(widthCm)
                 .depthCm(depthCm)
                 .backgroundImage(BACKGROUND_IMAGE)
-                .surfaceLeft(0.12)
-                .surfaceTop(0.58)
-                .surfaceRight(0.88)
-                .surfaceBottom(0.94)
+                .surfaceLeft(0.155)
+                .surfaceTop(0.592)
+                .surfaceRight(0.845)
+                .surfaceBottom(0.648)
                 .surfaceWidthCm(widthCm)
                 .priority(priority)
                 .isActive(true)

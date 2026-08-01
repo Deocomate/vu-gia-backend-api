@@ -16,20 +16,27 @@ import vn.springboot.repository.AltarStyleRepository;
 import vn.springboot.repository.ProductImageRepository;
 import vn.springboot.repository.ProductRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Seeds one admin-authored preset ("Bộ tiêu chuẩn"): the single placeable canvas item
- * ("Bát hương 20cm", using the same product image {@link AltarPlacementSeeder} attached a
- * real placement to) plus the 3 accessory products, tied to the 153cm
- * {@link vn.springboot.entity.altar.AltarModelSizeEntity} and the "Men lam" style.
+ * Seeds 3 real admin-authored presets spanning altar size, price tier and glaze style, so the
+ * customizer's preset picker demonstrates meaningfully different starting arrangements instead
+ * of one bát hương plus three invisible accessories.
  *
- * <p>Runs after {@link AltarPlacementSeeder} in {@link SeedRunner}'s FK-safe order — not a
- * hard FK dependency (the preset item references the product image directly, not the
- * placement row), but the correct conceptual order: a canvas preset item is only meaningful
- * once its image has a real placement to size/position it from.
+ * <p>Runs after {@link AltarPlacementSeeder} in {@link SeedRunner}'s FK-safe order — not a hard
+ * FK dependency (a preset item references the product image directly, not the placement row),
+ * but the correct conceptual order: a canvas preset item is only meaningful once its image has
+ * a real placement to size/position it from. Canvas item {@code x}/{@code y} reuse each
+ * product's {@link AltarPlacementSeeder} default so a preset never contradicts its own items'
+ * natural resting position.
  *
- * <p>Null audit: every field is populated except the 3 accessory items'
+ * <p>Preset 3's {@code altarStyle} is "Men lam vẽ vàng" even though 3 of its 6 canvas items are
+ * plain men lam — {@code altarStyle} labels the preset's overall character, it does not
+ * constrain item membership (nothing in the service or UI cross-checks the two), and only 3
+ * products are men-lam-ve-vang, too sparse for a strictly single-style preset to be useful.
+ *
+ * <p>Null audit: every field is populated except each preset's accessory items'
  * {@code productImage}/{@code x}/{@code y} (the documented Phase 3 invariant —
  * {@code productImage != null <=> x/y set}, enforced at the service layer, not the entity)
  * and {@code zIndexOverride} on every item (auto-z from {@code y}, same convention as
@@ -39,12 +46,63 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AltarPresetSeeder implements DomainSeeder {
 
-    private static final String PRESET_MODEL_SIZE_LABEL = "153 cm";
-    private static final String PRESET_STYLE_SLUG = "men-lam";
-    private static final String BAT_HUONG_SLUG = "bat-huong-20cm";
-    private static final String TRO_NEP_SLUG = "tro-nep";
-    private static final String COT_BAT_HUONG_SLUG = "cot-bat-huong";
-    private static final String BO_THAT_THAO_SLUG = "bo-that-thao";
+    /** One canvas item: which product, and its position — mirrors its {@link AltarPlacementSeeder} default. */
+    private record CanvasItem(String slug, double x, double y) {
+    }
+
+    /** One accessory item: which product, how many. */
+    private record AccessoryItem(String slug, int quantity) {
+    }
+
+    /** One preset: copy + which altar size/style it targets + its canvas and accessory items. */
+    private record PresetSeed(String name, String slug, String thumbSlug, String description,
+            String sizeLabel, String styleSlug, List<CanvasItem> canvas, List<AccessoryItem> accessories) {
+    }
+
+    private static final List<PresetSeed> PRESETS = List.of(
+            new PresetSeed("Bộ cơ bản 127cm", "bo-co-ban-127cm", "bat-huong-men-lam-ve-rong-h20",
+                    "Bộ gợi ý cơ bản cho bàn thờ gia tiên 127cm: bát hương, đôi lọ hoa, kỷ 3 chén và đĩa thờ men lam, cùng phụ kiện tro nếp và cốt bát hương đi kèm.",
+                    "127 cm", "men-lam",
+                    List.of(
+                            new CanvasItem("bat-huong-men-lam-ve-rong-h20", 0.50, 0.62),
+                            new CanvasItem("lo-hoa-men-lam-h30", 0.87, 0.20),
+                            new CanvasItem("lo-hoa-men-lam-h20", 0.20, 0.42),
+                            new CanvasItem("ky-3-chen-men-lam-de-rong", 0.24, 0.86),
+                            new CanvasItem("dia-tho-men-lam-d20", 0.66, 0.72)),
+                    List.of(
+                            new AccessoryItem("tro-nep", 2),
+                            new AccessoryItem("cot-bat-huong", 1))),
+            new PresetSeed("Bộ đầy đủ men lam 153cm", "bo-day-du-men-lam-153cm", "lo-hoa-men-lam-h35",
+                    "Bộ gợi ý đầy đủ cho bàn thờ gia tiên 153cm: bát hương, đôi lọ hoa, đôi chóe thờ, bát sâm, kỷ 5 chén, ống hương và đôi đèn dầu men lam, cùng đủ 3 loại phụ kiện đi kèm.",
+                    "153 cm", "men-lam",
+                    List.of(
+                            new CanvasItem("bat-huong-men-lam-ve-rong-h20", 0.50, 0.62),
+                            new CanvasItem("lo-hoa-men-lam-h35", 0.13, 0.20),
+                            new CanvasItem("lo-hoa-men-lam-h30", 0.87, 0.20),
+                            new CanvasItem("choe-tho-men-lam-h19", 0.30, 0.18),
+                            new CanvasItem("choe-tho-men-lam-h14", 0.70, 0.18),
+                            new CanvasItem("bat-sam-men-lam-ve-rong-phuong", 0.50, 0.22),
+                            new CanvasItem("ky-5-chen-men-lam-de-rong", 0.50, 0.92),
+                            new CanvasItem("ong-huong-men-lam-h31", 0.09, 0.34),
+                            new CanvasItem("den-dau-tho-men-lam-doi", 0.28, 0.52)),
+                    List.of(
+                            new AccessoryItem("tro-nep", 3),
+                            new AccessoryItem("cot-bat-huong", 1),
+                            new AccessoryItem("bo-that-thao", 1))),
+            new PresetSeed("Bộ cao cấp vẽ vàng 175cm", "bo-cao-cap-ve-vang-175cm", "doi-hac-tho-men-lam-ve-vang",
+                    "Bộ gợi ý cao cấp cho bàn thờ gia tiên 175cm: bát hương, đôi hạc thờ, bộ nậm rượu & kỷ chén vẽ vàng, nậm rượu vẽ vàng, lọ hoa và bát sâm men lam, tôn lên vẻ sang trọng.",
+                    "175 cm", "men-lam-ve-vang",
+                    List.of(
+                            new CanvasItem("bat-huong-men-lam-ve-rong-h20", 0.50, 0.62),
+                            new CanvasItem("doi-hac-tho-men-lam-ve-vang", 0.50, 0.10),
+                            new CanvasItem("bo-nam-ruou-ky-chen-men-lam-ve-vang", 0.50, 0.78),
+                            new CanvasItem("nam-ruou-men-lam-ve-vang-h28", 0.62, 0.52),
+                            new CanvasItem("lo-hoa-men-lam-h35", 0.13, 0.20),
+                            new CanvasItem("bat-sam-men-lam-co-nap", 0.38, 0.30)),
+                    List.of(
+                            new AccessoryItem("tro-nep", 3),
+                            new AccessoryItem("cot-bat-huong", 1),
+                            new AccessoryItem("bo-that-thao", 1))));
 
     private final AltarPresetRepository altarPresetRepository;
     private final AltarPresetItemRepository altarPresetItemRepository;
@@ -68,58 +126,73 @@ public class AltarPresetSeeder implements DomainSeeder {
     @Override
     @Transactional
     public void seed() {
-        AltarModelSizeEntity targetSize = altarModelSizeRepository.findAll().stream()
-                .filter(size -> PRESET_MODEL_SIZE_LABEL.equals(size.getLabel()))
+        List<AltarPresetItemEntity> allItems = new ArrayList<>();
+        for (int priority = 0; priority < PRESETS.size(); priority++) {
+            PresetSeed presetSeed = PRESETS.get(priority);
+            AltarPresetEntity preset = altarPresetRepository.save(buildPreset(presetSeed, priority + 1));
+            allItems.addAll(buildItems(preset, presetSeed));
+        }
+        altarPresetItemRepository.saveAll(allItems);
+    }
+
+    private AltarPresetEntity buildPreset(PresetSeed presetSeed, int priority) {
+        AltarModelSizeEntity size = altarModelSizeRepository.findAll().stream()
+                .filter(s -> presetSeed.sizeLabel().equals(s.getLabel()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "AltarPresetSeeder requires AltarModelSeeder to have seeded the '"
-                                + PRESET_MODEL_SIZE_LABEL + "' size first"));
+                                + presetSeed.sizeLabel() + "' size first"));
         AltarStyleEntity style = altarStyleRepository.findAll().stream()
-                .filter(s -> PRESET_STYLE_SLUG.equals(s.getSlug()))
+                .filter(s -> presetSeed.styleSlug().equals(s.getSlug()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
-                        "AltarPresetSeeder requires AltarStyleSeeder to have seeded '" + PRESET_STYLE_SLUG + "' first"));
+                        "AltarPresetSeeder requires AltarStyleSeeder to have seeded '"
+                                + presetSeed.styleSlug() + "' first"));
 
-        ProductEntity batHuong = requireProduct(BAT_HUONG_SLUG);
-        ProductImageEntity batHuongImage = productImageRepository
-                .findByProductIdOrderByPriorityAscIdAsc(batHuong.getId()).stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                        "AltarPresetSeeder requires ProductSeeder to have seeded images for '" + BAT_HUONG_SLUG + "'"));
-
-        ProductEntity troNep = requireProduct(TRO_NEP_SLUG);
-        ProductEntity cotBatHuong = requireProduct(COT_BAT_HUONG_SLUG);
-        ProductEntity boThatThao = requireProduct(BO_THAT_THAO_SLUG);
-
-        AltarPresetEntity preset = altarPresetRepository.save(AltarPresetEntity.builder()
-                .name("Bộ tiêu chuẩn")
-                .slug("bo-tieu-chuan")
-                .thumb("assets/images/altar-customizer/altar-preview.png")
-                .description("Bộ gợi ý tiêu chuẩn cho bàn thờ gia tiên 153cm: bát hương chính giữa cùng tro nếp, cốt bát hương và thất thảo đi kèm.")
-                .altarModelSize(targetSize)
+        return AltarPresetEntity.builder()
+                .name(presetSeed.name())
+                .slug(presetSeed.slug())
+                .thumb(thumbPath(presetSeed.thumbSlug()))
+                .description(presetSeed.description())
+                .altarModelSize(size)
                 .altarStyle(style)
-                .priority(1)
+                .priority(priority)
                 .isActive(true)
-                .build());
+                .build();
+    }
 
-        altarPresetItemRepository.saveAll(List.of(
-                // Canvas item: the only placeable altar-set product, same anchor as its AltarPlacementSeeder default.
-                AltarPresetItemEntity.builder()
-                        .preset(preset)
-                        .product(batHuong)
-                        .productImage(batHuongImage)
-                        .quantity(1)
-                        .x(0.30)
-                        .y(0.55)
-                        .scaleAdjust(1.0)
-                        .flipped(false)
-                        .zIndexOverride(null) // auto-z from y — intentional, see class javadoc.
-                        .sortOrder(0)
-                        .build(),
-                // Accessory items: summary-only, no canvas position (Phase 3 invariant: productImage/x/y all null).
-                accessoryItem(preset, troNep, 2, 1),
-                accessoryItem(preset, cotBatHuong, 1, 2),
-                accessoryItem(preset, boThatThao, 1, 3)));
+    private List<AltarPresetItemEntity> buildItems(AltarPresetEntity preset, PresetSeed presetSeed) {
+        List<AltarPresetItemEntity> items = new ArrayList<>();
+        int sortOrder = 0;
+        for (CanvasItem canvasItem : presetSeed.canvas()) {
+            items.add(canvasItem(preset, canvasItem, sortOrder++));
+        }
+        for (AccessoryItem accessoryItem : presetSeed.accessories()) {
+            items.add(accessoryItem(preset, requireProduct(accessoryItem.slug()), accessoryItem.quantity(), sortOrder++));
+        }
+        return items;
+    }
+
+    private AltarPresetItemEntity canvasItem(AltarPresetEntity preset, CanvasItem canvasItem, int sortOrder) {
+        ProductEntity product = requireProduct(canvasItem.slug());
+        ProductImageEntity productImage = productImageRepository
+                .findByProductIdOrderByPriorityAscIdAsc(product.getId()).stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "AltarPresetSeeder requires ProductSeeder to have seeded images for '" + canvasItem.slug() + "'"));
+
+        return AltarPresetItemEntity.builder()
+                .preset(preset)
+                .product(product)
+                .productImage(productImage)
+                .quantity(1)
+                .x(canvasItem.x())
+                .y(canvasItem.y())
+                .scaleAdjust(1.0)
+                .flipped(false)
+                .zIndexOverride(null) // auto-z from y — intentional, see class javadoc.
+                .sortOrder(sortOrder)
+                .build();
     }
 
     private AltarPresetItemEntity accessoryItem(AltarPresetEntity preset, ProductEntity product, int quantity, int sortOrder) {
@@ -135,6 +208,10 @@ public class AltarPresetSeeder implements DomainSeeder {
                 .zIndexOverride(null) // WHITELISTED: auto-z convention, no canvas render anyway.
                 .sortOrder(sortOrder)
                 .build();
+    }
+
+    private String thumbPath(String slug) {
+        return "assets/images/altar-customizer/products/" + slug + "/01.png";
     }
 
     private ProductEntity requireProduct(String slug) {

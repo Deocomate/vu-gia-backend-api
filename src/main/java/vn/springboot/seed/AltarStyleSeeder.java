@@ -9,11 +9,11 @@ import vn.springboot.repository.AltarStyleRepository;
 import java.util.List;
 
 /**
- * Seeds the glaze/finish "style" catalog products can be tagged with (Phase 6 of the
- * altar-customizer build). Five rows, matching the real glaze families already used in
- * {@link ProductCategorySeeder}'s and {@link ProductSeeder}'s existing product copy (men
- * lam / men rạn / vẽ vàng): Men lam, Men rạn, Men lam vẽ vàng, Men rạn dát vàng, Men màu
- * theo mệnh.
+ * Seeds the glaze/finish "style" catalog products can be tagged with. Two rows — only the
+ * glazes actually present in the real 25-product photo catalog: Men lam (22 products) and Men
+ * lam vẽ vàng (3 products). The palette's style chip row filters exclusively
+ * ({@code item.styleId !== altarStyleId}), so seeding styles with zero matching products would
+ * ship dead chips that always show "Không có sản phẩm phù hợp bộ lọc hiện tại."
  *
  * <p>No optional/nullable columns on this entity — every field is populated on every row.
  */
@@ -41,41 +41,17 @@ public class AltarStyleSeeder implements DomainSeeder {
                 AltarStyleEntity.builder()
                         .name("Men lam")
                         .slug("men-lam")
-                        .thumb("assets/images/altar-customizer/similar-product-1.jpg")
-                        .description("Men lam cổ điển, dùng oxit coban vẽ họa tiết xanh lam trên nền men trắng, nét vẽ tinh tế, màu sắc trong trẻo.")
+                        .thumb("assets/images/altar-customizer/products/lo-hoa-men-lam-h30/01.png")
+                        .description("Men lam cổ điển, dùng oxit coban vẽ họa tiết xanh lam trên nền men trắng, nung trên 1.200°C cho màu men trong trẻo, bền theo thời gian.")
                         .priority(1)
-                        .isActive(true)
-                        .build(),
-                AltarStyleEntity.builder()
-                        .name("Men rạn")
-                        .slug("men-ran")
-                        .thumb("assets/images/altar-customizer/similar-product-2.jpg")
-                        .description("Men rạn cổ kính, hình thành từ sự chênh lệch độ co giãn giữa men và xương gốm khi nung, mang vẻ đẹp hoài cổ, độc bản.")
-                        .priority(2)
                         .isActive(true)
                         .build(),
                 AltarStyleEntity.builder()
                         .name("Men lam vẽ vàng")
                         .slug("men-lam-ve-vang")
-                        .thumb("assets/images/altar-customizer/similar-product-3.jpg")
-                        .description("Men lam phối họa tiết vẽ tay bằng vàng 24k, tôn lên vẻ sang trọng, quý phái cho không gian thờ cúng.")
-                        .priority(3)
-                        .isActive(true)
-                        .build(),
-                AltarStyleEntity.builder()
-                        .name("Men rạn dát vàng")
-                        .slug("men-ran-dat-vang")
-                        .thumb("assets/images/altar-customizer/accessories-sprite.png")
-                        .description("Men rạn cổ kết hợp dát vàng thủ công trên các đường nét hoa văn, vừa hoài cổ vừa lộng lẫy.")
-                        .priority(4)
-                        .isActive(true)
-                        .build(),
-                AltarStyleEntity.builder()
-                        .name("Men màu theo mệnh")
-                        .slug("men-mau-theo-menh")
-                        .thumb("assets/images/altar-customizer/altar-preview.png")
-                        .description("Bộ men màu tuyển chọn theo ngũ hành bản mệnh gia chủ (Kim, Mộc, Thủy, Hỏa, Thổ), giúp gia tăng vượng khí.")
-                        .priority(5)
+                        .thumb("assets/images/altar-customizer/products/nam-ruou-men-lam-ve-vang-h28/01.png")
+                        .description("Men lam phối họa tiết vẽ tay bằng vàng 24k trên nền hoa văn cổ, tôn lên vẻ sang trọng cho không gian thờ cúng.")
+                        .priority(2)
                         .isActive(true)
                         .build()));
     }

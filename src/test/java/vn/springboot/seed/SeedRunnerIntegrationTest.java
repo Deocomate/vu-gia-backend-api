@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import vn.springboot.entity.altar.AltarItemGroupEntity;
 import vn.springboot.entity.altar.AltarModelEntity;
 import vn.springboot.entity.altar.AltarModelSizeEntity;
@@ -12,7 +13,10 @@ import vn.springboot.entity.altar.AltarPlacementEntity;
 import vn.springboot.entity.altar.AltarPresetEntity;
 import vn.springboot.entity.altar.AltarPresetItemEntity;
 import vn.springboot.entity.altar.AltarStyleEntity;
+import vn.springboot.entity.enums.CategoryType;
+import vn.springboot.entity.enums.ProductStatus;
 import vn.springboot.entity.product.ProductEntity;
+import vn.springboot.entity.product.ProductImageEntity;
 import vn.springboot.repository.AltarItemGroupRepository;
 import vn.springboot.repository.AltarModelRepository;
 import vn.springboot.repository.AltarModelSizeRepository;
@@ -118,10 +122,10 @@ class SeedRunnerIntegrationTest {
         assertThat(shippingMethodRepository.count()).isEqualTo(2);
         assertThat(userRepository.count()).isEqualTo(2);
         assertThat(productCategoryRepository.count()).isEqualTo(6);
-        // 12 original + 9 altar-set (6 altar products + 3 accessories, Phase 6 decision D6).
-        assertThat(productRepository.count()).isEqualTo(21);
-        // 15 original + 11 altar-set (3 for "Bát hương 20cm" + 1 each for the other 8 rows).
-        assertThat(productImageRepository.count()).isEqualTo(26);
+        // 12 original + 28 altar-set (25 ceramic products + 3 accessories, real photo catalog).
+        assertThat(productRepository.count()).isEqualTo(40);
+        // 15 original + 108 altar-set (105 ceramic gallery images + 1 borrowed image each accessory).
+        assertThat(productImageRepository.count()).isEqualTo(123);
         assertThat(newsCategoryRepository.count()).isEqualTo(3);
         assertThat(newsRepository.count()).isEqualTo(22);
         assertThat(bannerRepository.count()).isEqualTo(6);
@@ -131,13 +135,13 @@ class SeedRunnerIntegrationTest {
         assertThat(pageRepository.count()).isEqualTo(7);
         assertThat(couponRepository.count()).isEqualTo(3);
 
-        assertThat(altarItemGroupRepository.count()).isEqualTo(6);
-        assertThat(altarStyleRepository.count()).isEqualTo(5);
+        assertThat(altarItemGroupRepository.count()).isEqualTo(8);
+        assertThat(altarStyleRepository.count()).isEqualTo(2);
         assertThat(altarModelRepository.count()).isEqualTo(1);
         assertThat(altarModelSizeRepository.count()).isEqualTo(3);
-        assertThat(altarPlacementRepository.count()).isEqualTo(3);
-        assertThat(altarPresetRepository.count()).isEqualTo(1);
-        assertThat(altarPresetItemRepository.count()).isEqualTo(4);
+        assertThat(altarPlacementRepository.count()).isEqualTo(25);
+        assertThat(altarPresetRepository.count()).isEqualTo(3);
+        assertThat(altarPresetItemRepository.count()).isEqualTo(28);
     }
 
     @Test
@@ -173,14 +177,14 @@ class SeedRunnerIntegrationTest {
         seedRunner.run();
         seedRunner.run();
 
-        assertThat(productRepository.count()).isEqualTo(21);
-        assertThat(altarItemGroupRepository.count()).isEqualTo(6);
-        assertThat(altarStyleRepository.count()).isEqualTo(5);
+        assertThat(productRepository.count()).isEqualTo(40);
+        assertThat(altarItemGroupRepository.count()).isEqualTo(8);
+        assertThat(altarStyleRepository.count()).isEqualTo(2);
         assertThat(altarModelRepository.count()).isEqualTo(1);
         assertThat(altarModelSizeRepository.count()).isEqualTo(3);
-        assertThat(altarPlacementRepository.count()).isEqualTo(3);
-        assertThat(altarPresetRepository.count()).isEqualTo(1);
-        assertThat(altarPresetItemRepository.count()).isEqualTo(4);
+        assertThat(altarPlacementRepository.count()).isEqualTo(25);
+        assertThat(altarPresetRepository.count()).isEqualTo(3);
+        assertThat(altarPresetItemRepository.count()).isEqualTo(28);
         assertThatCode(() -> orphanReferenceChecker.check()).doesNotThrowAnyException();
     }
 
@@ -193,7 +197,7 @@ class SeedRunnerIntegrationTest {
     @Test
     void altarSeedDataHasNoUnexpectedNulls() {
         List<AltarItemGroupEntity> groups = altarItemGroupRepository.findAll();
-        assertThat(groups).hasSize(6);
+        assertThat(groups).hasSize(8);
         groups.forEach(g -> {
             assertThat(g.getName()).isNotBlank();
             assertThat(g.getSlug()).isNotBlank();
@@ -202,7 +206,7 @@ class SeedRunnerIntegrationTest {
         });
 
         List<AltarStyleEntity> styles = altarStyleRepository.findAll();
-        assertThat(styles).hasSize(5);
+        assertThat(styles).hasSize(2);
         styles.forEach(s -> {
             assertThat(s.getName()).isNotBlank();
             assertThat(s.getSlug()).isNotBlank();
@@ -236,7 +240,7 @@ class SeedRunnerIntegrationTest {
         });
 
         List<AltarPlacementEntity> placements = altarPlacementRepository.findAll();
-        assertThat(placements).hasSize(3);
+        assertThat(placements).hasSize(25);
         placements.forEach(p -> {
             assertThat(p.getProductImage()).isNotNull();
             assertThat(p.getOverlayImage()).isNotBlank();
@@ -249,7 +253,7 @@ class SeedRunnerIntegrationTest {
         });
 
         List<AltarPresetEntity> presets = altarPresetRepository.findAll();
-        assertThat(presets).hasSize(1);
+        assertThat(presets).hasSize(3);
         presets.forEach(p -> {
             assertThat(p.getName()).isNotBlank();
             assertThat(p.getSlug()).isNotBlank();
@@ -260,7 +264,7 @@ class SeedRunnerIntegrationTest {
         });
 
         List<AltarPresetItemEntity> items = altarPresetItemRepository.findAll();
-        assertThat(items).hasSize(4);
+        assertThat(items).hasSize(28);
         items.forEach(i -> {
             assertThat(i.getPreset()).isNotNull();
             assertThat(i.getProduct()).isNotNull();
@@ -292,12 +296,78 @@ class SeedRunnerIntegrationTest {
             assertThat(p.getAltarStyle()).isNull(); // WHITELISTED.
         });
 
-        List<String> altarProductSlugs = List.of(
-                "bat-huong-20cm", "lo-hoa-28cm", "mam-bong-24cm", "ky-5-chen", "choe-18cm", "ong-huong-31cm");
-        altarProductSlugs.forEach(slug -> {
-            ProductEntity p = productRepository.findBySlug(slug).orElseThrow();
-            assertThat(p.getAltarItemGroup()).isNotNull();
-            assertThat(p.getAltarStyle()).isNotNull();
+        // The 25 ceramic products all carry both an altar item group and an altar style.
+        AltarProductCatalog.ALTAR_ITEMS.stream()
+                .filter(item -> item.styleSlug() != null)
+                .forEach(item -> {
+                    ProductEntity p = productRepository.findBySlug(item.slug()).orElseThrow();
+                    assertThat(p.getAltarItemGroup()).isNotNull();
+                    assertThat(p.getAltarStyle()).isNotNull();
+                });
+    }
+
+    /**
+     * Guards decision D5 directly: for every one of the 25 ceramic altar products, the
+     * product's first image (by {@code priority ASC, id ASC}) must be its {@code 01.png}
+     * overlay, and the total image count must match the catalog's declared count. Without this,
+     * a future edit that reorders images would silently break every placement — the storefront
+     * would just show no overlay, with no other symptom.
+     */
+    @Test
+    void everyCeramicAltarProductsFirstImageIsItsOverlay() {
+        AltarProductCatalog.ALTAR_ITEMS.stream()
+                .filter(item -> item.styleSlug() != null) // ceramic products only, not the 3 accessories.
+                .forEach(item -> {
+                    ProductEntity product = productRepository.findBySlug(item.slug()).orElseThrow();
+                    List<ProductImageEntity> images = productImageRepository
+                            .findByProductIdOrderByPriorityAscIdAsc(product.getId());
+                    assertThat(images).as("images for %s", item.slug()).hasSize(item.imageCount());
+                    assertThat(images.get(0).getUrl()).as("first image url for %s", item.slug())
+                            .endsWith("/01.png");
+                });
+    }
+
+    /**
+     * Guards decision D8: the altar-customizer feed excludes published {@code BO_DO_THO}
+     * products that carry no altar item group. Returns exactly the 28 real altar-catalog
+     * products, every one with a non-null group, and none of the 5 legacy products that used to
+     * leak into the "Phụ kiện đi kèm" accessory list ahead of the real accessories.
+     */
+    @Test
+    void altarCustomizerFeedExcludesLegacyBoDoThoProductsWithNoAltarItemGroup() {
+        List<ProductEntity> items = productRepository.findAltarCustomizerItems(
+                ProductStatus.PUBLISHED, CategoryType.BO_DO_THO, null, null);
+
+        assertThat(items).hasSize(28);
+        items.forEach(p -> assertThat(p.getAltarItemGroup()).isNotNull());
+
+        List<String> legacySlugs = List.of(
+                "den-dau-tho-men-lam-ve-vang-kim", "ong-huong-tho-men-lam-co-dien",
+                "nam-ruou-tho-men-lam-ve-rong-chau", "choe-tho-dung-nuoc-men-lam-ve-sen-co",
+                "bat-huong-rong-phuong-men-lam");
+        assertThat(items).extracting(ProductEntity::getSlug).doesNotContainAnyElementsOf(legacySlugs);
+    }
+
+    /**
+     * Cheap guard against a copy-paste slip across 25 hand-written rows: every placement's
+     * {@code overlayImage} must equal the URL of the {@code productImage} it's attached to —
+     * a mismatch means the palette thumb and the canvas overlay show different pictures.
+     * {@code @Transactional} keeps the session open so the lazy {@code productImage} proxy can
+     * be read after {@code findAll()} returns.
+     */
+    @Test
+    @Transactional
+    void everyPlacementsOverlayImageMatchesItsProductImageUrl() {
+        altarPlacementRepository.findAll().forEach(p ->
+                assertThat(p.getOverlayImage()).isEqualTo(p.getProductImage().getUrl()));
+    }
+
+    /** A stray value here puts an item off-canvas with no other symptom. */
+    @Test
+    void everyPlacementsDefaultPositionIsWithinTheSurfaceUnitSquare() {
+        altarPlacementRepository.findAll().forEach(p -> {
+            assertThat(p.getDefaultX()).isBetween(0.0, 1.0);
+            assertThat(p.getDefaultY()).isBetween(0.0, 1.0);
         });
     }
 }

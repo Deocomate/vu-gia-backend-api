@@ -41,16 +41,22 @@ import java.util.stream.Collectors;
  * category ids (1-6) are translated below to their real {@link CategoryType}, then
  * resolved to whatever id {@link ProductCategorySeeder} actually generated.
  *
- * <p><b>Phase 6 altar-catalog extension.</b> {@code buildProducts()}'s original 12 rows
+ * <p><b>Real altar-catalog extension.</b> {@code buildProducts()}'s original 12 rows
  * (indexes 0-11, including the positionally-resolved combo above) are left completely
- * untouched — the 9 new altar-set products from {@code buildAltarSetProducts()} are
- * strictly <em>appended</em> after index 11 rather than inserted in the middle. This was
- * the deliberate, lower-risk choice over refactoring the combo's {@code saved.get(8..11)}
- * lookups to a slug-keyed map: appending changes zero bytes of the already-tested
- * index-8/9/10/11 resolution logic, so it carries no risk of silently shifting those
- * indices (the exact regression the phase's risk assessment flags). The altar item
- * group/style resolution added below instead uses a slug-keyed map, since that FK
- * resolution is brand new code with no existing behavior to preserve.
+ * untouched — the 28 real altar-catalog products from {@code buildAltarSetProducts()}
+ * (25 ceramic products built on the {@code tasks/seeder-alter-customize} photo set, plus 3
+ * non-ceramic accessories) are strictly <em>appended</em> after index 11 rather than inserted
+ * in the middle. This is the deliberate, lower-risk choice over refactoring the combo's
+ * {@code saved.get(8..11)} lookups to a slug-keyed map: appending changes zero bytes of the
+ * already-tested index-8/9/10/11 resolution logic, so it carries no risk of silently shifting
+ * those indices. The altar item group/style resolution, and the altar catalog itself, use a
+ * slug-keyed {@link AltarSeedItem} list instead, since with 28 rows a hand-counted
+ * {@code saved.get(n)} index per row is exactly the fragility this javadoc warns about for the
+ * combo. {@code priority} 100-127 keeps the altar rows visually distinct from the original 12's
+ * 0-10 when reading {@code ORDER BY p.priority ASC} output. Every ceramic product's first image
+ * (its {@code 01.png}) is saved at {@code priority = 0} — {@code AltarCustomizerServiceImpl}
+ * reduces each product to its first image by {@code priority ASC, id ASC} and only looks up a
+ * placement for that exact image id, so a reordering here would silently break every placement.
  */
 @Component
 @RequiredArgsConstructor
@@ -99,12 +105,17 @@ public class ProductSeeder implements DomainSeeder {
                 saved.get(8).getId(), saved.get(9).getId(), saved.get(10).getId()));
         productRepository.save(combo);
 
-        productImageRepository.saveAll(buildImages(saved));
+        Map<String, ProductEntity> altarBySlug = saved.subList(12, saved.size()).stream()
+                .collect(Collectors.toMap(ProductEntity::getSlug, Function.identity()));
+
+        List<ProductImageEntity> images = new ArrayList<>(buildOriginalImages(saved));
+        images.addAll(buildAltarImages(altarBySlug));
+        productImageRepository.saveAll(images);
     }
 
     /**
      * Resolves the category placeholder every draft carries, plus the altar item
-     * group/style placeholders the 9 appended altar-set drafts (only) carry — see
+     * group/style placeholders the 28 appended altar-set drafts (only) carry — see
      * {@link #altarItemGroupPlaceholder(String)}/{@link #altarStylePlaceholder(String)}.
      * Drafts from the original 12 never set an altar placeholder, so
      * {@code draft.getAltarItemGroup()}/{@code getAltarStyle()} stay {@code null} for them,
@@ -139,10 +150,10 @@ public class ProductSeeder implements DomainSeeder {
 
     /**
      * Indexes 0-11: the original 12 rows, byte-for-byte unchanged (see the class javadoc on
-     * why the altar-set rows are appended rather than inserted). Indexes 12-20:
-     * {@link #buildAltarSetProducts()} — the 9 {@code BO_DO_THO} altar-catalog rows added in
-     * Phase 6, each carrying an altar item group and (except the 3 non-ceramic accessories)
-     * an altar style.
+     * why the altar-set rows are appended rather than inserted). Indexes 12-39:
+     * {@link #buildAltarSetProducts()} — the 28 real altar-catalog rows (25 ceramic products
+     * carrying an altar item group + altar style, plus 3 non-ceramic accessories carrying an
+     * altar item group only).
      */
     private List<ProductEntity> buildProducts() {
         List<ProductEntity> products = new ArrayList<>(originalProducts());
@@ -199,87 +210,27 @@ public class ProductSeeder implements DomainSeeder {
                 comboProduct());
     }
 
-    /**
-     * The 9-row altar set from plan decision D6: names/prices reused from the client's
-     * altar-customizer mock data. 6 real altar products (indexes 12-17 once appended) plus 3
-     * accessories (indexes 18-20) assigned to the {@code renderOnAltar=false} "Phụ kiện đi
-     * kèm" group. Every one of the 6 named altar item groups gets at least one product so
-     * the storefront palette shows real content on every tab (only "Bát hương & phụ kiện"
-     * is placeable — see {@link AltarPlacementSeeder}'s javadoc for why, per decision D1).
-     *
-     * <p>Accessories intentionally get no {@link #altarStylePlaceholder(String)} — glaze
-     * style doesn't apply to non-ceramic consumables (ash, incense-bowl core material, herb
-     * bundle). This is the one legitimate {@code altarStyle = null} case among the altar set,
-     * documented here and asserted explicitly in the seed null audit
-     * ({@code SeedRunnerIntegrationTest#altarSeedDataHasNoUnexpectedNulls}).
-     */
     private List<ProductEntity> buildAltarSetProducts() {
-        List<ProductEntity> products = new ArrayList<>();
-
-        ProductEntity batHuong = altarProduct("Bát hương 20cm", "assets/images/altar-customizer/bat-huong-1.png",
-                "VG-ALT001", 850_000L, 30, true,
-                "Bát hương 20cm gốm sứ Bát Tràng, dáng tròn truyền thống, dùng cắm hương thờ Thần linh - Gia tiên.",
-                "bat-huong-20cm", 11, "bat-huong-phu-kien", "men-lam");
-        products.add(batHuong);
-
-        products.add(altarProduct("Lọ hoa 28cm", "assets/images/altar-customizer/similar-product-1.jpg",
-                "VG-ALT002", 700_000L, 22, false,
-                "Lọ hoa 28cm men lam vẽ vàng, dáng thanh thoát, dùng cắm hoa trang trí bàn thờ.",
-                "lo-hoa-28cm", 12, "lo-hoa-phu-kien", "men-lam-ve-vang"));
-
-        products.add(altarProduct("Mâm bồng 24cm", "assets/images/altar-customizer/similar-product-2.jpg",
-                "VG-ALT003", 650_000L, 18, false,
-                "Mâm bồng 24cm men rạn, dùng bày hoa quả và lễ vật trên bàn thờ gia tiên.",
-                "mam-bong-24cm", 13, "bo-tam-su-ngu-su", "men-ran"));
-
-        products.add(altarProduct("Kỷ 5 chén", "assets/images/altar-customizer/similar-product-3.jpg",
-                "VG-ALT004", 550_000L, 27, false,
-                "Kỷ 5 chén men rạn dát vàng, dùng đựng nước sạch hoặc rượu cúng trên bàn thờ.",
-                "ky-5-chen", 14, "bo-tam-su-ngu-su", "men-ran-dat-vang"));
-
-        products.add(altarProduct("Chóe 18cm", "assets/images/altar-customizer/similar-product-1.jpg",
-                "VG-ALT005", 1_200_000L, 9, true,
-                "Chóe 18cm men màu theo mệnh, dùng đựng gạo, muối và nước trên bàn thờ Thần tài - Thổ địa.",
-                "choe-18cm", 15, "than-tai-tho-dia", "men-mau-theo-menh"));
-
-        products.add(altarProduct("Ống hương 31cm", "assets/images/altar-customizer/similar-product-2.jpg",
-                "VG-ALT006", 450_000L, 14, false,
-                "Ống hương 31cm men lam, dùng cắm nhang chưa sử dụng, phụ kiện đi kèm bộ đồ thờ.",
-                "ong-huong-31cm", 16, "phu-kien-tho", "men-lam"));
-
-        products.add(altarProduct("Tro nếp", "assets/images/altar-customizer/accessories-sprite.png",
-                "VG-ALT007", 120_000L, 40, false,
-                "Tro nếp sạch dùng đổ bát hương, đã qua xử lý, không gây ẩm mốc, an toàn khi thắp hương.",
-                "tro-nep", 17, "phu-kien-di-kem", null));
-
-        products.add(altarProduct("Cốt bát hương", "assets/images/altar-customizer/accessories-sprite.png",
-                "VG-ALT008", 150_000L, 33, false,
-                "Cốt bát hương (thất bảo) dùng lót đáy bát hương trước khi đổ tro, theo phong tục truyền thống.",
-                "cot-bat-huong", 18, "phu-kien-di-kem", null));
-
-        products.add(altarProduct("Bộ thất thảo", "assets/images/altar-customizer/accessories-sprite.png",
-                "VG-ALT009", 250_000L, 21, false,
-                "Bộ thất thảo (7 vị thảo dược) dùng lót cốt bát hương, theo nghi thức an vị bát hương truyền thống.",
-                "bo-that-thao", 19, "phu-kien-di-kem", null));
-
+        List<ProductEntity> products = new ArrayList<>(AltarProductCatalog.ALTAR_ITEMS.size());
+        for (AltarProductCatalog.AltarSeedItem item : AltarProductCatalog.ALTAR_ITEMS) {
+            products.add(altarProduct(item));
+        }
         return products;
     }
 
     /**
      * Builds one altar-set {@link ProductEntity} on top of {@link #product}, then attaches the
-     * altar item group (always) and altar style ({@code styleSlug == null} for the 3
-     * accessories — see {@link #buildAltarSetProducts()}). {@code compareAtPrice} is left
-     * {@code null} for every altar-set row, same as several rows in the original 12
-     * ({@code products} table nullability, not this phase's null-audit scope).
+     * altar item group (always) and altar style ({@code styleSlug() == null} for the 3
+     * accessories). {@code compareAtPrice} is left {@code null} for every altar-set row, same as
+     * several rows in the original 12.
      */
-    private ProductEntity altarProduct(String name, String thumb, String sku, Long price, int soldCount,
-            boolean isFeatured, String descriptionText, String slug, int priority,
-            String itemGroupSlug, String styleSlug) {
-        ProductEntity draft = product(name, thumb, sku, price, null, soldCount, isFeatured, descriptionText,
-                slug, priority, CategoryType.BO_DO_THO);
-        draft.setAltarItemGroup(altarItemGroupPlaceholder(itemGroupSlug));
-        if (styleSlug != null) {
-            draft.setAltarStyle(altarStylePlaceholder(styleSlug));
+    private ProductEntity altarProduct(AltarProductCatalog.AltarSeedItem item) {
+        ProductEntity draft = product(item.name(), item.thumbPath(), item.sku(), item.price(), null,
+                item.soldCount(), item.featured(), item.description(), item.slug(), item.priority(),
+                CategoryType.BO_DO_THO);
+        draft.setAltarItemGroup(altarItemGroupPlaceholder(item.groupSlug()));
+        if (item.styleSlug() != null) {
+            draft.setAltarStyle(altarStylePlaceholder(item.styleSlug()));
         }
         return draft;
     }
@@ -314,7 +265,9 @@ public class ProductSeeder implements DomainSeeder {
      * silently fell back to its hardcoded {@code DEFAULT_SECTIONS}, the same 3 generic
      * blurbs on every product page regardless of which item it was. Glaze copy is picked
      * from the product name (men rạn vs men lam) so the 2nd section still matches the
-     * real product instead of repeating one canned paragraph everywhere.
+     * real product instead of repeating one canned paragraph everywhere. No altar-catalog
+     * product is men rạn, so every altar row naturally takes the men-lam branch — correct,
+     * since the real photo catalog is exclusively men lam / men lam vẽ vàng.
      */
     private String singleDetailSections(String productName) {
         boolean isMenRan = productName.contains("Men rạn") || productName.contains("men rạn");
@@ -457,7 +410,8 @@ public class ProductSeeder implements DomainSeeder {
         return writeJson(array);
     }
 
-    private List<ProductImageEntity> buildImages(List<ProductEntity> saved) {
+    /** Images for the original 12 rows (indexes 0-11) — untouched, still index-based. */
+    private List<ProductImageEntity> buildOriginalImages(List<ProductEntity> saved) {
         List<ProductImageEntity> images = new ArrayList<>();
         String[] singleImageFiles = {
                 "product-card-image-1.png", "product-card-image-2.png", "product-card-image-1.png",
@@ -476,25 +430,23 @@ public class ProductSeeder implements DomainSeeder {
         for (int priority = 0; priority < comboImageFiles.length; priority++) {
             images.add(image(saved.get(11), comboImageFiles[priority], priority));
         }
+        return images;
+    }
 
-        // Altar set (indexes 12-20, appended by buildAltarSetProducts() — see that method's
-        // javadoc for the index-to-product mapping). "Bát hương 20cm" (index 12) is the only
-        // product with real overlay assets, so it alone gets all 3 bat-huong-*.png as its
-        // gallery — that's what lets AltarPlacementSeeder attach 3 real placements to it.
-        // Every other altar-set row gets exactly 1 image, a real asset (similar-product-*.jpg
-        // photographs or the accessories sprite), never a fabricated placeholder (decision D1).
-        images.add(imageAtPath(saved.get(12), "assets/images/altar-customizer/bat-huong-1.png", 0));
-        images.add(imageAtPath(saved.get(12), "assets/images/altar-customizer/bat-huong-2.png", 1));
-        images.add(imageAtPath(saved.get(12), "assets/images/altar-customizer/bat-huong-3.png", 2));
-        images.add(imageAtPath(saved.get(13), "assets/images/altar-customizer/similar-product-1.jpg", 0));
-        images.add(imageAtPath(saved.get(14), "assets/images/altar-customizer/similar-product-2.jpg", 0));
-        images.add(imageAtPath(saved.get(15), "assets/images/altar-customizer/similar-product-3.jpg", 0));
-        images.add(imageAtPath(saved.get(16), "assets/images/altar-customizer/similar-product-1.jpg", 0));
-        images.add(imageAtPath(saved.get(17), "assets/images/altar-customizer/similar-product-2.jpg", 0));
-        images.add(imageAtPath(saved.get(18), "assets/images/altar-customizer/accessories-sprite.png", 0));
-        images.add(imageAtPath(saved.get(19), "assets/images/altar-customizer/accessories-sprite.png", 0));
-        images.add(imageAtPath(saved.get(20), "assets/images/altar-customizer/accessories-sprite.png", 0));
-
+    /**
+     * Images for the 28 appended altar-set rows: walks {@link AltarProductCatalog#ALTAR_ITEMS}
+     * — the same source of truth {@link #buildAltarSetProducts()} reads — so a product can
+     * never drift out of sync with its images. Each item's {@code 01.png} lands at
+     * {@code priority = 0} (decision D5); accessories emit exactly one row at their borrowed path.
+     */
+    private List<ProductImageEntity> buildAltarImages(Map<String, ProductEntity> altarBySlug) {
+        List<ProductImageEntity> images = new ArrayList<>();
+        for (AltarProductCatalog.AltarSeedItem item : AltarProductCatalog.ALTAR_ITEMS) {
+            ProductEntity product = altarBySlug.get(item.slug());
+            for (int n = 1; n <= item.imageCount(); n++) {
+                images.add(imageAtPath(product, item.imagePath(n), n - 1));
+            }
+        }
         return images;
     }
 

@@ -81,9 +81,16 @@ public interface ProductRepository
     /**
      * Backs the public altar-customizer feed ({@code GET /api/altar-customizer/items}): one
      * fetch-joined query for {@code productCategory}/{@code altarItemGroup}/{@code altarStyle},
-     * filtered to published {@code BO_DO_THO} products and optionally narrowed by group/style.
-     * Image + placement joining happens separately in {@code AltarCustomizerServiceImpl} (bulk
-     * IN queries, not per-product) since they're not to-one relations reachable from here.
+     * filtered to published {@code BO_DO_THO} products that also carry an altar item group, and
+     * optionally narrowed by group/style. The {@code aig.id IS NOT NULL} predicate excludes
+     * legacy {@code BO_DO_THO} products seeded without an altar item group — without it they
+     * resolve {@code renderOnAltar=false} in {@code AltarCustomizerServiceImpl} and leak into
+     * the "Phụ kiện đi kèm" accessory list ahead of the real accessories. The join stays a
+     * {@code LEFT JOIN FETCH} (not inner) because the fetch-join's only job is loading the group
+     * for the response; the new predicate does the filtering, and this shape is what keeps the
+     * optional {@code :altarItemGroupId} narrowing working. Image + placement joining happens
+     * separately in {@code AltarCustomizerServiceImpl} (bulk IN queries, not per-product) since
+     * they're not to-one relations reachable from here.
      */
     @Query("""
             SELECT p FROM ProductEntity p
@@ -92,6 +99,7 @@ public interface ProductRepository
             LEFT JOIN FETCH p.altarStyle ast
             WHERE p.status = :status
               AND pc.categoryType = :categoryType
+              AND aig.id IS NOT NULL
               AND (:altarItemGroupId IS NULL OR aig.id = :altarItemGroupId)
               AND (:altarStyleId IS NULL OR ast.id = :altarStyleId)
             ORDER BY p.priority ASC, p.id ASC
